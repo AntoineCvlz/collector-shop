@@ -5,6 +5,10 @@ jobs:
   build-and-test:
     name: Build & PHPUnit Tests
     runs-on: ubuntu-latest
+    
+    defaults:
+      run:
+        working-directory: ./backend
 
     steps:
       - name: 📥 Checkout code
@@ -16,6 +20,7 @@ jobs:
           php-version: '8.4'
           extensions: mbstring, xml, ctype, iconv, mysql, zip, bcmath
           coverage: xdebug
+          tools: composer:v2
 
       - name: 📦 Install Composer dependencies
         run: composer install --no-progress --prefer-dist --optimize-autoloader
@@ -40,7 +45,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
-          path: coverage.xml
+          path: backend/coverage.xml
           retention-days: 7
           
       - name: 📤 Upload build artifacts
@@ -48,7 +53,7 @@ jobs:
         with:
           name: build-artifacts
           path: |
-            ./
-            !node_modules
-            !tests
+            backend/
+            !backend/node_modules
+            !backend/tests
           retention-days: 7

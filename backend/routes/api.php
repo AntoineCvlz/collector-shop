@@ -2,6 +2,13 @@
 
 use Illuminate\Support\Facades\Route;
 
+Route::get('/hello-world', function () {
+    return response()->json([
+        'message' => 'Hello World'
+    ]);
+});
+
+
 Route::group(['namespace' => 'App\Http\Controllers\API'], function () {
     // --------------- Register and Login ----------------//
     Route::post('register', 'AuthenticationController@register')->name('register');

@@ -1,0 +1,68 @@
+services:
+  # --- BACKEND (PHP 8.3 FPM) ---
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: app_backend
+    restart: unless-stopped
+    volumes:
+      - ../backend:/var/www/html
+    networks:
+      - app-network
+    depends_on:
+      - db
+
+  # --- SERVEUR WEB (NGINX) ---
+  nginx:
+    image: nginx:alpine
+    container_name: app_nginx
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-80}:80"
+    volumes:
+      - ../backend:/var/www/html
+      - ./nginx:/etc/nginx/conf.d
+    networks:
+      - app-network
+    depends_on:
+      - backend
+
+  # --- DATABASE (POSTGRES) ---
+  db:
+    image: postgres:18-alpine
+    container_name: app_db
+    restart: unless-stopped
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    environment:
+      POSTGRES_DB: ${DB_DATABASE:-laravel}
+      POSTGRES_USER: ${DB_USERNAME:-user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-password}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+  # --- FRONTEND (REACT/VITE) ---
+  frontend:
+    build:
+      context: ../frontend
+    container_name: app_frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ../frontend:/app
+      - /app/node_modules
+    environment:
+      - VITE_API_BASE_URL=http://127.0.0.1
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  db-data:
+    driver: local

@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   code-quality-sast:
-    name: Code Quality & SAST (Laravel API)
+    name: Security Scan (Laravel)
     runs-on: ubuntu-latest
 
     steps:
@@ -19,12 +19,17 @@ jobs:
         uses: actions/checkout@v4
 
       # ═══════════════════════════════════════
-      # SEMGREP SAST
+      # 1. SEMGREP (Remplace avantageusement CodeQL pour PHP)
       # ═══════════════════════════════════════
       - name: 🔍 Run Semgrep SAST
         uses: returntocorp/semgrep-action@v1
         with:
-          config: 'p/php p/laravel p/owasp-top-10'
+          # On utilise des règles spécifiques à PHP et Laravel
+          config: >-
+            p/php
+            p/laravel
+            p/owasp-top-10
+            p/security-audit
         env:
           SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
         continue-on-error: true
@@ -37,15 +42,20 @@ jobs:
           category: semgrep
 
       # ═══════════════════════════════════════
-      # CODEQL SAST (Analyse PHP)
+      # 2. COMPOSER AUDIT (Sécurité des dépendances)
       # ═══════════════════════════════════════
-      - name: 🔍 Initialize CodeQL
-        uses: github/codeql-action/init@v4
-        with:
-          languages: php
-          queries: security-extended,security-and-quality
+      - name: 📦 Check PHP Dependencies Security
+        run: |
+          cd backend
+          composer audit
+        continue-on-error: true
 
-      - name: 🔍 Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v4
-        with:
-          category: codeql-php
+      # ═══════════════════════════════════════
+      # 3. LARAVEL PINT (Qualité de code / Linter)
+      # ═══════════════════════════════════════
+      - name: 🎨 Check Code Style (Pint)
+        run: |
+          cd backend
+          # On utilise --test pour ne pas modifier les fichiers mais juste vérifier
+          ./vendor/bin/pint --test
+        continue-on-error: true

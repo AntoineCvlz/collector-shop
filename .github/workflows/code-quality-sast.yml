@@ -4,32 +4,41 @@ on:
       SEMGREP_APP_TOKEN:
         required: false
 
-permissions:
-  security-events: write
-  contents: read
-  actions: read
-
 jobs:
   code-quality-sast:
-    name: Security Scan (Laravel)
+    name: Security & Quality Scan
     runs-on: ubuntu-latest
+    
+    defaults:
+      run:
+        working-directory: ./backend
 
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
 
       # ═══════════════════════════════════════
-      # 1. SEMGREP (Remplace avantageusement CodeQL pour PHP)
+      # 1. PRÉPARATION PHP (Léger)
+      # ═══════════════════════════════════════
+      - name: 🐘 Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          tools: composer:v2, pint # 💡 On installe Pint directement via les outils
+
+      # ═══════════════════════════════════════
+      # 2. LARAVEL PINT (Qualité de code)
+      # ═══════════════════════════════════════
+      - name: 🎨 Check Code Style (Pint)
+        run: pint --test # 💡 Comme Pint est installé en "tool", il est disponible partout
+
+      # ═══════════════════════════════════════
+      # 3. SEMGREP (Sécurité Code)
       # ═══════════════════════════════════════
       - name: 🔍 Run Semgrep SAST
         uses: returntocorp/semgrep-action@v1
         with:
-          # On utilise des règles spécifiques à PHP et Laravel
-          config: >-
-            p/php
-            p/laravel
-            p/owasp-top-10
-            p/security-audit
+          config: 'p/php p/security-audit p/secrets'
         env:
           SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
         continue-on-error: true
@@ -42,20 +51,8 @@ jobs:
           category: semgrep
 
       # ═══════════════════════════════════════
-      # 2. COMPOSER AUDIT (Sécurité des dépendances)
+      # 4. COMPOSER AUDIT (Sécurité Dépendances)
       # ═══════════════════════════════════════
       - name: 📦 Check PHP Dependencies Security
-        run: |
-          cd backend
-          composer audit
-        continue-on-error: true
-
-      # ═══════════════════════════════════════
-      # 3. LARAVEL PINT (Qualité de code / Linter)
-      # ═══════════════════════════════════════
-      - name: 🎨 Check Code Style (Pint)
-        run: |
-          cd backend
-          # On utilise --test pour ne pas modifier les fichiers mais juste vérifier
-          ./vendor/bin/pint --test
+        run: composer audit
         continue-on-error: true

@@ -15,15 +15,13 @@ permissions:
   actions: read
 
 jobs:
-  # ═══════════════════════════════════════════════
   # ÉTAPE 1 : BUILD & TESTS
-  # ═══════════════════════════════════════════════
   build-and-test:
     uses: ./.github/workflows/build-unit-tests.yml
 
-  # ═══════════════════════════════════════════════
-  # ÉTAPE 2 : ANALYSE DE SÉCURITÉ STATIQUE (SAST)
-  # ═══════════════════════════════════════════════
+  # ÉTAPE 2 : QUALITÉ & SÉCURITÉ
   code-quality-sast:
     needs: build-and-test
     uses: ./.github/workflows/code-quality-sast.yml
+    secrets:
+      SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}

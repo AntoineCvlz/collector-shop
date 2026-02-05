@@ -1,0 +1,22 @@
+name: Main CI/CD Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  schedule:
+    - cron: '0 2 * * 1'
+  workflow_dispatch:
+
+permissions:
+  security-events: write
+  contents: read
+  actions: read
+
+jobs:
+  # ═══════════════════════════════════════════════
+  # ÉTAPE 1 : BUILD & TESTS
+  # ═══════════════════════════════════════════════
+  build-and-test:
+    uses: ./.github/workflows/build-unit-tests.yml

@@ -1,0 +1,54 @@
+on:
+  workflow_call:
+    secrets:
+      SEMGREP_APP_TOKEN:
+        required: false
+
+permissions:
+  security-events: write
+  contents: read
+  actions: read
+
+jobs:
+  code-quality-sast:
+    name: Code Quality & SAST (Laravel API)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      # ═══════════════════════════════════════
+      # SEMGREP SAST (Ciblé Backend)
+      # ═══════════════════════════════════════
+      - name: 🔍 Run Semgrep SAST
+        uses: returntocorp/semgrep-action@v1
+        with:
+          config: 'p/php p/laravel p/owasp-top-10'
+        env:
+          SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
+        continue-on-error: true
+
+      - name: 📤 Upload Semgrep SARIF
+        uses: github/codeql-action/upload-sarif@v3
+        if: always() && hashFiles('semgrep.sarif') != ''
+        with:
+          sarif_file: semgrep.sarif
+          category: semgrep
+
+      # ═══════════════════════════════════════
+      # CODEQL SAST (Analyse PHP)
+      # ═══════════════════════════════════════
+      - name: 🔍 Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: 'php'
+          paths-ignore: |
+            frontend/**
+            docker/**
+          queries: security-extended,security-and-quality
+
+      - name: 🔍 Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: codeql-php

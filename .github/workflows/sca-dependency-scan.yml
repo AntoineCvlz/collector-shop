@@ -24,7 +24,7 @@ jobs:
       - name: 🐘 Set up PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.4'
+          php-version: "8.4"
           tools: composer:v2
 
       - name: 📦 Composer Audit (Native Laravel SCA)
@@ -34,17 +34,17 @@ jobs:
       # ═══════════════════════════════════════
       # 2. TRIVY SCA (Analyse des fichiers lock)
       # ═══════════════════════════════════════
-      - name: 🔍 Run Trivy SCA (Analyse Composer & NPM)
+      - name: 🔍 Run Trivy SCA
         uses: aquasecurity/trivy-action@0.29.0
         with:
-          scan-type: 'fs'
-          scan-ref: './backend'
-          format: 'sarif'
-          output: '../trivy-results.sarif'
-          severity: 'CRITICAL,HIGH,MEDIUM'
+          scan-type: "fs"
+          scan-ref: "."
+          format: "sarif"
+          output: "trivy-results.sarif"
+          severity: "CRITICAL,HIGH,MEDIUM"
           ignore-unfixed: true
 
-      - name: 📤 Upload Trivy SARIF to Security Tab
+      - name: 📤 Upload Trivy SARIF
         uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:

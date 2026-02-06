@@ -36,7 +36,7 @@ jobs:
           php artisan key:generate
 
       - name: 🧪 Run tests
-        run: php artisan test --parallel
+        run: php artisan test --parallel --coverage-clover coverage.xml
 
       - name: 📊 Upload coverage report
         uses: actions/upload-artifact@v4

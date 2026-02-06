@@ -29,25 +29,25 @@ jobs:
       # ═══════════════════════════════════════
       # 2. LARAVEL PINT (Qualité de code)
       # ═══════════════════════════════════════
+      - name: 🎨 Check Code Style (Pint)
         run: pint --test
 
       # ═══════════════════════════════════════
-      # 3. SEMGREP (Version CI)
+      # 3. SEMGREP
       # ═══════════════════════════════════════
       - name: 🔍 Run Semgrep SAST
         run: |
           pip install semgrep
-          semgrep ci --sarif --sarif-output=semgrep.sarif || true
+          semgrep scan --config="p/php" --config="p/security-audit" --config="p/secrets" --sarif --output=../semgrep.sarif
         env:
           SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
-          SEMGREP_RULES: "p/php p/security-audit p/secrets"
         continue-on-error: true
 
       - name: 📤 Upload Semgrep SARIF
         uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
-          sarif_file: backend/semgrep.sarif
+          sarif_file: semgrep.sarif
           category: semgrep
 
       # ═══════════════════════════════════════

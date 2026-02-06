@@ -1,0 +1,52 @@
+on:
+  workflow_call:
+
+permissions:
+  security-events: write
+  contents: read
+
+jobs:
+  sca-dependency-scan:
+    name: SCA - Dependency Security
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./backend
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      # ═══════════════════════════════════════
+      # 1. COMPOSER AUDIT (Le remplaçant natif de l'OWASP pour PHP)
+      # ═══════════════════════════════════════
+      - name: 🐘 Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          tools: composer:v2
+
+      - name: 📦 Composer Audit (Native Laravel SCA)
+        run: composer audit --format=plain
+        continue-on-error: true
+
+      # ═══════════════════════════════════════
+      # 2. TRIVY SCA (Analyse des fichiers lock)
+      # ═══════════════════════════════════════
+      - name: 🔍 Run Trivy SCA (Analyse Composer & NPM)
+        uses: aquasecurity/trivy-action@0.29.0
+        with:
+          scan-type: 'fs'
+          scan-ref: './backend'
+          format: 'sarif'
+          output: '../trivy-results.sarif'
+          severity: 'CRITICAL,HIGH,MEDIUM'
+          ignore-unfixed: true
+
+      - name: 📤 Upload Trivy SARIF to Security Tab
+        uses: github/codeql-action/upload-sarif@v4
+        if: always()
+        with:
+          sarif_file: trivy-results.sarif
+          category: trivy-sca

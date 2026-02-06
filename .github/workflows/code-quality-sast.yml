@@ -33,13 +33,12 @@ jobs:
         run: pint --test
 
       # ═══════════════════════════════════════
-      # 3. SEMGREP (Génération du fichier SARIF)
+      # 3. SEMGREP
       # ═══════════════════════════════════════
       - name: 🔍 Run Semgrep SAST
-        uses: returntocorp/semgrep-action@v1
-        with:
-          config: "p/php p/security-audit p/secrets"
-          generateSarif: "1"
+        run: |
+          pip install semgrep
+          semgrep scan --config="p/php" --config="p/security-audit" --config="p/secrets" --sarif --output=../semgrep.sarif
         env:
           SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
         continue-on-error: true

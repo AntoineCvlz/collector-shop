@@ -33,14 +33,15 @@ jobs:
         run: pint --test
 
       # ═══════════════════════════════════════
-      # 3. SEMGREP
+      # 3. SEMGREP (Version CI pour Dashboard)
       # ═══════════════════════════════════════
       - name: 🔍 Run Semgrep SAST
         run: |
           pip install semgrep
-          semgrep scan --config="p/php" --config="p/security-audit" --config="p/secrets" --sarif --output=../semgrep.sarif
+          semgrep ci --sarif --sarif-output=../semgrep.sarif || true
         env:
           SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
+          SEMGREP_RULES: "p/php p/security-audit p/secrets"
         continue-on-error: true
 
       - name: 📤 Upload Semgrep SARIF

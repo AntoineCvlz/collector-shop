@@ -43,3 +43,10 @@ jobs:
   sca-dependency-scan:
     needs: build-and-test
     uses: ./.github/workflows/sca-dependency-scan.yml
+
+  # ═══════════════════════════════════════════════
+  # ÉTAPE 5 : SÉCURITÉ INFRASTRUCTURE AS CODE
+  # ═══════════════════════════════════════════════
+  secure-iac-dockerfile-scan:
+    needs: build-and-test
+    uses: ./.github/workflows/secure-iac-dockerfile-scan.yml

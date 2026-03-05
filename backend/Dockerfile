@@ -1,4 +1,5 @@
-FROM php:8.4-fpm-alpine
+# FROM php:8.4-fpm-alpine  ← commenter
+FROM php:8.1-fpm-alpine3.16   # ← plein de CVEs connues
 
 RUN apk add --no-cache \
     libpq-dev \
@@ -9,10 +10,6 @@ RUN apk add --no-cache \
     curl \
     oniguruma-dev \
     icu-dev
-
-# ⚠️ TEST ONLY - package vulnérable pour valider le pipeline Trivy
-RUN apk add --no-cache --repository=https://dl-cdn.alpinelinux.org/alpine/v3.15/main \
-    busybox=1.34.1-r3
 
 RUN docker-php-ext-install \
     pdo \
@@ -35,8 +32,6 @@ RUN apk add --no-cache fcgi
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD SCRIPT_NAME=/ping SCRIPT_FILENAME=/ping REQUEST_METHOD=GET cgi-fcgi -bind -connect 127.0.0.1:9000 || exit 1
-
-USER www-data
 
 USER www-data
 

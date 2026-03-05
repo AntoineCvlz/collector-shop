@@ -23,6 +23,12 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 
+# ← Copie du code source
+COPY --chown=www-data:www-data . .
+
+# ← Installation des dépendances composer
+RUN composer install --no-dev --optimize-autoloader --no-interaction
+
 RUN mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache \
     && chown -R www-data:www-data /var/www/html \
     && chmod -R 775 storage bootstrap/cache

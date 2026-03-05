@@ -1,4 +1,3 @@
-# FROM php:8.4-fpm-alpine  ← commenter
 FROM php:8.1-fpm-alpine3.16   # ← plein de CVEs connues
 
 RUN apk add --no-cache \

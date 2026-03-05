@@ -58,22 +58,21 @@ jobs:
           category: trivy-container-scan
 
       - name: Run Trivy scan (display results)
-        uses: aquasecurity/trivy-action@0.30.0
         continue-on-error: true
-        with:
-          image-ref: ${{ secrets.DEPLOY_APPLI_NAME }}:${{ github.sha }}
-          format: "table"
-          exit-code: "0"
-          severity: "CRITICAL,HIGH"
-          skip-setup-trivy: true
+        run: |
+          trivy image \
+            --format table \
+            --exit-code 0 \
+            --severity CRITICAL,HIGH \
+            --scanners vuln \
+            ${{ secrets.DEPLOY_APPLI_NAME }}:${{ github.sha }}
 
       - name: Run Trivy scan (blocking on vulnerabilities)
-        uses: aquasecurity/trivy-action@0.30.0
-        with:
-          image-ref: ${{ secrets.DEPLOY_APPLI_NAME }}:${{ github.sha }}
-          format: 'table'
-          exit-code: '0'
-          ignore-unfixed: true
-          severity: 'CRITICAL,HIGH'
-          scanners: 'vuln'
-          skip-setup-trivy: true
+        run: |
+          trivy image \
+            --format table \
+            --exit-code 1 \
+            --ignore-unfixed \
+            --severity CRITICAL,HIGH \
+            --scanners vuln \
+            ${{ secrets.DEPLOY_APPLI_NAME }}:${{ github.sha }}

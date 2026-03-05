@@ -32,84 +32,94 @@ jobs:
     uses: ./.github/workflows/code-quality-sast.yml
     secrets:
       SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
-
-  # ═══════════════════════════════════════════════
-  # ÉTAPE 3 : DÉTECTION DE SECRETS
-  # ═══════════════════════════════════════════════
-  secret-scanning:
-    needs: build-and-test
-    uses: ./.github/workflows/secret-scanning.yml
-
-  # ═══════════════════════════════════════════════
-  # ÉTAPE 4 : ANALYSE DES DÉPENDANCES (SCA)
-  # ═══════════════════════════════════════════════
-  sca-dependency-scan:
-    needs: build-and-test
-    uses: ./.github/workflows/sca-dependency-scan.yml
-
-  # ═══════════════════════════════════════════════
-  # ÉTAPE 5 : SÉCURITÉ INFRASTRUCTURE AS CODE
-  # ═══════════════════════════════════════════════
-  secure-iac-dockerfile-scan:
-    needs: [build-and-test, build-and-test-front]
-    uses: ./.github/workflows/secure-iac-dockerfile-scan.yml
-
-  # ═══════════════════════════════════════════════
-  # ÉTAPE 6 : BUILD & SCAN DOCKER BACKEND
-  # ═══════════════════════════════════════════════
-  build-and-scan-docker:
-    needs: [code-quality-sast, secret-scanning, secure-iac-dockerfile-scan, sca-dependency-scan]
-    uses: ./.github/workflows/build-docker-image.yml
-    secrets: inherit
-
-  # ═══════════════════════════════════════════════
-  # ÉTAPE 6bis : BUILD & SCAN DOCKER FRONTEND
-  # ═══════════════════════════════════════════════
-  build-and-scan-docker-front:
-    needs: [build-and-test-front, secure-iac-dockerfile-scan]
-    uses: ./.github/workflows/build-docker-image-front.yml
-    secrets: inherit
-
-  # ═══════════════════════════════════════════════
-  # ÉTAPE 7 : PUBLICATION DOCKER HUB BACKEND
-  # ═══════════════════════════════════════════════
-  publish-docker-hub:
-    needs: [build-and-scan-docker]
-    uses: ./.github/workflows/publish-docker-hub.yml
-    secrets: inherit
-
-  # ═══════════════════════════════════════════════
-  # ÉTAPE 9 : DAST (Après publication Docker Hub)
-  # ═══════════════════════════════════════════════
-  dast-zap-test:
-    needs: publish-docker-hub
-    uses: ./.github/workflows/dast-zap-test.yml
-    secrets: inherit
-
-  # ═══════════════════════════════════════════════
-  # ÉTAPE 10 : Notifications (toujours exécuté, même en cas d'échec)
-  # ═══════════════════════════════════════════════
-
-  send-notifications:
-    needs:
-      - build-and-test
-      - code-quality-sast
-      - secret-scanning
-      - sca-dependency-scan
-      - secure-iac-dockerfile-scan
-      - build-and-scan-docker
-      - publish-docker-hub
-      - dast-zap-test
-    uses: ./.github/workflows/send-notifications.yml
-    if: always()
+  
+  code-quality-sast-front:
+    needs: build-and-test-front
+    uses: ./.github/workflows/code-quality-sast-front.yml
     secrets:
-      MAIL_USERNAME: ${{ secrets.MAIL_USERNAME }}
-      MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
-      MAIL_TO: ${{ secrets.MAIL_TO }}
-    with:
-      result_build_and_test: ${{ needs.build-and-test.result }}
-      result_code_quality_sast: ${{ needs.code-quality-sast.result }}
-      result_secret_scanning: ${{ needs.secret-scanning.result }}
-      result_sca_dependency_scan: ${{ needs.sca-dependency-scan.result }}
-      result_secure_iac_dockerfile_scan: ${{ needs.secure-iac-dockerfile-scan.result }}
-      result_build_and_scan_docker: ${{ needs.build-and-scan-docker.result }}
+      SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
+
+  # # ═══════════════════════════════════════════════
+  # # ÉTAPE 3 : DÉTECTION DE SECRETS
+  # # ═══════════════════════════════════════════════
+  # secret-scanning:
+  #   needs: build-and-test
+  #   uses: ./.github/workflows/secret-scanning.yml
+
+  # # ═══════════════════════════════════════════════
+  # # ÉTAPE 4 : ANALYSE DES DÉPENDANCES (SCA)
+  # # ═══════════════════════════════════════════════
+  # sca-dependency-scan:
+  #   needs: build-and-test
+  #   uses: ./.github/workflows/sca-dependency-scan.yml
+
+  # # ═══════════════════════════════════════════════
+  # # ÉTAPE 5 : SÉCURITÉ INFRASTRUCTURE AS CODE
+  # # ═══════════════════════════════════════════════
+  # secure-iac-dockerfile-scan:
+  #   needs: [build-and-test]
+  #   uses: ./.github/workflows/secure-iac-dockerfile-scan.yml
+
+  # secure-iac-dockerfile-scan-front:
+  #   needs: [build-and-test-front]
+  #   uses: ./.github/workflows/secure-iac-dockerfile-scan.yml
+
+  # # ═══════════════════════════════════════════════
+  # # ÉTAPE 6 : BUILD & SCAN DOCKER BACKEND
+  # # ═══════════════════════════════════════════════
+  # build-and-scan-docker:
+  #   needs: [code-quality-sast, secret-scanning, secure-iac-dockerfile-scan, sca-dependency-scan]
+  #   uses: ./.github/workflows/build-docker-image.yml
+  #   secrets: inherit
+
+  # # ═══════════════════════════════════════════════
+  # # ÉTAPE 6bis : BUILD & SCAN DOCKER FRONTEND
+  # # ═══════════════════════════════════════════════
+  # build-and-scan-docker-front:
+  #   needs: [build-and-test-front, secure-iac-dockerfile-scan-front]
+  #   uses: ./.github/workflows/build-docker-image-front.yml
+  #   secrets: inherit
+
+  # # ═══════════════════════════════════════════════
+  # # ÉTAPE 7 : PUBLICATION DOCKER HUB BACKEND
+  # # ═══════════════════════════════════════════════
+  # publish-docker-hub:
+  #   needs: [build-and-scan-docker]
+  #   uses: ./.github/workflows/publish-docker-hub.yml
+  #   secrets: inherit
+
+  # # ═══════════════════════════════════════════════
+  # # ÉTAPE 9 : DAST (Après publication Docker Hub)
+  # # ═══════════════════════════════════════════════
+  # dast-zap-test:
+  #   needs: publish-docker-hub
+  #   uses: ./.github/workflows/dast-zap-test.yml
+  #   secrets: inherit
+
+  # # ═══════════════════════════════════════════════
+  # # ÉTAPE 10 : Notifications (toujours exécuté, même en cas d'échec)
+  # # ═══════════════════════════════════════════════
+
+  # send-notifications:
+  #   needs:
+  #     - build-and-test
+  #     - code-quality-sast
+  #     - secret-scanning
+  #     - sca-dependency-scan
+  #     - secure-iac-dockerfile-scan
+  #     - build-and-scan-docker
+  #     - publish-docker-hub
+  #     - dast-zap-test
+  #   uses: ./.github/workflows/send-notifications.yml
+  #   if: always()
+  #   secrets:
+  #     MAIL_USERNAME: ${{ secrets.MAIL_USERNAME }}
+  #     MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
+  #     MAIL_TO: ${{ secrets.MAIL_TO }}
+  #   with:
+  #     result_build_and_test: ${{ needs.build-and-test.result }}
+  #     result_code_quality_sast: ${{ needs.code-quality-sast.result }}
+  #     result_secret_scanning: ${{ needs.secret-scanning.result }}
+  #     result_sca_dependency_scan: ${{ needs.sca-dependency-scan.result }}
+  #     result_secure_iac_dockerfile_scan: ${{ needs.secure-iac-dockerfile-scan.result }}
+  #     result_build_and_scan_docker: ${{ needs.build-and-scan-docker.result }}

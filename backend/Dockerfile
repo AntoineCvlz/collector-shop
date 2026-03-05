@@ -1,4 +1,4 @@
-FROM php:8.4-fpm-alpine
+FROM php:8.0-fpm-alpine3.14
 
 RUN apk add --no-cache \
     libpq-dev \

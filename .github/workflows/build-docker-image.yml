@@ -43,10 +43,10 @@ jobs:
         uses: aquasecurity/trivy-action@0.30.0
         with:
           image-ref: ${{ secrets.DEPLOY_APPLI_NAME }}:${{ github.sha }}
-          format: 'sarif'
-          output: 'trivy-results.sarif'
-          severity: 'CRITICAL,HIGH,MEDIUM'
-          exit-code: '0'
+          format: "sarif"
+          output: "trivy-results.sarif"
+          severity: "CRITICAL,HIGH,MEDIUM"
+          exit-code: "0"
           ignore-unfixed: false
           skip-setup-trivy: true
 
@@ -54,7 +54,7 @@ jobs:
         uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
-          sarif_file: 'trivy-results.sarif'
+          sarif_file: "trivy-results.sarif"
           category: trivy-container-scan
 
       - name: Run Trivy scan (display results)
@@ -62,17 +62,18 @@ jobs:
         continue-on-error: true
         with:
           image-ref: ${{ secrets.DEPLOY_APPLI_NAME }}:${{ github.sha }}
-          format: 'table'
-          exit-code: '0'
-          severity: 'CRITICAL,HIGH'
+          format: "table"
+          exit-code: "0"
+          severity: "CRITICAL,HIGH"
           skip-setup-trivy: true
 
       - name: Run Trivy scan (blocking on vulnerabilities)
         uses: aquasecurity/trivy-action@0.30.0
         with:
           image-ref: ${{ secrets.DEPLOY_APPLI_NAME }}:${{ github.sha }}
-          format: 'table'
-          exit-code: '1'
+          format: "table"
+          exit-code: "1"
           ignore-unfixed: true
-          severity: 'CRITICAL,HIGH'
+          severity: "CRITICAL,HIGH"
+          scanners: "vuln"
           skip-setup-trivy: true

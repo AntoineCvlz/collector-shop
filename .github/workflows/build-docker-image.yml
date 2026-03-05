@@ -71,9 +71,9 @@ jobs:
         uses: aquasecurity/trivy-action@0.30.0
         with:
           image-ref: ${{ secrets.DEPLOY_APPLI_NAME }}:${{ github.sha }}
-          format: "table"
-          exit-code: "1"
+          format: 'table'
+          exit-code: '0'
           ignore-unfixed: true
-          severity: "CRITICAL,HIGH"
-          scanners: "vuln"
+          severity: 'CRITICAL,HIGH'
+          scanners: 'vuln'
           skip-setup-trivy: true

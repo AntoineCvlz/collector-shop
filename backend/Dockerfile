@@ -1,4 +1,4 @@
-FROM php:8.0-fpm-alpine3.14
+FROM php:8.4-fpm-alpine
 
 RUN apk add --no-cache \
     libpq-dev \
@@ -9,6 +9,10 @@ RUN apk add --no-cache \
     curl \
     oniguruma-dev \
     icu-dev
+
+# ⚠️ TEST ONLY - package vulnérable pour valider le pipeline Trivy
+RUN apk add --no-cache --repository=https://dl-cdn.alpinelinux.org/alpine/v3.15/main \
+    busybox=1.34.1-r3
 
 RUN docker-php-ext-install \
     pdo \

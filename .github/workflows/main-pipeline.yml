@@ -51,11 +51,11 @@ jobs:
   # ÉTAPE 5 : SÉCURITÉ INFRASTRUCTURE AS CODE
   # ═══════════════════════════════════════════════
   secure-iac-dockerfile-scan:
-    needs: build-and-test
+    needs: [build-and-test, build-and-test-front]
     uses: ./.github/workflows/secure-iac-dockerfile-scan.yml
 
   # ═══════════════════════════════════════════════
-  # ÉTAPE 6 : BUILD & SCAN DOCKER
+  # ÉTAPE 6 : BUILD & SCAN DOCKER BACKEND
   # ═══════════════════════════════════════════════
   build-and-scan-docker:
     needs: [code-quality-sast, secret-scanning, secure-iac-dockerfile-scan, sca-dependency-scan]
@@ -63,7 +63,15 @@ jobs:
     secrets: inherit
 
   # ═══════════════════════════════════════════════
-  # ÉTAPE 8 : PUBLICATION DOCKER HUB
+  # ÉTAPE 6bis : BUILD & SCAN DOCKER FRONTEND
+  # ═══════════════════════════════════════════════
+  build-and-scan-docker-front:
+    needs: [build-and-test-front, secure-iac-dockerfile-scan]
+    uses: ./.github/workflows/build-docker-image-front.yml
+    secrets: inherit
+
+  # ═══════════════════════════════════════════════
+  # ÉTAPE 7 : PUBLICATION DOCKER HUB BACKEND
   # ═══════════════════════════════════════════════
   publish-docker-hub:
     needs: [build-and-scan-docker]

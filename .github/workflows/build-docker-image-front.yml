@@ -1,0 +1,80 @@
+name: Frontend Docker Build & Scan
+
+on:
+  workflow_call:
+    secrets:
+      DEPLOY_APPLI_NAME_FRONT:
+        required: true
+
+permissions:
+  security-events: write
+  contents: read
+  actions: read
+
+jobs:
+  build-and-scan-docker-front:
+    name: 🐳 Frontend Docker Build & Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          push: false
+          load: true
+          tags: ${{ secrets.DEPLOY_APPLI_NAME_FRONT }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Install Trivy via apt
+        run: |
+          sudo apt-get install -y wget apt-transport-https gnupg
+          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
+          echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb generic main" | sudo tee /etc/apt/sources.list.d/trivy.list
+          sudo apt-get update
+          sudo apt-get install -y trivy
+
+      - name: Run Trivy scan for GitHub Security
+        uses: aquasecurity/trivy-action@0.30.0
+        with:
+          image-ref: ${{ secrets.DEPLOY_APPLI_NAME_FRONT }}:${{ github.sha }}
+          format: "sarif"
+          output: "trivy-results-front.sarif"
+          severity: "CRITICAL,HIGH,MEDIUM"
+          exit-code: "0"
+          ignore-unfixed: false
+          skip-setup-trivy: true
+
+      - name: Upload scan results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v4
+        if: always()
+        with:
+          sarif_file: "trivy-results-front.sarif"
+          category: trivy-container-scan-front
+
+      - name: Run Trivy scan (display results)
+        continue-on-error: true
+        run: |
+          trivy image \
+            --format table \
+            --exit-code 0 \
+            --severity CRITICAL,HIGH \
+            --scanners vuln \
+            ${{ secrets.DEPLOY_APPLI_NAME_FRONT }}:${{ github.sha }}
+
+      - name: Run Trivy scan (blocking on vulnerabilities)
+        run: |
+          trivy image \
+            --format table \
+            --exit-code 1 \
+            --ignore-unfixed \
+            --severity CRITICAL,HIGH \
+            --scanners vuln \
+            ${{ secrets.DEPLOY_APPLI_NAME_FRONT }}:${{ github.sha }}

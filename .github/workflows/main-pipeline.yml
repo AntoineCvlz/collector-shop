@@ -74,3 +74,29 @@ jobs:
     needs: publish-docker-hub
     uses: ./.github/workflows/dast-zap-test.yml
     secrets: inherit
+
+  # ═══════════════════════════════════════════════
+  # ÉTAPE 10 : Notifications (toujours exécuté, même en cas d'échec)
+  # ═══════════════════════════════════════════════
+
+  send-notifications:
+    needs:
+      - build-and-test
+      - code-quality-sast
+      - secret-scanning
+      - sca-dependency-scan
+      - secure-iac-dockerfile-scan
+      - build-and-scan-docker
+    uses: ./.github/workflows/send-notifications.yml
+    if: always()
+    secrets:
+      MAIL_USERNAME: ${{ secrets.MAIL_USERNAME }}
+      MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
+      MAIL_TO: ${{ secrets.MAIL_TO }}
+    with:
+      result_build_and_test: ${{ needs.build-and-test.result }}
+      result_code_quality_sast: ${{ needs.code-quality-sast.result }}
+      result_secret_scanning: ${{ needs.secret-scanning.result }}
+      result_sca_dependency_scan: ${{ needs.sca-dependency-scan.result }}
+      result_secure_iac_dockerfile_scan: ${{ needs.secure-iac-dockerfile-scan.result }}
+      result_build_and_scan_docker: ${{ needs.build-and-scan-docker.result }}

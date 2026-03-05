@@ -1,0 +1,97 @@
+on:
+  workflow_call:
+    secrets:
+      MAIL_USERNAME:
+        required: true
+      MAIL_PASSWORD:
+        required: true
+      MAIL_TO:
+        required: true
+    inputs:
+      result_build_and_test:
+        required: true
+        type: string
+      result_code_quality_sast:
+        required: true
+        type: string
+      result_secret_scanning:
+        required: true
+        type: string
+      result_sca_dependency_scan:
+        required: true
+        type: string
+      result_secure_iac_dockerfile_scan:
+        required: true
+        type: string
+      result_build_and_scan_docker:
+        required: true
+        type: string
+
+jobs:
+  send-notifications:
+    name: 📬 Send Notifications
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: 📊 Check pipeline status
+        run: |
+          echo "═══════════════════════════════════════"
+          echo "📊 PIPELINE STATUS REPORT"
+          echo "═══════════════════════════════════════"
+          echo "Build & Test:    ${{ inputs.result_build_and_test }}"
+          echo "SAST:            ${{ inputs.result_code_quality_sast }}"
+          echo "Secret Scanning: ${{ inputs.result_secret_scanning }}"
+          echo "SCA:             ${{ inputs.result_sca_dependency_scan }}"
+          echo "IaC Security:    ${{ inputs.result_secure_iac_dockerfile_scan }}"
+          echo "Docker Build:    ${{ inputs.result_build_and_scan_docker }}"
+          echo "═══════════════════════════════════════"
+
+      - name: 🎨 Determine overall status
+        id: status
+        run: |
+          if [[ \
+            "${{ inputs.result_build_and_test }}" == "success" && \
+            "${{ inputs.result_code_quality_sast }}" == "success" && \
+            "${{ inputs.result_secret_scanning }}" == "success" && \
+            "${{ inputs.result_sca_dependency_scan }}" == "success" && \
+            "${{ inputs.result_secure_iac_dockerfile_scan }}" == "success" && \
+            "${{ inputs.result_build_and_scan_docker }}" == "success" \
+          ]]; then
+            echo "overall=✅ SUCCESS" >> $GITHUB_OUTPUT
+            echo "color=green" >> $GITHUB_OUTPUT
+          else
+            echo "overall=❌ FAILURE" >> $GITHUB_OUTPUT
+            echo "color=red" >> $GITHUB_OUTPUT
+          fi
+
+      - name: 📧 Send email notification
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp-mail.outlook.com
+          server_port: 587
+          secure: false
+          tls: true
+          username: ${{ secrets.MAIL_USERNAME }}
+          password: ${{ secrets.MAIL_PASSWORD }}
+          to: ${{ secrets.MAIL_TO }}
+          from: GitHub Actions <${{ secrets.MAIL_USERNAME }}>
+          subject: "[${{ steps.status.outputs.overall }}] Pipeline - ${{ github.repository }} (${{ github.ref_name }})"
+          html_body: |
+            <h2>📊 Pipeline Status Report</h2>
+            <p><strong>Repository:</strong> ${{ github.repository }}</p>
+            <p><strong>Branch:</strong> ${{ github.ref_name }}</p>
+            <p><strong>Commit:</strong> ${{ github.sha }}</p>
+            <p><strong>Triggered by:</strong> ${{ github.actor }}</p>
+            <p><strong>Overall status:</strong> ${{ steps.status.outputs.overall }}</p>
+            <hr/>
+            <table border="1" cellpadding="8" cellspacing="0">
+              <tr><th>Job</th><th>Status</th></tr>
+              <tr><td>🏗️ Build & Test</td><td>${{ inputs.result_build_and_test }}</td></tr>
+              <tr><td>🔍 SAST</td><td>${{ inputs.result_code_quality_sast }}</td></tr>
+              <tr><td>🔐 Secret Scanning</td><td>${{ inputs.result_secret_scanning }}</td></tr>
+              <tr><td>📦 SCA</td><td>${{ inputs.result_sca_dependency_scan }}</td></tr>
+              <tr><td>🏗️ IaC Security</td><td>${{ inputs.result_secure_iac_dockerfile_scan }}</td></tr>
+              <tr><td>🐳 Docker Build</td><td>${{ inputs.result_build_and_scan_docker }}</td></tr>
+            </table>
+            <hr/>
+            <p><a href="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}">🔗 View full pipeline run</a></p>

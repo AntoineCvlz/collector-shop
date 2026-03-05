@@ -114,7 +114,8 @@ jobs:
             ghcr.io/zaproxy/zaproxy:stable \
             zap-baseline.py \
             -t http://localhost:8080 \
-            -r zap-report.html
+            -r zap-report.html \
+            -I
         continue-on-error: true
 
       - name: Upload ZAP reports

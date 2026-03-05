@@ -20,6 +20,9 @@ jobs:
   # ═══════════════════════════════════════════════
   build-and-test:
     uses: ./.github/workflows/build-unit-tests.yml
+  
+  build-and-test-front:
+    uses: ./.github/workflows/build-unit-tests-front.yml
 
   # ═══════════════════════════════════════════════
   # ÉTAPE 2 : QUALITÉ & SÉCURITÉ

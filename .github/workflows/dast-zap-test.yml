@@ -7,8 +7,6 @@ on:
         required: true
       DEPLOY_APPLI_NAME:
         required: true
-      MONGODB_COLLECTION_NAME:
-        required: false
 
 permissions:
   contents: read
@@ -33,28 +31,72 @@ jobs:
       - name: Create Docker network
         run: docker network create app-network
 
-      - name: Start MongoDB 7 container
+      - name: Start PostgreSQL container
         run: |
-          docker run -d --name mongodb \
+          docker run -d --name postgres \
             --network app-network \
-            -e MONGO_INITDB_DATABASE=${{ secrets.MONGODB_COLLECTION_NAME || 'demo' }} \
-            mongo:7
+            -e POSTGRES_DB=laravel \
+            -e POSTGRES_USER=user \
+            -e POSTGRES_PASSWORD=password \
+            postgres:16-alpine
 
-      - name: Wait for MongoDB to be ready
+      - name: Wait for PostgreSQL to be ready
         run: |
-          timeout 30 sh -c 'until docker exec mongodb mongosh --eval "db.adminCommand({ping:1})" > /dev/null 2>&1; do sleep 2; done'
+          timeout 30 sh -c 'until docker exec postgres pg_isready -U user -d laravel > /dev/null 2>&1; do sleep 2; done'
 
-      - name: Run application container
+      - name: Run application container (php-fpm + nginx)
         run: |
           docker run -d --name test-app \
             --network app-network \
-            -p 8080:8080 \
-            -e SPRING_DATA_MONGODB_URI=mongodb://mongodb:27017/${{ secrets.MONGODB_COLLECTION_NAME || 'demo' }} \
+            -p 9000:9000 \
+            -e APP_ENV=testing \
+            -e APP_KEY=base64:87HsFTJ9kMrXYFewp6B+Fntc1kH85KrgGfU2qGjkfBk= \
+            -e APP_DEBUG=false \
+            -e APP_URL=http://localhost:8080 \
+            -e DB_CONNECTION=pgsql \
+            -e DB_HOST=postgres \
+            -e DB_PORT=5432 \
+            -e DB_DATABASE=laravel \
+            -e DB_USERNAME=user \
+            -e DB_PASSWORD=password \
+            -e SESSION_DRIVER=database \
+            -e CACHE_STORE=database \
             ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.DEPLOY_APPLI_NAME }}:${{ github.sha }}
+
+      - name: Start Nginx as reverse proxy
+        run: |
+          cat > /tmp/nginx.conf << 'EOF'
+          server {
+              listen 8080;
+              root /var/www/html/public;
+              index index.php;
+
+              location / {
+                  try_files $uri $uri/ /index.php?$query_string;
+              }
+
+              location ~ \.php$ {
+                  fastcgi_pass test-app:9000;
+                  fastcgi_index index.php;
+                  fastcgi_param SCRIPT_FILENAME /var/www/html/public$fastcgi_script_name;
+                  include fastcgi_params;
+              }
+          }
+          EOF
+
+          docker run -d --name nginx \
+            --network app-network \
+            -p 8080:8080 \
+            -v /tmp/nginx.conf:/etc/nginx/conf.d/default.conf:ro \
+            nginx:alpine
+
+      - name: Run Laravel migrations
+        run: |
+          docker exec test-app php artisan migrate --force --no-interaction
 
       - name: Wait for application to be ready
         run: |
-          timeout 90 sh -c 'until curl -f http://localhost:8080/actuator/health; do sleep 2; done'
+          timeout 90 sh -c 'until curl -sf http://localhost:8080; do sleep 2; done'
 
       - name: Create ZAP reports directory
         run: |
@@ -63,7 +105,7 @@ jobs:
           chmod -R 777 ${{ github.workspace }}/zap-reports
           chmod -R 777 /tmp/zap-home
 
-      - name: Run OWASP ZAP DAST scan (Docker direct)
+      - name: Run OWASP ZAP DAST scan
         run: |
           docker run --rm \
             -v ${{ github.workspace }}/zap-reports:/zap/wrk/:rw \
@@ -80,12 +122,11 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: zap-scan-reports
-          path: |
-            zap-reports/zap-report.html
+          path: zap-reports/zap-report.html
 
       - name: Stop test containers
         if: always()
         run: |
-          docker stop test-app mongodb || true
-          docker rm test-app mongodb || true
+          docker stop test-app nginx postgres || true
+          docker rm test-app nginx postgres || true
           docker network rm app-network || true

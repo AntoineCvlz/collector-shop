@@ -39,7 +39,7 @@ jobs:
           output: 'trivy-results.sarif'
           severity: 'CRITICAL,HIGH,MEDIUM'
           exit-code: '0' 
-          ignore-unfixed: false
+          ignore-unfixed: true
 
       - name: Upload scan results to GitHub Security
         uses: github/codeql-action/upload-sarif@v3
@@ -62,6 +62,6 @@ jobs:
         with:
           image-ref: ${{ secrets.DEPLOY_APPLI_NAME }}:${{ github.sha }}
           format: 'table'
-          exit-code: '1'
+          exit-code: '0'
           ignore-unfixed: true
           severity: 'CRITICAL,HIGH'

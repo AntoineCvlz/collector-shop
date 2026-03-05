@@ -67,10 +67,9 @@ jobs:
       - name: 📧 Send email notification
         uses: dawidd6/action-send-mail@v3
         with:
-          server_address: smtp-mail.outlook.com
-          server_port: 587
-          secure: false
-          tls: true
+          server_address: smtp.gmail.com
+          server_port: 465
+          secure: true
           username: ${{ secrets.MAIL_USERNAME }}
           password: ${{ secrets.MAIL_PASSWORD }}
           to: ${{ secrets.MAIL_TO }}

@@ -1,4 +1,4 @@
-name: Main CI/CD Pipeline
+name: Main Frontend CI/CD Pipeline
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
   pull_request:
     branches: ["main"]
   schedule:
-    - cron: "0 2 * * 1"
+    - cron: "0 3 * * 1"
   workflow_dispatch:
 
 permissions:
@@ -16,17 +16,17 @@ permissions:
 
 jobs:
   # ═══════════════════════════════════════════════
-  # ÉTAPE 1 : BUILD & TESTS
+  # ÉTAPE 1 : BUILD & TESTS FRONTEND
   # ═══════════════════════════════════════════════
-  build-and-test:
-    uses: ./.github/workflows/build-unit-tests.yml
+  build-and-test-front:
+    uses: ./.github/workflows/build-unit-tests-front.yml
 
   # ═══════════════════════════════════════════════
-  # ÉTAPE 2 : QUALITÉ & SÉCURITÉ
+  # ÉTAPE 2 : QUALITÉ & SÉCURITÉ FRONTEND
   # ═══════════════════════════════════════════════
-  code-quality-sast:
-    needs: build-and-test
-    uses: ./.github/workflows/code-quality-sast.yml
+  code-quality-sast-front:
+    needs: build-and-test-front
+    uses: ./.github/workflows/code-quality-sast-front.yml
     secrets:
       SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
 
@@ -34,71 +34,79 @@ jobs:
   # ÉTAPE 3 : DÉTECTION DE SECRETS
   # ═══════════════════════════════════════════════
   secret-scanning:
-    needs: build-and-test
+    needs: build-and-test-front
     uses: ./.github/workflows/secret-scanning.yml
 
   # ═══════════════════════════════════════════════
-  # ÉTAPE 4 : ANALYSE DES DÉPENDANCES (SCA)
+  # ÉTAPE 4 : ANALYSE DES DÉPENDANCES FRONT (SCA)
   # ═══════════════════════════════════════════════
-  sca-dependency-scan:
-    needs: build-and-test
-    uses: ./.github/workflows/sca-dependency-scan.yml
+  sca-dependency-scan-front:
+    needs: build-and-test-front
+    uses: ./.github/workflows/sca-dependency-scan-front.yml
 
   # ═══════════════════════════════════════════════
-  # ÉTAPE 5 : SÉCURITÉ INFRASTRUCTURE AS CODE
+  # ÉTAPE 5 : SÉCURITÉ DOCKERFILE FRONT
   # ═══════════════════════════════════════════════
-  secure-iac-dockerfile-scan:
-    needs: build-and-test
-    uses: ./.github/workflows/secure-iac-dockerfile-scan.yml
+  secure-iac-dockerfile-scan-front:
+    needs: build-and-test-front
+    uses: ./.github/workflows/secure-iac-dockerfile-scan-front.yml
 
   # ═══════════════════════════════════════════════
-  # ÉTAPE 6 : BUILD & SCAN DOCKER
+  # ÉTAPE 6 : BUILD & SCAN DOCKER FRONT
   # ═══════════════════════════════════════════════
-  build-and-scan-docker:
-    needs: [code-quality-sast, secret-scanning, secure-iac-dockerfile-scan, sca-dependency-scan]
-    uses: ./.github/workflows/build-docker-image.yml
-    secrets: inherit
+  build-and-scan-docker-front:
+    needs: [code-quality-sast-front, secret-scanning, secure-iac-dockerfile-scan-front, sca-dependency-scan-front]
+    uses: ./.github/workflows/build-docker-image-front.yml
+    secrets:
+      DEPLOY_FRONT_APPLI_NAME: ${{ secrets.DEPLOY_FRONT_APPLI_NAME }}
 
   # ═══════════════════════════════════════════════
-  # ÉTAPE 8 : PUBLICATION DOCKER HUB
+  # ÉTAPE 7 : PUBLICATION DOCKER HUB FRONT
   # ═══════════════════════════════════════════════
-  publish-docker-hub:
-    needs: [build-and-scan-docker]
-    uses: ./.github/workflows/publish-docker-hub.yml
-    secrets: inherit
+  publish-docker-hub-front:
+    needs: [build-and-scan-docker-front]
+    uses: ./.github/workflows/publish-docker-hub-front.yml
+    secrets:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+      DEPLOY_FRONT_APPLI_NAME: ${{ secrets.DEPLOY_FRONT_APPLI_NAME }}
 
   # ═══════════════════════════════════════════════
-  # ÉTAPE 9 : DAST (Après publication Docker Hub)
+  # ÉTAPE 8 : DAST FRONT (Après publication)
   # ═══════════════════════════════════════════════
-  dast-zap-test:
-    needs: publish-docker-hub
-    uses: ./.github/workflows/dast-zap-test.yml
-    secrets: inherit
+  dast-zap-test-front:
+    needs: publish-docker-hub-front
+    uses: ./.github/workflows/dast-zap-test-front.yml
+    secrets:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+      DEPLOY_FRONT_APPLI_NAME: ${{ secrets.DEPLOY_FRONT_APPLI_NAME }}
 
   # ═══════════════════════════════════════════════
-  # ÉTAPE 10 : Notifications (toujours exécuté, même en cas d'échec)
+  # ÉTAPE 9 : Notifications (toujours exécuté)
   # ═══════════════════════════════════════════════
-
-  send-notifications:
+  send-notifications-front:
     needs:
-      - build-and-test
-      - code-quality-sast
+      - build-and-test-front
+      - code-quality-sast-front
       - secret-scanning
-      - sca-dependency-scan
-      - secure-iac-dockerfile-scan
-      - build-and-scan-docker
-      - publish-docker-hub
-      - dast-zap-test
-    uses: ./.github/workflows/send-notifications.yml
+      - sca-dependency-scan-front
+      - secure-iac-dockerfile-scan-front
+      - build-and-scan-docker-front
+      - publish-docker-hub-front
+      - dast-zap-test-front
+    uses: ./.github/workflows/send-notifications-front.yml
     if: always()
     secrets:
       MAIL_USERNAME: ${{ secrets.MAIL_USERNAME }}
       MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
       MAIL_TO: ${{ secrets.MAIL_TO }}
     with:
-      result_build_and_test: ${{ needs.build-and-test.result }}
-      result_code_quality_sast: ${{ needs.code-quality-sast.result }}
+      result_build_and_test_front: ${{ needs.build-and-test-front.result }}
+      result_code_quality_sast_front: ${{ needs.code-quality-sast-front.result }}
       result_secret_scanning: ${{ needs.secret-scanning.result }}
-      result_sca_dependency_scan: ${{ needs.sca-dependency-scan.result }}
-      result_secure_iac_dockerfile_scan: ${{ needs.secure-iac-dockerfile-scan.result }}
-      result_build_and_scan_docker: ${{ needs.build-and-scan-docker.result }}
+      result_sca_dependency_scan_front: ${{ needs.sca-dependency-scan-front.result }}
+      result_secure_iac_dockerfile_scan_front: ${{ needs.secure-iac-dockerfile-scan-front.result }}
+      result_build_and_scan_docker_front: ${{ needs.build-and-scan-docker-front.result }}
+      result_publish_docker_hub_front: ${{ needs.publish-docker-hub-front.result }}
+      result_dast_zap_test_front: ${{ needs.dast-zap-test-front.result }}

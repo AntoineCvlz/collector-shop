@@ -1,0 +1,106 @@
+on:
+  workflow_call:
+    secrets:
+      MAIL_USERNAME:
+        required: true
+      MAIL_PASSWORD:
+        required: true
+      MAIL_TO:
+        required: true
+    inputs:
+      result_build_and_test_front:
+        required: true
+        type: string
+      result_code_quality_sast_front:
+        required: true
+        type: string
+      result_secret_scanning:
+        required: true
+        type: string
+      result_sca_dependency_scan_front:
+        required: true
+        type: string
+      result_secure_iac_dockerfile_scan_front:
+        required: true
+        type: string
+      result_build_and_scan_docker_front:
+        required: true
+        type: string
+      result_publish_docker_hub_front:
+        required: true
+        type: string
+      result_dast_zap_test_front:
+        required: true
+        type: string
+
+jobs:
+  send-notifications-front:
+    name: 📬 Send Frontend Notifications
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: 📊 Check pipeline status
+        run: |
+          echo "═══════════════════════════════════════"
+          echo "📊 FRONTEND PIPELINE STATUS REPORT"
+          echo "═══════════════════════════════════════"
+          echo "Build & Test:    ${{ inputs.result_build_and_test_front }}"
+          echo "SAST:            ${{ inputs.result_code_quality_sast_front }}"
+          echo "Secret Scanning: ${{ inputs.result_secret_scanning }}"
+          echo "SCA:             ${{ inputs.result_sca_dependency_scan_front }}"
+          echo "IaC Security:    ${{ inputs.result_secure_iac_dockerfile_scan_front }}"
+          echo "Docker Build:    ${{ inputs.result_build_and_scan_docker_front }}"
+          echo "Docker Publish:  ${{ inputs.result_publish_docker_hub_front }}"
+          echo "DAST ZAP:        ${{ inputs.result_dast_zap_test_front }}"
+          echo "═══════════════════════════════════════"
+
+      - name: 🎨 Determine overall status
+        id: status
+        run: |
+          if [[ \
+            "${{ inputs.result_build_and_test_front }}" == "success" && \
+            "${{ inputs.result_code_quality_sast_front }}" == "success" && \
+            "${{ inputs.result_secret_scanning }}" == "success" && \
+            "${{ inputs.result_sca_dependency_scan_front }}" == "success" && \
+            "${{ inputs.result_secure_iac_dockerfile_scan_front }}" == "success" && \
+            "${{ inputs.result_build_and_scan_docker_front }}" == "success" && \
+            "${{ inputs.result_publish_docker_hub_front }}" == "success" && \
+            "${{ inputs.result_dast_zap_test_front }}" == "success" \
+          ]]; then
+            echo "overall=✅ SUCCESS" >> $GITHUB_OUTPUT
+          else
+            echo "overall=❌ FAILURE" >> $GITHUB_OUTPUT
+          fi
+
+      - name: 📧 Send email notification
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          secure: true
+          username: ${{ secrets.MAIL_USERNAME }}
+          password: ${{ secrets.MAIL_PASSWORD }}
+          to: ${{ secrets.MAIL_TO }}
+          from: GitHub Actions <${{ secrets.MAIL_USERNAME }}>
+          subject: "[${{ steps.status.outputs.overall }}] Frontend Pipeline - ${{ github.repository }} (${{ github.ref_name }})"
+          html_body: |
+            <h2>📊 Frontend Pipeline Status Report</h2>
+            <p><strong>Repository:</strong> ${{ github.repository }}</p>
+            <p><strong>Branch:</strong> ${{ github.ref_name }}</p>
+            <p><strong>Commit:</strong> ${{ github.sha }}</p>
+            <p><strong>Triggered by:</strong> ${{ github.actor }}</p>
+            <p><strong>Overall status:</strong> ${{ steps.status.outputs.overall }}</p>
+            <hr/>
+            <table border="1" cellpadding="8" cellspacing="0">
+              <tr><th>Job</th><th>Status</th></tr>
+              <tr><td>🏗️ Build & Test</td><td>${{ inputs.result_build_and_test_front }}</td></tr>
+              <tr><td>🔍 SAST</td><td>${{ inputs.result_code_quality_sast_front }}</td></tr>
+              <tr><td>🔐 Secret Scanning</td><td>${{ inputs.result_secret_scanning }}</td></tr>
+              <tr><td>📦 SCA</td><td>${{ inputs.result_sca_dependency_scan_front }}</td></tr>
+              <tr><td>🏗️ IaC Security</td><td>${{ inputs.result_secure_iac_dockerfile_scan_front }}</td></tr>
+              <tr><td>🐳 Docker Build</td><td>${{ inputs.result_build_and_scan_docker_front }}</td></tr>
+              <tr><td>📤 Docker Publish</td><td>${{ inputs.result_publish_docker_hub_front }}</td></tr>
+              <tr><td>🧪 DAST ZAP</td><td>${{ inputs.result_dast_zap_test_front }}</td></tr>
+            </table>
+            <hr/>
+            <p><a href="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}">🔗 View full pipeline run</a></p>

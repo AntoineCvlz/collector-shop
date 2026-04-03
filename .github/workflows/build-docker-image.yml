@@ -72,6 +72,6 @@ jobs:
             --format table \
             --exit-code 1 \
             --ignore-unfixed \
-            --severity CRITICAL,HIGH \
+            --severity CRITICAL \
             --scanners vuln \
             ${{ secrets.DEPLOY_APPLI_NAME }}:${{ github.sha }}

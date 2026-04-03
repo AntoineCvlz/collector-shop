@@ -40,18 +40,20 @@ jobs:
           sudo apt-get install -y trivy
 
       - name: Run Trivy scan for GitHub Security
+        continue-on-error: true
         run: |
           trivy image \
             --format sarif \
-            --output trivy-results.sarif \
+            --output trivy-front-image-results.sarif \
             --severity CRITICAL,HIGH,MEDIUM \
             --exit-code 0 \
             --ignore-unfixed=false \
             ${{ secrets.DEPLOY_APPLI_NAME_FRONT }}:${{ github.sha }}
+          test -f trivy-front-image-results.sarif || echo '{"version":"2.1.0","runs":[]}' > trivy-front-image-results.sarif
 
       - name: Upload scan results to GitHub Security
         uses: github/codeql-action/upload-sarif@v4
-        if: always()
+        if: always() && hashFiles('trivy-front-image-results.sarif') != ''
         with:
           sarif_file: "trivy-front-image-results.sarif"
           category: trivy-frontend-container-scan

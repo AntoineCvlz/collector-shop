@@ -48,6 +48,7 @@ jobs:
             --exit-code 0 \
             --ignore-unfixed=false \
             ${{ secrets.DEPLOY_FRONT_APPLI_NAME }}:${{ github.sha }}
+          test -f trivy-front-image-results.sarif || echo '{"version":"2.1.0","runs":[]}' > trivy-front-image-results.sarif
 
       - name: Upload scan results to GitHub Security
         uses: github/codeql-action/upload-sarif@v4

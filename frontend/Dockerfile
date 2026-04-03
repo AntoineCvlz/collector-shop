@@ -12,6 +12,9 @@ RUN npm run build
 # ── Stage 2 : Serve avec Nginx ────────────────────────────────────
 FROM nginx:alpine
 
+# Refresh Alpine packages to pull latest security fixes in base image layers.
+RUN apk update && apk upgrade --no-cache libpng zlib && rm -rf /var/cache/apk/*
+
 COPY --from=builder /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 

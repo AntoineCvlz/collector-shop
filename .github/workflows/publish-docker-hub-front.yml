@@ -5,7 +5,7 @@ on:
         required: true
       DOCKERHUB_TOKEN:
         required: true
-      DEPLOY_FRONT_APPLI_NAME:
+      DEPLOY_APPLI_NAME_FRONT:
         required: true
 
 jobs:
@@ -32,15 +32,15 @@ jobs:
           file: ./frontend/Dockerfile
           push: true
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.DEPLOY_FRONT_APPLI_NAME }}:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.DEPLOY_FRONT_APPLI_NAME }}:${{ github.sha }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.DEPLOY_APPLI_NAME_FRONT }}:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.DEPLOY_APPLI_NAME_FRONT }}:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
       - name: Generate SBOM
         uses: anchore/sbom-action@v0
         with:
-          image: ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.DEPLOY_FRONT_APPLI_NAME }}:latest
+          image: ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.DEPLOY_APPLI_NAME_FRONT }}:latest
           format: spdx-json
           output-file: sbom-front.spdx.json
 

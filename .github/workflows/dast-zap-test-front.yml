@@ -5,7 +5,7 @@ on:
         required: true
       DOCKERHUB_TOKEN:
         required: true
-      DEPLOY_FRONT_APPLI_NAME:
+      DEPLOY_APPLI_NAME_FRONT:
         required: true
 
 permissions:
@@ -26,13 +26,13 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Pull frontend image
-        run: docker pull ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.DEPLOY_FRONT_APPLI_NAME }}:${{ github.sha }}
+        run: docker pull ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.DEPLOY_APPLI_NAME_FRONT }}:${{ github.sha }}
 
       - name: Run frontend container
         run: |
           docker run -d --name test-frontend \
             -p 8081:80 \
-            ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.DEPLOY_FRONT_APPLI_NAME }}:${{ github.sha }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.DEPLOY_APPLI_NAME_FRONT }}:${{ github.sha }}
 
       - name: Wait for frontend to be ready
         run: |

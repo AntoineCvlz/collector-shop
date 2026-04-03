@@ -58,7 +58,7 @@ jobs:
     needs: [code-quality-sast-front, secret-scanning, secure-iac-dockerfile-scan-front, sca-dependency-scan-front]
     uses: ./.github/workflows/build-docker-image-front.yml
     secrets:
-      DEPLOY_FRONT_APPLI_NAME: ${{ secrets.DEPLOY_FRONT_APPLI_NAME }}
+      DEPLOY_APPLI_NAME_FRONT: ${{ secrets.DEPLOY_APPLI_NAME_FRONT }}
 
   # ═══════════════════════════════════════════════
   # ÉTAPE 7 : PUBLICATION DOCKER HUB FRONT
@@ -69,7 +69,7 @@ jobs:
     secrets:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-      DEPLOY_FRONT_APPLI_NAME: ${{ secrets.DEPLOY_FRONT_APPLI_NAME }}
+      DEPLOY_APPLI_NAME_FRONT: ${{ secrets.DEPLOY_APPLI_NAME_FRONT }}
 
   # ═══════════════════════════════════════════════
   # ÉTAPE 8 : DAST FRONT (Après publication)
@@ -80,7 +80,7 @@ jobs:
     secrets:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-      DEPLOY_FRONT_APPLI_NAME: ${{ secrets.DEPLOY_FRONT_APPLI_NAME }}
+      DEPLOY_APPLI_NAME_FRONT: ${{ secrets.DEPLOY_APPLI_NAME_FRONT }}
 
   # ═══════════════════════════════════════════════
   # ÉTAPE 9 : Notifications (toujours exécuté)

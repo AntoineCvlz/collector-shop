@@ -33,7 +33,7 @@ jobs:
         continue-on-error: true
 
       - name: 🔍 Run Trivy FS SCA
-        uses: aquasecurity/trivy-action@0.29.0
+        uses: aquasecurity/trivy-action@0.30.0
         with:
           scan-type: "fs"
           scan-ref: "./frontend"

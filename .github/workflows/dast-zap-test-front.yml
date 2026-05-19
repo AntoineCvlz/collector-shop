@@ -31,7 +31,7 @@ jobs:
       - name: Run frontend container
         run: |
           docker run -d --name test-frontend \
-            -p 8081:80 \
+            -p 8081:8080 \
             ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.DEPLOY_APPLI_NAME_FRONT }}:${{ github.sha }}
 
       - name: Wait for frontend to be ready

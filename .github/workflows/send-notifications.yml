@@ -68,7 +68,7 @@ jobs:
           fi
 
       - name: 📧 Send email notification
-        uses: dawidd6/action-send-mail@v5
+        uses: dawidd6/action-send-mail@v16
         with:
           server_address: smtp.gmail.com
           server_port: 465

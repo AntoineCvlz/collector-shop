@@ -91,8 +91,21 @@ jobs:
           DB_USERNAME: laravel
           DB_PASSWORD: secret
 
-      - name: 🔧 Fix Pest prefix in junit.xml
-        run: sed -i 's/P\\Tests\\/Tests\\/g' /tmp/infection-coverage/junit.xml
+      - name: 🔧 Fix Pest prefix in coverage XML files
+        run: |
+          python3 << 'PYEOF'
+          import os
+          for root, dirs, files in os.walk('/tmp/infection-coverage'):
+              for fname in files:
+                  if fname.endswith('.xml'):
+                      path = os.path.join(root, fname)
+                      with open(path, 'r') as f:
+                          content = f.read()
+                      fixed = content.replace('P\\Tests\\', 'Tests\\')
+                      with open(path, 'w') as f:
+                          f.write(fixed)
+          print("Done: P\\ prefix removed from all coverage XML files")
+          PYEOF
 
       - name: 🧬 Run Infection PHP
         run: |

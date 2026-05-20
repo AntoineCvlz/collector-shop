@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download Docker image artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: docker-image-${{ inputs.app_name }}-${{ github.sha }}
 
@@ -47,7 +47,7 @@ jobs:
           output-file: sbom-front.spdx.json
 
       - name: Upload SBOM
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: sbom-frontend
           path: sbom-front.spdx.json

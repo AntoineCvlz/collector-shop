@@ -74,7 +74,6 @@ jobs:
             --min-msi=50 \
             --min-covered-msi=70 \
             --threads=$(nproc) \
-            --only-covered \
             --no-progress \
             --logger-html=infection-report.html
         env:

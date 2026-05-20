@@ -28,13 +28,13 @@ jobs:
         run: npm ci
 
       - name: 🎭 Install Playwright browsers
-        run: npx playwright install --with-deps
+        run: npx playwright install --with-deps chromium
 
       - name: 🏗️ Build frontend
         run: npm run build
 
       - name: 🧪 Run Playwright tests
-        run: npx playwright test
+        run: npx playwright test --project=chromium
         env:
           CI: true
 

@@ -71,7 +71,6 @@ jobs:
       - name: 🧬 Run Infection PHP
         run: |
           vendor/bin/infection \
-            --test-framework=pest \
             --min-msi=50 \
             --min-covered-msi=70 \
             --threads=$(nproc) \

@@ -26,6 +26,7 @@ jobs:
   # ═══════════════════════════════════════════════
   code-quality-sast:
     needs: build-and-test
+    if: always()
     uses: ./.github/workflows/code-quality-sast.yml
     secrets:
       SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}

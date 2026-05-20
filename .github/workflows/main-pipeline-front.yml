@@ -26,6 +26,7 @@ jobs:
   # ═══════════════════════════════════════════════
   code-quality-sast-front:
     needs: build-and-test-front
+    if: always()
     uses: ./.github/workflows/code-quality-sast-front.yml
     secrets:
       SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}

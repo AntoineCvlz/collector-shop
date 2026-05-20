@@ -68,9 +68,25 @@ jobs:
       - name: 🔧 Install Infection PHP
         run: composer require --dev infection/infection --no-interaction --quiet
 
+      - name: 🧪 Generate coverage for Infection
+        run: |
+          mkdir -p /tmp/infection-coverage
+          vendor/bin/pest \
+            --coverage-xml=/tmp/infection-coverage/coverage-xml \
+            --log-junit=/tmp/infection-coverage/junit.xml
+        env:
+          DB_CONNECTION: pgsql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 5432
+          DB_DATABASE: laravel_test
+          DB_USERNAME: laravel
+          DB_PASSWORD: secret
+
       - name: 🧬 Run Infection PHP
         run: |
           vendor/bin/infection \
+            --coverage=/tmp/infection-coverage \
+            --skip-initial-tests \
             --min-msi=50 \
             --min-covered-msi=70 \
             --threads=$(nproc) \

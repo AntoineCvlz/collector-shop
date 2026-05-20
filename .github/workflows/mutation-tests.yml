@@ -92,7 +92,7 @@ jobs:
           DB_PASSWORD: secret
 
       - name: 🔧 Fix Pest prefix in junit.xml
-        run: sed -i 's/classname="P\\/classname="/g' /tmp/infection-coverage/junit.xml
+        run: sed -i 's/P\\Tests\\/Tests\\/g' /tmp/infection-coverage/junit.xml
 
       - name: 🧬 Run Infection PHP
         run: |

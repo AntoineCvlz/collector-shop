@@ -68,7 +68,17 @@ jobs:
       - name: 🔧 Install Infection PHP
         run: composer require --dev infection/infection --no-interaction --quiet
 
-      - name: 🧪 Generate coverage for Infection
+      - name: 🧪 Run initial tests (must pass before mutation testing)
+        run: vendor/bin/pest
+        env:
+          DB_CONNECTION: pgsql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 5432
+          DB_DATABASE: laravel_test
+          DB_USERNAME: laravel
+          DB_PASSWORD: secret
+
+      - name: 📊 Generate coverage for Infection
         run: |
           mkdir -p /tmp/infection-coverage
           vendor/bin/pest \
@@ -81,6 +91,9 @@ jobs:
           DB_DATABASE: laravel_test
           DB_USERNAME: laravel
           DB_PASSWORD: secret
+
+      - name: 🔧 Fix Pest prefix in junit.xml
+        run: sed -i 's/classname="P\\/classname="/g' /tmp/infection-coverage/junit.xml
 
       - name: 🧬 Run Infection PHP
         run: |

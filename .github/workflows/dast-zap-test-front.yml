@@ -1,11 +1,13 @@
 on:
   workflow_call:
+    inputs:
+      app_name:
+        required: true
+        type: string
     secrets:
       DOCKERHUB_USERNAME:
         required: true
       DOCKERHUB_TOKEN:
-        required: true
-      DEPLOY_APPLI_NAME_FRONT:
         required: true
 
 env:
@@ -20,7 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Login to Docker Hub
         uses: docker/login-action@v4
@@ -29,13 +31,13 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Pull frontend image
-        run: docker pull ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.DEPLOY_APPLI_NAME_FRONT }}:${{ github.sha }}
+        run: docker pull ${{ secrets.DOCKERHUB_USERNAME }}/${{ inputs.app_name }}:${{ github.sha }}
 
       - name: Run frontend container
         run: |
           docker run -d --name test-frontend \
             -p 8081:8080 \
-            ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.DEPLOY_APPLI_NAME_FRONT }}:${{ github.sha }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/${{ inputs.app_name }}:${{ github.sha }}
 
       - name: Wait for frontend to be ready
         run: |
@@ -63,7 +65,7 @@ jobs:
 
       - name: Upload ZAP reports
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v4
         with:
           name: zap-front-scan-reports
           path: zap-front-reports/zap-front-report.html

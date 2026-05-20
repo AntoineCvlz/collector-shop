@@ -1,11 +1,15 @@
 on:
   workflow_call:
+    inputs:
+      app_name:
+        required: true
+        type: string
     secrets:
       DOCKERHUB_USERNAME:
         required: true
       DOCKERHUB_TOKEN:
         required: true
-      DEPLOY_APPLI_NAME:
+      LARAVEL_APP_KEY:
         required: true
 
 env:
@@ -20,7 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Login to Docker Hub
         uses: docker/login-action@v4
@@ -29,7 +33,7 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Pull Docker image from Docker Hub
-        run: docker pull ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.DEPLOY_APPLI_NAME }}:${{ github.sha }}
+        run: docker pull ${{ secrets.DOCKERHUB_USERNAME }}/${{ inputs.app_name }}:${{ github.sha }}
 
       - name: Create Docker network
         run: docker network create app-network
@@ -53,7 +57,7 @@ jobs:
             --network app-network \
             -p 9000:9000 \
             -e APP_ENV=testing \
-            -e APP_KEY=base64:87HsFTJ9kMrXYFewp6B+Fntc1kH85KrgGfU2qGjkfBk= \
+            -e APP_KEY=${{ secrets.LARAVEL_APP_KEY }} \
             -e APP_DEBUG=false \
             -e APP_URL=http://localhost:8080 \
             -e DB_CONNECTION=pgsql \
@@ -64,7 +68,7 @@ jobs:
             -e DB_PASSWORD=password \
             -e SESSION_DRIVER=database \
             -e CACHE_STORE=database \
-            ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.DEPLOY_APPLI_NAME }}:${{ github.sha }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/${{ inputs.app_name }}:${{ github.sha }}
 
       - name: Start Nginx as reverse proxy
         run: |
@@ -123,7 +127,7 @@ jobs:
 
       - name: Upload ZAP reports
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v4
         with:
           name: zap-scan-reports
           path: zap-reports/zap-report.html

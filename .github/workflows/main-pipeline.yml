@@ -3,11 +3,39 @@ name: Main CI/CD Pipeline
 on:
   push:
     branches: ["main"]
+    paths:
+      - "backend/**"
+      - ".github/workflows/main-pipeline.yml"
+      - ".github/workflows/build-unit-tests.yml"
+      - ".github/workflows/code-quality-sast.yml"
+      - ".github/workflows/secret-scanning.yml"
+      - ".github/workflows/sca-dependency-scan.yml"
+      - ".github/workflows/secure-iac-dockerfile-scan.yml"
+      - ".github/workflows/build-docker-image.yml"
+      - ".github/workflows/publish-docker-hub.yml"
+      - ".github/workflows/dast-zap-test.yml"
+      - ".github/workflows/send-notifications.yml"
   pull_request:
     branches: ["main"]
+    paths:
+      - "backend/**"
+      - ".github/workflows/main-pipeline.yml"
+      - ".github/workflows/build-unit-tests.yml"
+      - ".github/workflows/code-quality-sast.yml"
+      - ".github/workflows/secret-scanning.yml"
+      - ".github/workflows/sca-dependency-scan.yml"
+      - ".github/workflows/secure-iac-dockerfile-scan.yml"
+      - ".github/workflows/build-docker-image.yml"
+      - ".github/workflows/publish-docker-hub.yml"
+      - ".github/workflows/dast-zap-test.yml"
+      - ".github/workflows/send-notifications.yml"
   schedule:
     - cron: "0 2 * * 1"
   workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   security-events: write
@@ -26,7 +54,6 @@ jobs:
   # ═══════════════════════════════════════════════
   code-quality-sast:
     needs: build-and-test
-    if: always()
     uses: ./.github/workflows/code-quality-sast.yml
     secrets:
       SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
@@ -58,28 +85,37 @@ jobs:
   build-and-scan-docker:
     needs: [code-quality-sast, secret-scanning, secure-iac-dockerfile-scan, sca-dependency-scan]
     uses: ./.github/workflows/build-docker-image.yml
-    secrets: inherit
+    with:
+      app_name: ${{ vars.DEPLOY_APPLI_NAME }}
 
   # ═══════════════════════════════════════════════
-  # ÉTAPE 8 : PUBLICATION DOCKER HUB
+  # ÉTAPE 7 : PUBLICATION DOCKER HUB
   # ═══════════════════════════════════════════════
   publish-docker-hub:
     needs: [build-and-scan-docker]
     uses: ./.github/workflows/publish-docker-hub.yml
-    secrets: inherit
+    with:
+      app_name: ${{ vars.DEPLOY_APPLI_NAME }}
+    secrets:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
 
   # ═══════════════════════════════════════════════
-  # ÉTAPE 9 : DAST (Après publication Docker Hub)
+  # ÉTAPE 8 : DAST (Après publication Docker Hub)
   # ═══════════════════════════════════════════════
   dast-zap-test:
     needs: publish-docker-hub
     uses: ./.github/workflows/dast-zap-test.yml
-    secrets: inherit
+    with:
+      app_name: ${{ vars.DEPLOY_APPLI_NAME }}
+    secrets:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+      LARAVEL_APP_KEY: ${{ secrets.LARAVEL_APP_KEY }}
 
   # ═══════════════════════════════════════════════
-  # ÉTAPE 10 : Notifications (toujours exécuté, même en cas d'échec)
+  # ÉTAPE 9 : Notifications (toujours exécuté, même en cas d'échec)
   # ═══════════════════════════════════════════════
-
   send-notifications:
     needs:
       - build-and-test

@@ -3,11 +3,39 @@ name: Main Frontend CI/CD Pipeline
 on:
   push:
     branches: ["main"]
+    paths:
+      - "frontend/**"
+      - ".github/workflows/main-pipeline-front.yml"
+      - ".github/workflows/build-unit-tests-front.yml"
+      - ".github/workflows/code-quality-sast-front.yml"
+      - ".github/workflows/secret-scanning.yml"
+      - ".github/workflows/sca-dependency-scan-front.yml"
+      - ".github/workflows/secure-iac-dockerfile-scan-front.yml"
+      - ".github/workflows/build-docker-image-front.yml"
+      - ".github/workflows/publish-docker-hub-front.yml"
+      - ".github/workflows/dast-zap-test-front.yml"
+      - ".github/workflows/send-notifications-front.yml"
   pull_request:
     branches: ["main"]
+    paths:
+      - "frontend/**"
+      - ".github/workflows/main-pipeline-front.yml"
+      - ".github/workflows/build-unit-tests-front.yml"
+      - ".github/workflows/code-quality-sast-front.yml"
+      - ".github/workflows/secret-scanning.yml"
+      - ".github/workflows/sca-dependency-scan-front.yml"
+      - ".github/workflows/secure-iac-dockerfile-scan-front.yml"
+      - ".github/workflows/build-docker-image-front.yml"
+      - ".github/workflows/publish-docker-hub-front.yml"
+      - ".github/workflows/dast-zap-test-front.yml"
+      - ".github/workflows/send-notifications-front.yml"
   schedule:
     - cron: "0 3 * * 1"
   workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   security-events: write
@@ -26,7 +54,6 @@ jobs:
   # ═══════════════════════════════════════════════
   code-quality-sast-front:
     needs: build-and-test-front
-    if: always()
     uses: ./.github/workflows/code-quality-sast-front.yml
     secrets:
       SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
@@ -58,8 +85,8 @@ jobs:
   build-and-scan-docker-front:
     needs: [code-quality-sast-front, secret-scanning, secure-iac-dockerfile-scan-front, sca-dependency-scan-front]
     uses: ./.github/workflows/build-docker-image-front.yml
-    secrets:
-      DEPLOY_APPLI_NAME_FRONT: ${{ secrets.DEPLOY_APPLI_NAME_FRONT }}
+    with:
+      app_name: ${{ vars.DEPLOY_APPLI_NAME_FRONT }}
 
   # ═══════════════════════════════════════════════
   # ÉTAPE 7 : PUBLICATION DOCKER HUB FRONT
@@ -67,10 +94,11 @@ jobs:
   publish-docker-hub-front:
     needs: [build-and-scan-docker-front]
     uses: ./.github/workflows/publish-docker-hub-front.yml
+    with:
+      app_name: ${{ vars.DEPLOY_APPLI_NAME_FRONT }}
     secrets:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-      DEPLOY_APPLI_NAME_FRONT: ${{ secrets.DEPLOY_APPLI_NAME_FRONT }}
 
   # ═══════════════════════════════════════════════
   # ÉTAPE 8 : DAST FRONT (Après publication)
@@ -78,10 +106,11 @@ jobs:
   dast-zap-test-front:
     needs: publish-docker-hub-front
     uses: ./.github/workflows/dast-zap-test-front.yml
+    with:
+      app_name: ${{ vars.DEPLOY_APPLI_NAME_FRONT }}
     secrets:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-      DEPLOY_APPLI_NAME_FRONT: ${{ secrets.DEPLOY_APPLI_NAME_FRONT }}
 
   # ═══════════════════════════════════════════════
   # ÉTAPE 9 : Notifications (toujours exécuté)

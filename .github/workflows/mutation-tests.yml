@@ -39,7 +39,6 @@ jobs:
           extensions: mbstring, xml, ctype, iconv, pgsql, pdo_pgsql, zip, bcmath
           coverage: xdebug
           tools: composer:v2
-
       - name: 📦 Install Composer dependencies
         run: composer install --no-progress --prefer-dist --optimize-autoloader
 
@@ -68,7 +67,7 @@ jobs:
       - name: 🔧 Install Infection PHP
         run: composer require --dev infection/infection --no-interaction --quiet
 
-      - name: 🧪 Run initial tests (must pass before mutation testing)
+      - name: 🧪 Run initial tests
         run: vendor/bin/pest
         env:
           DB_CONNECTION: pgsql

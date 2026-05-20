@@ -80,6 +80,14 @@ jobs:
     uses: ./.github/workflows/secure-iac-dockerfile-scan.yml
 
   # ═══════════════════════════════════════════════
+  # ÉTAPE 5b : MUTATION TESTS (push uniquement, trop lent pour les PRs)
+  # ═══════════════════════════════════════════════
+  mutation-tests:
+    needs: build-and-test
+    if: github.event_name != 'pull_request'
+    uses: ./.github/workflows/mutation-tests.yml
+
+  # ═══════════════════════════════════════════════
   # ÉTAPE 6 : BUILD & SCAN DOCKER
   # ═══════════════════════════════════════════════
   build-and-scan-docker:

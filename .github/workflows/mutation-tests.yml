@@ -5,8 +5,8 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
-  build-and-test:
-    name: Build & PHPUnit Tests
+  mutation-tests:
+    name: 🧬 Mutation Tests (Infection PHP)
     runs-on: ubuntu-latest
 
     services:
@@ -43,11 +43,6 @@ jobs:
       - name: 📦 Install Composer dependencies
         run: composer install --no-progress --prefer-dist --optimize-autoloader
 
-      - name: ⚡ Install NPM dependencies & Build assets
-        run: |
-          npm install
-          npm run build
-
       - name: ⚙️ Prepare Laravel Environment
         run: |
           cp .env.example .env
@@ -70,8 +65,18 @@ jobs:
           DB_USERNAME: laravel
           DB_PASSWORD: secret
 
-      - name: 🧪 Run tests
-        run: php artisan test --coverage-clover coverage.xml
+      - name: 🔧 Install Infection PHP
+        run: composer require --dev infection/infection --no-interaction --quiet
+
+      - name: 🧬 Run Infection PHP
+        run: |
+          vendor/bin/infection \
+            --min-msi=50 \
+            --min-covered-msi=70 \
+            --threads=$(nproc) \
+            --only-covered \
+            --no-progress \
+            --logger-html=infection-report.html
         env:
           DB_CONNECTION: pgsql
           DB_HOST: 127.0.0.1
@@ -80,26 +85,10 @@ jobs:
           DB_USERNAME: laravel
           DB_PASSWORD: secret
 
-      - name: 🚦 Coverage gate (minimum 80%)
-        run: |
-          php -r "
-          \$xml = simplexml_load_file('coverage.xml');
-          \$metrics = \$xml->project->metrics;
-          \$covered = (int)\$metrics['coveredstatements'];
-          \$total = (int)\$metrics['statements'];
-          \$pct = \$total > 0 ? round((\$covered / \$total) * 100, 2) : 0;
-          echo 'Coverage: ' . \$pct . '%' . PHP_EOL;
-          if (\$pct < 80) {
-              echo 'Coverage gate failed: ' . \$pct . '% is below the 80% threshold.' . PHP_EOL;
-              exit(1);
-          }
-          echo 'Coverage gate passed.' . PHP_EOL;
-          "
-
-      - name: 📊 Upload coverage report
-        if: always() && hashFiles('backend/coverage.xml') != ''
+      - name: 📊 Upload Infection report
+        if: always()
         uses: actions/upload-artifact@v6
         with:
-          name: coverage-report
-          path: backend/coverage.xml
+          name: infection-report
+          path: backend/infection-report.html
           retention-days: 7

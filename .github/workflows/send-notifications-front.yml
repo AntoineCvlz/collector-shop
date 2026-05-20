@@ -33,6 +33,9 @@ on:
         required: true
         type: string
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   send-notifications-front:
     name: 📬 Send Frontend Notifications
@@ -68,67 +71,41 @@ jobs:
             "${{ inputs.result_dast_zap_test_front }}" == "success" \
           ]]; then
             echo "overall=✅ SUCCESS" >> $GITHUB_OUTPUT
+            echo "color=green" >> $GITHUB_OUTPUT
           else
             echo "overall=❌ FAILURE" >> $GITHUB_OUTPUT
+            echo "color=red" >> $GITHUB_OUTPUT
           fi
 
       - name: 📧 Send email notification
-        env:
-          MAIL_USERNAME: ${{ secrets.MAIL_USERNAME }}
-          MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
-          MAIL_TO: ${{ secrets.MAIL_TO }}
-          PIPELINE_STATUS: ${{ steps.status.outputs.overall }}
-          GH_REPOSITORY: ${{ github.repository }}
-          GH_REF_NAME: ${{ github.ref_name }}
-          GH_SHA: ${{ github.sha }}
-          GH_ACTOR: ${{ github.actor }}
-          GH_SERVER_URL: ${{ github.server_url }}
-          GH_RUN_ID: ${{ github.run_id }}
-          RESULT_BUILD: ${{ inputs.result_build_and_test_front }}
-          RESULT_SAST: ${{ inputs.result_code_quality_sast_front }}
-          RESULT_SECRETS: ${{ inputs.result_secret_scanning }}
-          RESULT_SCA: ${{ inputs.result_sca_dependency_scan_front }}
-          RESULT_IAC: ${{ inputs.result_secure_iac_dockerfile_scan_front }}
-          RESULT_DOCKER: ${{ inputs.result_build_and_scan_docker_front }}
-          RESULT_PUBLISH: ${{ inputs.result_publish_docker_hub_front }}
-          RESULT_DAST: ${{ inputs.result_dast_zap_test_front }}
-        run: |
-          python3 << 'PYEOF'
-          import smtplib, os
-          from email.mime.multipart import MIMEMultipart
-          from email.mime.text import MIMEText
-
-          e = os.environ
-          html = (
-              "<h2>📊 Frontend Pipeline Status Report</h2>"
-              f"<p><strong>Repository:</strong> {e['GH_REPOSITORY']}</p>"
-              f"<p><strong>Branch:</strong> {e['GH_REF_NAME']}</p>"
-              f"<p><strong>Commit:</strong> {e['GH_SHA']}</p>"
-              f"<p><strong>Triggered by:</strong> {e['GH_ACTOR']}</p>"
-              f"<p><strong>Overall status:</strong> {e['PIPELINE_STATUS']}</p>"
-              "<hr/>"
-              "<table border='1' cellpadding='8' cellspacing='0'>"
-              "<tr><th>Job</th><th>Status</th></tr>"
-              f"<tr><td>🏗️ Build &amp; Test</td><td>{e['RESULT_BUILD']}</td></tr>"
-              f"<tr><td>🔍 SAST</td><td>{e['RESULT_SAST']}</td></tr>"
-              f"<tr><td>🔐 Secret Scanning</td><td>{e['RESULT_SECRETS']}</td></tr>"
-              f"<tr><td>📦 SCA</td><td>{e['RESULT_SCA']}</td></tr>"
-              f"<tr><td>🏗️ IaC Security</td><td>{e['RESULT_IAC']}</td></tr>"
-              f"<tr><td>🐳 Docker Build</td><td>{e['RESULT_DOCKER']}</td></tr>"
-              f"<tr><td>📤 Docker Publish</td><td>{e['RESULT_PUBLISH']}</td></tr>"
-              f"<tr><td>🧪 DAST ZAP</td><td>{e['RESULT_DAST']}</td></tr>"
-              "</table><hr/>"
-              f"<p><a href='{e['GH_SERVER_URL']}/{e['GH_REPOSITORY']}/actions/runs/{e['GH_RUN_ID']}'>🔗 View full pipeline run</a></p>"
-          )
-
-          msg = MIMEMultipart("alternative")
-          msg["Subject"] = f"[{e['PIPELINE_STATUS']}] Frontend Pipeline - {e['GH_REPOSITORY']} ({e['GH_REF_NAME']})"
-          msg["From"] = f"GitHub Actions <{e['MAIL_USERNAME']}>"
-          msg["To"] = e["MAIL_TO"]
-          msg.attach(MIMEText(html, "html"))
-
-          with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
-              server.login(e["MAIL_USERNAME"], e["MAIL_PASSWORD"])
-              server.sendmail(e["MAIL_USERNAME"], e["MAIL_TO"], msg.as_string())
-          print("✅ Email sent successfully!")
-          PYEOF
+        uses: dawidd6/action-send-mail@v5
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          secure: true
+          username: ${{ secrets.MAIL_USERNAME }}
+          password: ${{ secrets.MAIL_PASSWORD }}
+          to: ${{ secrets.MAIL_TO }}
+          from: GitHub Actions <${{ secrets.MAIL_USERNAME }}>
+          subject: "[${{ steps.status.outputs.overall }}] Frontend Pipeline - ${{ github.repository }} (${{ github.ref_name }})"
+          html_body: |
+            <h2>📊 Frontend Pipeline Status Report</h2>
+            <p><strong>Repository:</strong> ${{ github.repository }}</p>
+            <p><strong>Branch:</strong> ${{ github.ref_name }}</p>
+            <p><strong>Commit:</strong> ${{ github.sha }}</p>
+            <p><strong>Triggered by:</strong> ${{ github.actor }}</p>
+            <p><strong>Overall status:</strong> ${{ steps.status.outputs.overall }}</p>
+            <hr/>
+            <table border="1" cellpadding="8" cellspacing="0">
+              <tr><th>Job</th><th>Status</th></tr>
+              <tr><td>🏗️ Build &amp; Test</td><td>${{ inputs.result_build_and_test_front }}</td></tr>
+              <tr><td>🔍 SAST</td><td>${{ inputs.result_code_quality_sast_front }}</td></tr>
+              <tr><td>🔐 Secret Scanning</td><td>${{ inputs.result_secret_scanning }}</td></tr>
+              <tr><td>📦 SCA</td><td>${{ inputs.result_sca_dependency_scan_front }}</td></tr>
+              <tr><td>🏗️ IaC Security</td><td>${{ inputs.result_secure_iac_dockerfile_scan_front }}</td></tr>
+              <tr><td>🐳 Docker Build</td><td>${{ inputs.result_build_and_scan_docker_front }}</td></tr>
+              <tr><td>📤 Docker Publish</td><td>${{ inputs.result_publish_docker_hub_front }}</td></tr>
+              <tr><td>🧪 DAST ZAP</td><td>${{ inputs.result_dast_zap_test_front }}</td></tr>
+            </table>
+            <hr/>
+            <p><a href="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}">🔗 View full pipeline run</a></p>

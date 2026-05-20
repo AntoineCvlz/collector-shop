@@ -26,6 +26,12 @@ on:
       result_build_and_scan_docker:
         required: true
         type: string
+      result_publish_docker_hub:
+        required: true
+        type: string
+      result_dast_zap_test:
+        required: true
+        type: string
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -47,6 +53,8 @@ jobs:
           echo "SCA:             ${{ inputs.result_sca_dependency_scan }}"
           echo "IaC Security:    ${{ inputs.result_secure_iac_dockerfile_scan }}"
           echo "Docker Build:    ${{ inputs.result_build_and_scan_docker }}"
+          echo "Docker Publish:  ${{ inputs.result_publish_docker_hub }}"
+          echo "DAST ZAP:        ${{ inputs.result_dast_zap_test }}"
           echo "═══════════════════════════════════════"
 
       - name: 🎨 Determine overall status
@@ -58,7 +66,9 @@ jobs:
             "${{ inputs.result_secret_scanning }}" == "success" && \
             "${{ inputs.result_sca_dependency_scan }}" == "success" && \
             "${{ inputs.result_secure_iac_dockerfile_scan }}" == "success" && \
-            "${{ inputs.result_build_and_scan_docker }}" == "success" \
+            "${{ inputs.result_build_and_scan_docker }}" == "success" && \
+            "${{ inputs.result_publish_docker_hub }}" == "success" && \
+            "${{ inputs.result_dast_zap_test }}" == "success" \
           ]]; then
             echo "overall=✅ SUCCESS" >> $GITHUB_OUTPUT
             echo "color=green" >> $GITHUB_OUTPUT
@@ -94,6 +104,8 @@ jobs:
               <tr><td>📦 SCA</td><td>${{ inputs.result_sca_dependency_scan }}</td></tr>
               <tr><td>🏗️ IaC Security</td><td>${{ inputs.result_secure_iac_dockerfile_scan }}</td></tr>
               <tr><td>🐳 Docker Build</td><td>${{ inputs.result_build_and_scan_docker }}</td></tr>
+              <tr><td>📤 Docker Publish</td><td>${{ inputs.result_publish_docker_hub }}</td></tr>
+              <tr><td>🧪 DAST ZAP</td><td>${{ inputs.result_dast_zap_test }}</td></tr>
             </table>
             <hr/>
             <p><a href="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}">🔗 View full pipeline run</a></p>

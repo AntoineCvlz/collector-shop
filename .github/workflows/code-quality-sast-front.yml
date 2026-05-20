@@ -4,6 +4,9 @@ on:
       SEMGREP_APP_TOKEN:
         required: false
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   code-quality-sast-front:
     name: 🔍 Frontend Security & Quality Scan
@@ -45,6 +48,7 @@ jobs:
       # 3. SEMGREP
       # ═══════════════════════════════════════
       - name: 🔍 Run Semgrep SAST
+        if: always()
         run: |
           pip install semgrep --break-system-packages
           semgrep scan --config="p/typescript" --config="p/react" --config="p/security-audit" --config="p/secrets" --sarif --output=semgrep-front.sarif || true

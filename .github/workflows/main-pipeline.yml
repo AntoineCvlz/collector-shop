@@ -103,3 +103,5 @@ jobs:
       result_sca_dependency_scan: ${{ needs.sca-dependency-scan.result }}
       result_secure_iac_dockerfile_scan: ${{ needs.secure-iac-dockerfile-scan.result }}
       result_build_and_scan_docker: ${{ needs.build-and-scan-docker.result }}
+      result_publish_docker_hub: ${{ needs.publish-docker-hub.result }}
+      result_dast_zap_test: ${{ needs.dast-zap-test.result }}

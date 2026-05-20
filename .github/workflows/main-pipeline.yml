@@ -5,30 +5,12 @@ on:
     branches: ["main"]
     paths:
       - "backend/**"
-      - ".github/workflows/main-pipeline.yml"
-      - ".github/workflows/build-unit-tests.yml"
-      - ".github/workflows/code-quality-sast.yml"
-      - ".github/workflows/secret-scanning.yml"
-      - ".github/workflows/sca-dependency-scan.yml"
-      - ".github/workflows/secure-iac-dockerfile-scan.yml"
-      - ".github/workflows/build-docker-image.yml"
-      - ".github/workflows/publish-docker-hub.yml"
-      - ".github/workflows/dast-zap-test.yml"
-      - ".github/workflows/send-notifications.yml"
+      - ".github/workflows/**"
   pull_request:
     branches: ["main"]
     paths:
       - "backend/**"
-      - ".github/workflows/main-pipeline.yml"
-      - ".github/workflows/build-unit-tests.yml"
-      - ".github/workflows/code-quality-sast.yml"
-      - ".github/workflows/secret-scanning.yml"
-      - ".github/workflows/sca-dependency-scan.yml"
-      - ".github/workflows/secure-iac-dockerfile-scan.yml"
-      - ".github/workflows/build-docker-image.yml"
-      - ".github/workflows/publish-docker-hub.yml"
-      - ".github/workflows/dast-zap-test.yml"
-      - ".github/workflows/send-notifications.yml"
+      - ".github/workflows/**"
   schedule:
     - cron: "0 2 * * 1"
   workflow_dispatch:

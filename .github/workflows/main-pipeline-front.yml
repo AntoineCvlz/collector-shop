@@ -5,30 +5,12 @@ on:
     branches: ["main"]
     paths:
       - "frontend/**"
-      - ".github/workflows/main-pipeline-front.yml"
-      - ".github/workflows/build-unit-tests-front.yml"
-      - ".github/workflows/code-quality-sast-front.yml"
-      - ".github/workflows/secret-scanning.yml"
-      - ".github/workflows/sca-dependency-scan-front.yml"
-      - ".github/workflows/secure-iac-dockerfile-scan-front.yml"
-      - ".github/workflows/build-docker-image-front.yml"
-      - ".github/workflows/publish-docker-hub-front.yml"
-      - ".github/workflows/dast-zap-test-front.yml"
-      - ".github/workflows/send-notifications-front.yml"
+      - ".github/workflows/**"
   pull_request:
     branches: ["main"]
     paths:
       - "frontend/**"
-      - ".github/workflows/main-pipeline-front.yml"
-      - ".github/workflows/build-unit-tests-front.yml"
-      - ".github/workflows/code-quality-sast-front.yml"
-      - ".github/workflows/secret-scanning.yml"
-      - ".github/workflows/sca-dependency-scan-front.yml"
-      - ".github/workflows/secure-iac-dockerfile-scan-front.yml"
-      - ".github/workflows/build-docker-image-front.yml"
-      - ".github/workflows/publish-docker-hub-front.yml"
-      - ".github/workflows/dast-zap-test-front.yml"
-      - ".github/workflows/send-notifications-front.yml"
+      - ".github/workflows/**"
   schedule:
     - cron: "0 3 * * 1"
   workflow_dispatch:

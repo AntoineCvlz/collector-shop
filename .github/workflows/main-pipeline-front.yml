@@ -23,6 +23,7 @@ permissions:
   security-events: write
   contents: read
   actions: read
+  id-token: write
 
 jobs:
   # ═══════════════════════════════════════════════
@@ -62,7 +63,14 @@ jobs:
     uses: ./.github/workflows/secure-iac-dockerfile-scan-front.yml
 
   # ═══════════════════════════════════════════════
-  # ÉTAPE 5b : E2E TESTS (gate avant le build Docker)
+  # ÉTAPE 5b : CODEQL SAST FRONTEND
+  # ═══════════════════════════════════════════════
+  codeql-front:
+    needs: build-and-test-front
+    uses: ./.github/workflows/codeql-front.yml
+
+  # ═══════════════════════════════════════════════
+  # ÉTAPE 5c : E2E TESTS (gate avant le build Docker)
   # ═══════════════════════════════════════════════
   e2e-playwright-front:
     needs: build-and-test-front
@@ -72,7 +80,7 @@ jobs:
   # ÉTAPE 6 : BUILD & SCAN DOCKER FRONT
   # ═══════════════════════════════════════════════
   build-and-scan-docker-front:
-    needs: [code-quality-sast-front, secret-scanning, secure-iac-dockerfile-scan-front, sca-dependency-scan-front, e2e-playwright-front]
+    needs: [code-quality-sast-front, secret-scanning, secure-iac-dockerfile-scan-front, sca-dependency-scan-front, codeql-front, e2e-playwright-front]
     uses: ./.github/workflows/build-docker-image-front.yml
     with:
       app_name: ${{ vars.DEPLOY_APPLI_NAME_FRONT }}

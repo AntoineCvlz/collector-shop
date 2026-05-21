@@ -23,6 +23,7 @@ permissions:
   security-events: write
   contents: read
   actions: read
+  id-token: write
 
 jobs:
   # ═══════════════════════════════════════════════
@@ -62,7 +63,14 @@ jobs:
     uses: ./.github/workflows/secure-iac-dockerfile-scan.yml
 
   # ═══════════════════════════════════════════════
-  # ÉTAPE 5b : MUTATION TESTS (push uniquement, trop lent pour les PRs)
+  # ÉTAPE 5b : CODEQL SAST
+  # ═══════════════════════════════════════════════
+  codeql:
+    needs: build-and-test
+    uses: ./.github/workflows/codeql.yml
+
+  # ═══════════════════════════════════════════════
+  # ÉTAPE 5c : MUTATION TESTS (push uniquement, trop lent pour les PRs)
   # ═══════════════════════════════════════════════
   mutation-tests:
     needs: build-and-test
@@ -73,7 +81,7 @@ jobs:
   # ÉTAPE 6 : BUILD & SCAN DOCKER
   # ═══════════════════════════════════════════════
   build-and-scan-docker:
-    needs: [code-quality-sast, secret-scanning, secure-iac-dockerfile-scan, sca-dependency-scan]
+    needs: [code-quality-sast, secret-scanning, secure-iac-dockerfile-scan, sca-dependency-scan, codeql]
     uses: ./.github/workflows/build-docker-image.yml
     with:
       app_name: ${{ vars.DEPLOY_APPLI_NAME }}

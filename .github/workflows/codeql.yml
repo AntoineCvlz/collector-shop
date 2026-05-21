@@ -1,0 +1,30 @@
+on:
+  workflow_call:
+
+permissions:
+  security-events: write
+  contents: read
+  actions: read
+
+jobs:
+  codeql-backend:
+    name: 🔬 CodeQL Analysis (PHP)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v6
+
+      - name: 🔬 Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: php
+          queries: security-and-quality
+
+      - name: 🏗️ Autobuild
+        uses: github/codeql-action/autobuild@v3
+
+      - name: 📊 Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: codeql-php

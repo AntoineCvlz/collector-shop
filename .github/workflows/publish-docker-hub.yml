@@ -13,6 +13,10 @@ on:
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   publish-docker-hub:
     name: 📤 Publish
@@ -38,6 +42,14 @@ jobs:
           docker tag ${{ inputs.app_name }}:${{ github.sha }} ${{ secrets.DOCKERHUB_USERNAME }}/${{ inputs.app_name }}:${{ github.sha }}
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ inputs.app_name }}:latest
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ inputs.app_name }}:${{ github.sha }}
+
+      - name: 🔏 Install Cosign
+        uses: sigstore/cosign-installer@v3
+
+      - name: 🔏 Sign Docker image (keyless)
+        run: |
+          cosign sign --yes \
+            ${{ secrets.DOCKERHUB_USERNAME }}/${{ inputs.app_name }}:${{ github.sha }}
 
       - name: Generate SBOM
         uses: anchore/sbom-action@v0

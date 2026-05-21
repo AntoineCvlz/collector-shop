@@ -77,10 +77,17 @@ jobs:
     uses: ./.github/workflows/e2e-playwright-front.yml
 
   # ═══════════════════════════════════════════════
+  # ÉTAPE 5d : LIGHTHOUSE CI (Performance / A11y / SEO)
+  # ═══════════════════════════════════════════════
+  lighthouse-ci-front:
+    needs: build-and-test-front
+    uses: ./.github/workflows/lighthouse-ci-front.yml
+
+  # ═══════════════════════════════════════════════
   # ÉTAPE 6 : BUILD & SCAN DOCKER FRONT
   # ═══════════════════════════════════════════════
   build-and-scan-docker-front:
-    needs: [code-quality-sast-front, secret-scanning, secure-iac-dockerfile-scan-front, sca-dependency-scan-front, codeql-front, e2e-playwright-front]
+    needs: [code-quality-sast-front, secret-scanning, secure-iac-dockerfile-scan-front, sca-dependency-scan-front, codeql-front, e2e-playwright-front, lighthouse-ci-front]
     uses: ./.github/workflows/build-docker-image-front.yml
     with:
       app_name: ${{ vars.DEPLOY_APPLI_NAME_FRONT }}

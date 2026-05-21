@@ -1,0 +1,46 @@
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  phpstan-backend:
+    name: 🔍 PHPStan Static Analysis (PHP)
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./backend
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          extensions: mbstring, pdo, pdo_pgsql
+          coverage: none
+
+      - name: 📦 Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: 📦 Install PHPStan + Larastan
+        run: composer require --dev larastan/larastan --no-interaction
+
+      - name: 🔧 Create PHPStan configuration
+        run: |
+          cat > phpstan.neon << 'EOF'
+          includes:
+            - vendor/larastan/larastan/extension.neon
+          parameters:
+            paths:
+              - app
+            level: 5
+          EOF
+
+      - name: 🔍 Run PHPStan analysis
+        run: vendor/bin/phpstan analyse --no-progress --error-format=github

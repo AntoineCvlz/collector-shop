@@ -85,7 +85,7 @@ jobs:
         run: docker save ${{ inputs.app_name }}:${{ github.sha }} | gzip > docker-image.tar.gz
 
       - name: Upload Docker image artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: docker-image-${{ inputs.app_name }}-${{ github.sha }}
           path: docker-image.tar.gz

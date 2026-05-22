@@ -59,7 +59,7 @@ jobs:
           output-file: sbom-front.spdx.json
 
       - name: Upload SBOM
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: sbom-frontend
           path: sbom-front.spdx.json

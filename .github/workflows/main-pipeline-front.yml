@@ -117,7 +117,20 @@ jobs:
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
 
   # ═══════════════════════════════════════════════
-  # ÉTAPE 9 : Notifications (toujours exécuté)
+  # ÉTAPE 9 : DÉPLOIEMENT GITOPS (staging → production)
+  # Uniquement sur push main (pas sur les PRs)
+  # ═══════════════════════════════════════════════
+  # deploy-front:
+  #   needs: dast-zap-test-front
+  #   if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+  #   uses: ./.github/workflows/deploy-front.yml
+  #   with:
+  #     app_name: ${{ vars.DEPLOY_APPLI_NAME_FRONT }}
+  #   secrets:
+  #     DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+
+  # ═══════════════════════════════════════════════
+  # ÉTAPE 10 : Notifications (toujours exécuté)
   # ═══════════════════════════════════════════════
   send-notifications-front:
     needs:

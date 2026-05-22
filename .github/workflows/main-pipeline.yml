@@ -112,7 +112,20 @@ jobs:
       LARAVEL_APP_KEY: ${{ secrets.LARAVEL_APP_KEY }}
 
   # ═══════════════════════════════════════════════
-  # ÉTAPE 9 : Notifications (toujours exécuté, même en cas d'échec)
+  # ÉTAPE 9 : DÉPLOIEMENT GITOPS (staging → production)
+  # Uniquement sur push main (pas sur les PRs)
+  # ═══════════════════════════════════════════════
+  # deploy:
+  #   needs: dast-zap-test
+  #   if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+  #   uses: ./.github/workflows/deploy.yml
+  #   with:
+  #     app_name: ${{ vars.DEPLOY_APPLI_NAME }}
+  #   secrets:
+  #     DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+
+  # ═══════════════════════════════════════════════
+  # ÉTAPE 10 : Notifications (toujours exécuté, même en cas d'échec)
   # ═══════════════════════════════════════════════
   send-notifications:
     needs:

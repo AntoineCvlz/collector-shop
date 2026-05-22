@@ -1,0 +1,65 @@
+on:
+  workflow_call:
+    inputs:
+      app_name:
+        required: true
+        type: string
+    secrets:
+      DOCKERHUB_USERNAME:
+        required: true
+
+jobs:
+  # ─────────────────────────────────────────────
+  # STAGING — déploiement automatique
+  # ─────────────────────────────────────────────
+  deploy-staging:
+    name: 🚀 Deploy → Staging
+    runs-on: ubuntu-latest
+    environment: staging         # secrets SSH_HOST / SSH_USER / SSH_PRIVATE_KEY scopés ici
+
+    steps:
+      - name: 🚀 Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/${{ inputs.app_name }}:latest
+            cd /opt/collector-shop
+            docker compose up -d --no-deps --pull always ${{ inputs.app_name }}
+            docker image prune -f
+
+      - name: 🏥 Health check staging
+        run: |
+          sleep 15
+          curl --fail --retry 3 --retry-delay 5 "${{ vars.STAGING_URL }}/api/health"
+
+  # ─────────────────────────────────────────────
+  # PRODUCTION — approbation manuelle requise
+  # (configurer "Required reviewers" dans GitHub
+  #  Settings → Environments → production)
+  # ─────────────────────────────────────────────
+  deploy-production:
+    name: 🚀 Deploy → Production
+    needs: deploy-staging
+    runs-on: ubuntu-latest
+    environment: production      # secrets SSH_HOST / SSH_USER / SSH_PRIVATE_KEY scopés ici
+
+    steps:
+      - name: 🚀 Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/${{ inputs.app_name }}:latest
+            cd /opt/collector-shop
+            docker compose up -d --no-deps --pull always ${{ inputs.app_name }}
+            docker image prune -f
+
+      - name: 🏥 Health check production
+        run: |
+          sleep 15
+          curl --fail --retry 3 --retry-delay 5 "${{ vars.PRODUCTION_URL }}/api/health"

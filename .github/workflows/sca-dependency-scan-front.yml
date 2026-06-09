@@ -35,32 +35,35 @@ jobs:
       - name: 🔐 NPM Audit — bloquant sur HIGH/CRITICAL
         run: npm audit --audit-level=high
 
+      # Install Trivy via le script officiel (pas l'action, qui échoue au download).
+      - name: 📥 Install Trivy CLI
+        run: |
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
+            | sudo sh -s -- -b /usr/local/bin v0.65.0
+          trivy --version
+
       # Run 1 : rapport complet → onglet Security, non bloquant
       - name: 🔍 Trivy SCA — rapport SARIF
-        uses: aquasecurity/trivy-action@v0.33.1
-        with:
-          scan-type: fs
-          scan-ref: frontend
-          format: sarif
-          output: trivy-front-results.sarif
-          severity: CRITICAL,HIGH,MEDIUM
-          ignore-unfixed: true
-          exit-code: "0"
+        run: |
+          trivy fs . \
+            --format sarif \
+            --output trivy-front-results.sarif \
+            --severity CRITICAL,HIGH,MEDIUM \
+            --ignore-unfixed \
+            --exit-code 0
 
       - name: 📤 Upload Trivy SARIF
         uses: github/codeql-action/upload-sarif@v4
-        if: always() && hashFiles('trivy-front-results.sarif') != ''
+        if: always() && hashFiles('frontend/trivy-front-results.sarif') != ''
         with:
-          sarif_file: trivy-front-results.sarif
+          sarif_file: frontend/trivy-front-results.sarif
           category: trivy-frontend-sca
 
       # Run 2 : gate bloquant sur CRITICAL/HIGH corrigeables
       - name: 🚦 Trivy SCA — gate (CRITICAL/HIGH bloquant)
-        uses: aquasecurity/trivy-action@v0.33.1
-        with:
-          scan-type: fs
-          scan-ref: frontend
-          format: table
-          severity: CRITICAL,HIGH
-          ignore-unfixed: true
-          exit-code: "1"
+        run: |
+          trivy fs . \
+            --format table \
+            --severity CRITICAL,HIGH \
+            --ignore-unfixed \
+            --exit-code 1

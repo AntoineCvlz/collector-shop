@@ -37,15 +37,20 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Install Trivy CLI
+        run: |
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
+            | sudo sh -s -- -b /usr/local/bin v0.65.0
+          trivy --version
+
       - name: Run Trivy scan for GitHub Security (SARIF, non bloquant)
-        uses: aquasecurity/trivy-action@v0.33.1
-        with:
-          image-ref: ${{ inputs.app_name }}:${{ github.sha }}
-          format: sarif
-          output: trivy-front-image-results.sarif
-          severity: CRITICAL,HIGH,MEDIUM
-          exit-code: "0"
-          ignore-unfixed: false
+        run: |
+          trivy image \
+            --format sarif \
+            --output trivy-front-image-results.sarif \
+            --severity CRITICAL,HIGH,MEDIUM \
+            --exit-code 0 \
+            ${{ inputs.app_name }}:${{ github.sha }}
 
       - name: Upload scan results to GitHub Security
         uses: github/codeql-action/upload-sarif@v4
@@ -55,14 +60,14 @@ jobs:
           category: trivy-frontend-container-scan
 
       - name: 🚦 Trivy gate (blocking on CRITICAL/HIGH)
-        uses: aquasecurity/trivy-action@v0.33.1
-        with:
-          image-ref: ${{ inputs.app_name }}:${{ github.sha }}
-          format: table
-          severity: CRITICAL,HIGH
-          ignore-unfixed: true
-          scanners: vuln
-          exit-code: "1"
+        run: |
+          trivy image \
+            --format table \
+            --severity CRITICAL,HIGH \
+            --ignore-unfixed \
+            --scanners vuln \
+            --exit-code 1 \
+            ${{ inputs.app_name }}:${{ github.sha }}
 
       - name: Save Docker image as archive
         run: docker save ${{ inputs.app_name }}:${{ github.sha }} | gzip > docker-image-front.tar.gz

@@ -25,8 +25,15 @@ test.describe("Écran d'inscription", () => {
   });
 
   test("affiche une erreur quand la création échoue", async ({ page }) => {
-    // L'API n'est pas disponible en E2E front : la requête échoue,
-    // ce qui doit déclencher le message d'erreur.
+    // On force l'API à répondre en erreur pour rendre le test déterministe.
+    await page.route("**/api/register", (route) =>
+      route.fulfill({
+        status: 422,
+        contentType: "application/json",
+        body: JSON.stringify({ message: "Validation error" }),
+      }),
+    );
+
     await page.goto("/register");
 
     await page.getByLabel("Nom").fill("Jean Dupont");

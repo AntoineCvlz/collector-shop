@@ -17,8 +17,16 @@ test.describe("Écran de connexion", () => {
   test("affiche une erreur avec des identifiants invalides", async ({
     page,
   }) => {
-    // L'API n'est pas disponible en E2E front : la requête échoue,
-    // ce qui doit déclencher le message d'erreur.
+    // On force l'API à répondre 401 pour rendre le test déterministe,
+    // indépendamment de l'état réel du backend.
+    await page.route("**/api/login", (route) =>
+      route.fulfill({
+        status: 401,
+        contentType: "application/json",
+        body: JSON.stringify({ message: "Unauthorized" }),
+      }),
+    );
+
     await page.goto("/login");
 
     await page.getByLabel("Email").fill("inconnu@example.com");

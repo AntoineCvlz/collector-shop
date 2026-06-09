@@ -1,7 +1,6 @@
 import { useNavigate } from "react-router-dom";
 
 import { Button } from "../components/ui/button";
-import Hello from "../components/Hello";
 import { clearSession, getUser, isAuthenticated } from "../lib/auth";
 
 export default function Home() {
@@ -15,7 +14,7 @@ export default function Home() {
 
   return (
     <div className="flex min-h-svh flex-col items-center justify-center gap-4 p-4">
-      <Hello />
+      <h1 className="text-2xl font-bold">Collector Shop</h1>
       {isAuthenticated() ? (
         <>
           <p className="text-sm text-muted-foreground">

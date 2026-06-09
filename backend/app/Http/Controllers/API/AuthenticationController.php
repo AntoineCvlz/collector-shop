@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -14,7 +15,7 @@ class AuthenticationController extends Controller
     /**
      * Register a new account.
      */
-    public function register(Request $request)
+    public function register(Request $request): JsonResponse
     {
         $request->validate([
             'name' => 'required|string|min:4',
@@ -49,7 +50,7 @@ class AuthenticationController extends Controller
     /**
      * Login request.
      */
-    public function login(Request $request)
+    public function login(Request $request): JsonResponse
     {
         $request->validate([
             'email' => 'required|email',
@@ -57,8 +58,11 @@ class AuthenticationController extends Controller
         ]);
 
         try {
-            if (Auth::attempt(['email' => $request->email, 'password' => $request->password])) {
-                $user = Auth::user();
+            $user = Auth::attempt(['email' => $request->email, 'password' => $request->password])
+                ? Auth::user()
+                : null;
+
+            if ($user instanceof User) {
                 $accessToken = $user->createToken('authToken')->accessToken;
 
                 return response()->json([
@@ -94,7 +98,7 @@ class AuthenticationController extends Controller
     /**
      * Get paginated user list (authenticated).
      */
-    public function userInfo()
+    public function userInfo(): JsonResponse
     {
         try {
             $users = User::latest()->paginate(10);
@@ -119,11 +123,13 @@ class AuthenticationController extends Controller
     /**
      * Logout the user and revoke token.
      */
-    public function logOut(Request $request)
+    public function logOut(Request $request): JsonResponse
     {
         try {
-            if (Auth::check()) {
-                Auth::user()->tokens()->delete();
+            $user = Auth::user();
+
+            if ($user instanceof User) {
+                $user->tokens()->delete();
 
                 return response()->json([
                     'response_code' => 200,

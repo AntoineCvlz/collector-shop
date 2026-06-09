@@ -4,5 +4,5 @@ includes:
 parameters:
     paths:
         - app
-    # Niveau à monter progressivement (max: 9). Cible recommandée : 6+.
-    level: 5
+    # Niveau à monter progressivement (max: 10). Prochaine cible possible : 9.
+    level: 8

@@ -35,11 +35,12 @@ jobs:
       - name: 🔐 NPM Audit — bloquant sur HIGH/CRITICAL
         run: npm audit --audit-level=high
 
-      # Install Trivy via le script officiel (pas l'action, qui échoue au download).
+      # Download direct du binaire (CDN GitHub, sans API → pas de rate-limit).
       - name: 📥 Install Trivy CLI
         run: |
-          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
-            | sudo sh -s -- -b /usr/local/bin v0.65.0
+          TRIVY_VERSION=0.71.0
+          curl -sfL "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz" -o /tmp/trivy.tar.gz
+          sudo tar -xzf /tmp/trivy.tar.gz -C /usr/local/bin trivy
           trivy --version
 
       # Run 1 : rapport complet → onglet Security, non bloquant

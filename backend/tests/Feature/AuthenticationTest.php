@@ -1,7 +1,9 @@
 <?php
 
 use App\Models\User;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 use Laravel\Passport\Passport;
 
 // La base de test est réinitialisée à chaque test (RefreshDatabase) ;
@@ -206,4 +208,70 @@ test('hello world endpoint returns a message', function () {
     $this->getJson('/api/hello-world')
         ->assertStatus(200)
         ->assertJson(['message' => 'Hello World']);
+});
+
+// ─────────────────────────────────────────────
+// CAS D'ERREUR 500 (blocs catch)
+// ─────────────────────────────────────────────
+
+test('register returns 500 when an unexpected error occurs', function () {
+    // Hash::make est appelé dans le try : on le force à lever une exception.
+    Hash::shouldReceive('make')->andThrow(new \RuntimeException('boom'));
+
+    $this->postJson(route('register'), [
+        'name' => 'John Doe',
+        'email' => 'john@example.com',
+        'password' => 'password123',
+    ])->assertStatus(500)
+        ->assertJson([
+            'response_code' => 500,
+            'status' => 'error',
+            'message' => 'Registration failed',
+        ]);
+});
+
+test('login returns 500 when an unexpected error occurs', function () {
+    Auth::shouldReceive('attempt')->andThrow(new \RuntimeException('boom'));
+
+    $this->postJson(route('login'), [
+        'email' => 'login@example.com',
+        'password' => 'password123',
+    ])->assertStatus(500)
+        ->assertJson([
+            'response_code' => 500,
+            'status' => 'error',
+            'message' => 'Login failed',
+        ]);
+});
+
+test('user info returns 500 when the query fails', function () {
+    Passport::actingAs(User::factory()->create(), ['*'], 'api');
+
+    // La table n'existe plus → User::latest()->paginate() lève une QueryException.
+    Schema::drop('users');
+
+    $this->getJson(route('get-user'))
+        ->assertStatus(500)
+        ->assertJson([
+            'response_code' => 500,
+            'status' => 'error',
+            'message' => 'Failed to fetch user list',
+        ]);
+});
+
+test('logout returns 500 when an unexpected error occurs', function () {
+    Passport::actingAs(User::factory()->create(), ['*'], 'api');
+
+    // $user->tokens()->delete() est appelé dans le try : sans la table des
+    // tokens, la requête lève une QueryException → bloc catch (500).
+    // (On ne mocke pas la façade Auth pour ne pas casser le middleware auth:api.)
+    Schema::drop('oauth_access_tokens');
+
+    $this->postJson(route('logout'))
+        ->assertStatus(500)
+        ->assertJson([
+            'response_code' => 500,
+            'status' => 'error',
+            'message' => 'An error occurred during logout',
+        ]);
 });

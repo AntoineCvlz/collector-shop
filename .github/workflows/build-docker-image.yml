@@ -38,7 +38,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Run Trivy scan for GitHub Security (SARIF, non bloquant)
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.33.1
         with:
           image-ref: ${{ inputs.app_name }}:${{ github.sha }}
           format: sarif
@@ -55,7 +55,7 @@ jobs:
           category: trivy-container-scan
 
       - name: 🚦 Trivy gate (blocking on CRITICAL/HIGH)
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.33.1
         with:
           image-ref: ${{ inputs.app_name }}:${{ github.sha }}
           format: table

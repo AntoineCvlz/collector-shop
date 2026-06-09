@@ -37,7 +37,7 @@ jobs:
 
       # Run 1 : rapport complet → onglet Security, non bloquant
       - name: 🔍 Trivy SCA — rapport SARIF
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.33.1
         with:
           scan-type: fs
           scan-ref: frontend
@@ -56,7 +56,7 @@ jobs:
 
       # Run 2 : gate bloquant sur CRITICAL/HIGH corrigeables
       - name: 🚦 Trivy SCA — gate (CRITICAL/HIGH bloquant)
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.33.1
         with:
           scan-type: fs
           scan-ref: frontend

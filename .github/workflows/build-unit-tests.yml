@@ -8,6 +8,7 @@ jobs:
   build-and-test:
     name: Build & PHPUnit Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     services:
       postgres:
@@ -40,9 +41,23 @@ jobs:
           coverage: xdebug
           tools: composer:v2
 
+      - name: 📦 Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: backend/vendor
+          key: composer-${{ runner.os }}-${{ hashFiles('backend/composer.lock') }}
+          restore-keys: composer-${{ runner.os }}-
+
       - name: 📦 Install Composer dependencies
         run: composer install --no-progress --prefer-dist --optimize-autoloader
 
+      - name: ⚙️ Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "20"
+
+      # Compilation des assets front Laravel (Vite). Les dépendances PHP
+      # passent par Composer ci-dessus ; npm ne sert qu'au build des assets.
       - name: ⚡ Install NPM dependencies & Build assets
         run: |
           npm install
@@ -80,22 +95,27 @@ jobs:
           DB_USERNAME: laravel
           DB_PASSWORD: secret
 
-      - name: 🚦 Coverage gate (minimum 80%)
+      # Seuil pilotable sans toucher au workflow : définir la variable repo
+      # COVERAGE_MIN (Settings → Variables). Cible finale : 80 %.
+      # À monter par paliers au fur et à mesure que les tests réels arrivent.
+      - name: 🚦 Coverage gate
+        env:
+          COVERAGE_MIN: ${{ vars.COVERAGE_MIN || '1' }}
         run: |
-          php -r "
-          \$xml = simplexml_load_file('coverage.xml');
-          \$metrics = \$xml->project->metrics;
-          \$covered = (int)\$metrics['coveredstatements'];
-          \$total = (int)\$metrics['statements'];
-          \$pct = \$total > 0 ? round((\$covered / \$total) * 100, 2) : 0;
-          echo 'Coverage: ' . \$pct . '%' . PHP_EOL;
-          // TODO: augmenter le seuil progressivement (cible : 80%)
-          if (\$pct < 1) {
-              echo 'Coverage gate failed: ' . \$pct . '% is below the 1% threshold.' . PHP_EOL;
+          php -r '
+          $min = (float) getenv("COVERAGE_MIN");
+          $xml = simplexml_load_file("coverage.xml");
+          $metrics = $xml->project->metrics;
+          $covered = (int) $metrics["coveredstatements"];
+          $total = (int) $metrics["statements"];
+          $pct = $total > 0 ? round(($covered / $total) * 100, 2) : 0;
+          echo "Coverage: {$pct}% (gate minimum: {$min}%)" . PHP_EOL;
+          if ($pct < $min) {
+              fwrite(STDERR, "::error::Coverage gate failed: {$pct}% < {$min}%" . PHP_EOL);
               exit(1);
           }
-          echo 'Coverage gate passed.' . PHP_EOL;
-          "
+          echo "Coverage gate passed." . PHP_EOL;
+          '
 
       - name: 📊 Upload coverage report
         if: always() && hashFiles('backend/coverage.xml') != ''

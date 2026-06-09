@@ -22,6 +22,7 @@ jobs:
   dast-zap-test:
     name: 🧪 DAST ZAP Test
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -124,6 +125,13 @@ jobs:
             -r zap-report.html \
             -I
         continue-on-error: true
+
+      # Garde-fou : si ZAP n'a pas produit de rapport, c'est que le scan n'a
+      # pas réellement balayé l'app (app morte, réseau, crash) → on échoue.
+      - name: Verify ZAP actually scanned the app
+        run: |
+          test -s "${{ github.workspace }}/zap-reports/zap-report.html" \
+            || { echo "::error::ZAP n'a produit aucun rapport — le scan DAST n'a pas eu lieu."; exit 1; }
 
       - name: Upload ZAP reports
         if: always()

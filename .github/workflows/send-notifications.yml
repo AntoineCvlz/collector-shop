@@ -23,6 +23,14 @@ on:
       result_secure_iac_dockerfile_scan:
         required: true
         type: string
+      result_phpstan:
+        required: false
+        type: string
+        default: skipped
+      result_mutation_tests:
+        required: false
+        type: string
+        default: skipped
       result_build_and_scan_docker:
         required: true
         type: string
@@ -40,6 +48,7 @@ jobs:
   send-notifications:
     name: 📬 Send Notifications
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     if: always()
     steps:
       - name: 📊 Check pipeline status
@@ -52,6 +61,8 @@ jobs:
           echo "Secret Scanning: ${{ inputs.result_secret_scanning }}"
           echo "SCA:             ${{ inputs.result_sca_dependency_scan }}"
           echo "IaC Security:    ${{ inputs.result_secure_iac_dockerfile_scan }}"
+          echo "PHPStan:         ${{ inputs.result_phpstan }}"
+          echo "Mutation Tests:  ${{ inputs.result_mutation_tests }}"
           echo "Docker Build:    ${{ inputs.result_build_and_scan_docker }}"
           echo "Docker Publish:  ${{ inputs.result_publish_docker_hub }}"
           echo "DAST ZAP:        ${{ inputs.result_dast_zap_test }}"
@@ -59,23 +70,32 @@ jobs:
 
       - name: 🎨 Determine overall status
         id: status
+        env:
+          RESULTS: >-
+            ${{ inputs.result_build_and_test }}
+            ${{ inputs.result_code_quality_sast }}
+            ${{ inputs.result_secret_scanning }}
+            ${{ inputs.result_sca_dependency_scan }}
+            ${{ inputs.result_secure_iac_dockerfile_scan }}
+            ${{ inputs.result_phpstan }}
+            ${{ inputs.result_mutation_tests }}
+            ${{ inputs.result_build_and_scan_docker }}
+            ${{ inputs.result_publish_docker_hub }}
+            ${{ inputs.result_dast_zap_test }}
         run: |
-          if [[ \
-            "${{ inputs.result_build_and_test }}" == "success" && \
-            "${{ inputs.result_code_quality_sast }}" == "success" && \
-            "${{ inputs.result_secret_scanning }}" == "success" && \
-            "${{ inputs.result_sca_dependency_scan }}" == "success" && \
-            "${{ inputs.result_secure_iac_dockerfile_scan }}" == "success" && \
-            "${{ inputs.result_build_and_scan_docker }}" == "success" && \
-            "${{ inputs.result_publish_docker_hub }}" == "success" && \
-            "${{ inputs.result_dast_zap_test }}" == "success" \
-          ]]; then
-            echo "overall=✅ SUCCESS" >> $GITHUB_OUTPUT
-            echo "color=green" >> $GITHUB_OUTPUT
-          else
-            echo "overall=❌ FAILURE" >> $GITHUB_OUTPUT
-            echo "color=red" >> $GITHUB_OUTPUT
-          fi
+          # Un job 'skipped' (ex. non lancé en PR) n'est PAS un échec.
+          # Seuls 'failure' et 'cancelled' déclenchent un statut global rouge.
+          overall="✅ SUCCESS"
+          color="green"
+          for r in $RESULTS; do
+            if [[ "$r" == "failure" || "$r" == "cancelled" ]]; then
+              overall="❌ FAILURE"
+              color="red"
+              break
+            fi
+          done
+          echo "overall=$overall" >> "$GITHUB_OUTPUT"
+          echo "color=$color" >> "$GITHUB_OUTPUT"
 
       - name: 📧 Send email notification
         uses: dawidd6/action-send-mail@v17
@@ -103,6 +123,8 @@ jobs:
               <tr><td>🔐 Secret Scanning</td><td>${{ inputs.result_secret_scanning }}</td></tr>
               <tr><td>📦 SCA</td><td>${{ inputs.result_sca_dependency_scan }}</td></tr>
               <tr><td>🏗️ IaC Security</td><td>${{ inputs.result_secure_iac_dockerfile_scan }}</td></tr>
+              <tr><td>🔍 PHPStan</td><td>${{ inputs.result_phpstan }}</td></tr>
+              <tr><td>🧬 Mutation Tests</td><td>${{ inputs.result_mutation_tests }}</td></tr>
               <tr><td>🐳 Docker Build</td><td>${{ inputs.result_build_and_scan_docker }}</td></tr>
               <tr><td>📤 Docker Publish</td><td>${{ inputs.result_publish_docker_hub }}</td></tr>
               <tr><td>🧪 DAST ZAP</td><td>${{ inputs.result_dast_zap_test }}</td></tr>

@@ -11,6 +11,7 @@ jobs:
   code-quality-sast:
     name: Security & Quality Scan
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     defaults:
       run:
@@ -57,8 +58,8 @@ jobs:
           category: semgrep
 
       # ═══════════════════════════════════════
-      # 4. COMPOSER AUDIT (Sécurité Dépendances)
+      # 4. COMPOSER AUDIT (Sécurité Dépendances) — bloquant
+      # composer audit lit composer.lock : pas besoin d'installer les vendors.
       # ═══════════════════════════════════════
       - name: 📦 Check PHP Dependencies Security
-        run: composer audit
-        continue-on-error: true
+        run: composer audit --locked

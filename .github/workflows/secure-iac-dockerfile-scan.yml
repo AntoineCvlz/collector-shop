@@ -12,6 +12,7 @@ jobs:
   secure-iac-dockerfile-scan:
     name: IaC Security - Checkov
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
       - name: 📥 Checkout code

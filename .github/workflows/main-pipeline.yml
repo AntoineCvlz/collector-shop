@@ -134,6 +134,8 @@ jobs:
       - secret-scanning
       - sca-dependency-scan
       - secure-iac-dockerfile-scan
+      - phpstan
+      - mutation-tests
       - build-and-scan-docker
       - publish-docker-hub
       - dast-zap-test
@@ -149,6 +151,8 @@ jobs:
       result_secret_scanning: ${{ needs.secret-scanning.result }}
       result_sca_dependency_scan: ${{ needs.sca-dependency-scan.result }}
       result_secure_iac_dockerfile_scan: ${{ needs.secure-iac-dockerfile-scan.result }}
+      result_phpstan: ${{ needs.phpstan.result }}
+      result_mutation_tests: ${{ needs.mutation-tests.result }}
       result_build_and_scan_docker: ${{ needs.build-and-scan-docker.result }}
       result_publish_docker_hub: ${{ needs.publish-docker-hub.result }}
       result_dast_zap_test: ${{ needs.dast-zap-test.result }}

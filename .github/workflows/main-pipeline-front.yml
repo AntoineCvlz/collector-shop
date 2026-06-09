@@ -139,6 +139,9 @@ jobs:
       - secret-scanning
       - sca-dependency-scan-front
       - secure-iac-dockerfile-scan-front
+      - codeql-front
+      - e2e-playwright-front
+      - lighthouse-ci-front
       - build-and-scan-docker-front
       - publish-docker-hub-front
       - dast-zap-test-front
@@ -154,6 +157,9 @@ jobs:
       result_secret_scanning: ${{ needs.secret-scanning.result }}
       result_sca_dependency_scan_front: ${{ needs.sca-dependency-scan-front.result }}
       result_secure_iac_dockerfile_scan_front: ${{ needs.secure-iac-dockerfile-scan-front.result }}
+      result_codeql_front: ${{ needs.codeql-front.result }}
+      result_e2e_playwright_front: ${{ needs.e2e-playwright-front.result }}
+      result_lighthouse_ci_front: ${{ needs.lighthouse-ci-front.result }}
       result_build_and_scan_docker_front: ${{ needs.build-and-scan-docker-front.result }}
       result_publish_docker_hub_front: ${{ needs.publish-docker-hub-front.result }}
       result_dast_zap_test_front: ${{ needs.dast-zap-test-front.result }}

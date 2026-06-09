@@ -8,6 +8,7 @@ jobs:
   e2e-playwright:
     name: 🎭 E2E Tests (Playwright)
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     defaults:
       run:

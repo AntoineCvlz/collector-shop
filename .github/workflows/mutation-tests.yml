@@ -8,6 +8,7 @@ jobs:
   mutation-tests:
     name: 🧬 Mutation Tests (Infection PHP)
     runs-on: ubuntu-latest
+    timeout-minutes: 45
 
     services:
       postgres:

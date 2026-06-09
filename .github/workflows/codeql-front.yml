@@ -10,6 +10,7 @@ jobs:
   codeql-front:
     name: 🔬 CodeQL Analysis (TypeScript)
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     defaults:
       run:

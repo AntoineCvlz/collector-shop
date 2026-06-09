@@ -12,6 +12,7 @@ jobs:
   sca-dependency-scan-front:
     name: SCA Frontend - Dependency Security
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     defaults:
       run:
@@ -31,31 +32,35 @@ jobs:
       - name: 📦 Install dependencies
         run: npm ci
 
-      - name: 🔐 NPM Audit
+      - name: 🔐 NPM Audit — bloquant sur HIGH/CRITICAL
         run: npm audit --audit-level=high
-        continue-on-error: true
 
-      - name: 📥 Install Trivy CLI
-        run: |
-          sudo apt-get install -y wget apt-transport-https gnupg
-          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
-          echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb generic main" | sudo tee /etc/apt/sources.list.d/trivy.list
-          sudo apt-get update
-          sudo apt-get install -y trivy
-
-      - name: 🔍 Run Trivy SCA (Filesystem)
-        run: |
-          trivy fs . \
-            --format sarif \
-            --output trivy-front-results.sarif \
-            --severity CRITICAL,HIGH,MEDIUM \
-            --ignore-unfixed \
-            --exit-code 0
+      # Run 1 : rapport complet → onglet Security, non bloquant
+      - name: 🔍 Trivy SCA — rapport SARIF
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: fs
+          scan-ref: frontend
+          format: sarif
+          output: trivy-front-results.sarif
+          severity: CRITICAL,HIGH,MEDIUM
+          ignore-unfixed: true
+          exit-code: "0"
 
       - name: 📤 Upload Trivy SARIF
         uses: github/codeql-action/upload-sarif@v4
-        if: always()
-        continue-on-error: true
+        if: always() && hashFiles('trivy-front-results.sarif') != ''
         with:
-          sarif_file: frontend/trivy-front-results.sarif
+          sarif_file: trivy-front-results.sarif
           category: trivy-frontend-sca
+
+      # Run 2 : gate bloquant sur CRITICAL/HIGH corrigeables
+      - name: 🚦 Trivy SCA — gate (CRITICAL/HIGH bloquant)
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: fs
+          scan-ref: frontend
+          format: table
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: "1"

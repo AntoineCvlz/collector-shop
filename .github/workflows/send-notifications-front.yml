@@ -23,6 +23,18 @@ on:
       result_secure_iac_dockerfile_scan_front:
         required: true
         type: string
+      result_codeql_front:
+        required: false
+        type: string
+        default: skipped
+      result_e2e_playwright_front:
+        required: false
+        type: string
+        default: skipped
+      result_lighthouse_ci_front:
+        required: false
+        type: string
+        default: skipped
       result_build_and_scan_docker_front:
         required: true
         type: string
@@ -40,6 +52,7 @@ jobs:
   send-notifications-front:
     name: 📬 Send Frontend Notifications
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     if: always()
     steps:
       - name: 📊 Check pipeline status
@@ -52,6 +65,9 @@ jobs:
           echo "Secret Scanning: ${{ inputs.result_secret_scanning }}"
           echo "SCA:             ${{ inputs.result_sca_dependency_scan_front }}"
           echo "IaC Security:    ${{ inputs.result_secure_iac_dockerfile_scan_front }}"
+          echo "CodeQL:          ${{ inputs.result_codeql_front }}"
+          echo "E2E Playwright:  ${{ inputs.result_e2e_playwright_front }}"
+          echo "Lighthouse CI:   ${{ inputs.result_lighthouse_ci_front }}"
           echo "Docker Build:    ${{ inputs.result_build_and_scan_docker_front }}"
           echo "Docker Publish:  ${{ inputs.result_publish_docker_hub_front }}"
           echo "DAST ZAP:        ${{ inputs.result_dast_zap_test_front }}"
@@ -59,23 +75,33 @@ jobs:
 
       - name: 🎨 Determine overall status
         id: status
+        env:
+          RESULTS: >-
+            ${{ inputs.result_build_and_test_front }}
+            ${{ inputs.result_code_quality_sast_front }}
+            ${{ inputs.result_secret_scanning }}
+            ${{ inputs.result_sca_dependency_scan_front }}
+            ${{ inputs.result_secure_iac_dockerfile_scan_front }}
+            ${{ inputs.result_codeql_front }}
+            ${{ inputs.result_e2e_playwright_front }}
+            ${{ inputs.result_lighthouse_ci_front }}
+            ${{ inputs.result_build_and_scan_docker_front }}
+            ${{ inputs.result_publish_docker_hub_front }}
+            ${{ inputs.result_dast_zap_test_front }}
         run: |
-          if [[ \
-            "${{ inputs.result_build_and_test_front }}" == "success" && \
-            "${{ inputs.result_code_quality_sast_front }}" == "success" && \
-            "${{ inputs.result_secret_scanning }}" == "success" && \
-            "${{ inputs.result_sca_dependency_scan_front }}" == "success" && \
-            "${{ inputs.result_secure_iac_dockerfile_scan_front }}" == "success" && \
-            "${{ inputs.result_build_and_scan_docker_front }}" == "success" && \
-            "${{ inputs.result_publish_docker_hub_front }}" == "success" && \
-            "${{ inputs.result_dast_zap_test_front }}" == "success" \
-          ]]; then
-            echo "overall=✅ SUCCESS" >> $GITHUB_OUTPUT
-            echo "color=green" >> $GITHUB_OUTPUT
-          else
-            echo "overall=❌ FAILURE" >> $GITHUB_OUTPUT
-            echo "color=red" >> $GITHUB_OUTPUT
-          fi
+          # Un job 'skipped' n'est PAS un échec.
+          # Seuls 'failure' et 'cancelled' déclenchent un statut global rouge.
+          overall="✅ SUCCESS"
+          color="green"
+          for r in $RESULTS; do
+            if [[ "$r" == "failure" || "$r" == "cancelled" ]]; then
+              overall="❌ FAILURE"
+              color="red"
+              break
+            fi
+          done
+          echo "overall=$overall" >> "$GITHUB_OUTPUT"
+          echo "color=$color" >> "$GITHUB_OUTPUT"
 
       - name: 📧 Send email notification
         uses: dawidd6/action-send-mail@v17
@@ -103,6 +129,9 @@ jobs:
               <tr><td>🔐 Secret Scanning</td><td>${{ inputs.result_secret_scanning }}</td></tr>
               <tr><td>📦 SCA</td><td>${{ inputs.result_sca_dependency_scan_front }}</td></tr>
               <tr><td>🏗️ IaC Security</td><td>${{ inputs.result_secure_iac_dockerfile_scan_front }}</td></tr>
+              <tr><td>🔬 CodeQL</td><td>${{ inputs.result_codeql_front }}</td></tr>
+              <tr><td>🎭 E2E Playwright</td><td>${{ inputs.result_e2e_playwright_front }}</td></tr>
+              <tr><td>🔦 Lighthouse CI</td><td>${{ inputs.result_lighthouse_ci_front }}</td></tr>
               <tr><td>🐳 Docker Build</td><td>${{ inputs.result_build_and_scan_docker_front }}</td></tr>
               <tr><td>📤 Docker Publish</td><td>${{ inputs.result_publish_docker_hub_front }}</td></tr>
               <tr><td>🧪 DAST ZAP</td><td>${{ inputs.result_dast_zap_test_front }}</td></tr>

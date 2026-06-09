@@ -1,0 +1,8 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+
+parameters:
+    paths:
+        - app
+    # Niveau à monter progressivement (max: 9). Cible recommandée : 6+.
+    level: 5

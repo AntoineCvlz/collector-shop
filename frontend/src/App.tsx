@@ -1,18 +1,22 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Button } from "./components/ui/button";
-import { Spinner } from "./components/ui/spinner";
-import Hello from "./components/Hello";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+
+import Home from "./pages/Home";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
 
 const queryClient = new QueryClient();
 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <div className="flex min-h-svh flex-col items-center justify-center">
-        <Button>Click me</Button>
-        <Spinner />
-        <Hello />
-      </div>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+        </Routes>
+      </BrowserRouter>
     </QueryClientProvider>
   );
 }

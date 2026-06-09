@@ -48,6 +48,7 @@ services:
   frontend:
     build:
       context: ../frontend
+      target: dev          # stage Vite hot-reload (cf. frontend/Dockerfile)
     container_name: app_frontend
     ports:
       - "3000:3000"

@@ -1,3 +1,18 @@
+# ── Stage 0 : Dev (Vite hot-reload) ───────────────────────────────
+# Utilisé en local par docker-compose (cible "dev"). Non utilisé par la CI,
+# qui build l'image complète et prend le dernier stage (prod nginx).
+FROM node:20-alpine AS dev
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm ci
+
+COPY . .
+
+EXPOSE 3000
+CMD ["npm", "run", "dev", "--", "--host"]
+
 # ── Stage 1 : Build Vite ──────────────────────────────────────────
 FROM node:20-alpine AS builder
 

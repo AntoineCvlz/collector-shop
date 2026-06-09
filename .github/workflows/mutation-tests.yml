@@ -12,7 +12,7 @@ jobs:
 
     services:
       postgres:
-        image: postgres:16-alpine
+        image: postgres:18-alpine
         env:
           POSTGRES_DB: laravel_test
           POSTGRES_USER: laravel
@@ -64,6 +64,10 @@ jobs:
           DB_DATABASE: laravel_test
           DB_USERNAME: laravel
           DB_PASSWORD: secret
+
+      # Clés Passport requises par les tests d'auth (personal access client).
+      - name: 🔑 Generate Passport keys
+        run: php artisan passport:keys --force --no-interaction
 
       - name: 🔧 Install Infection PHP
         run: composer require --dev infection/infection --no-interaction --quiet

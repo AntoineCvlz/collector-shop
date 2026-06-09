@@ -12,7 +12,7 @@ jobs:
 
     services:
       postgres:
-        image: postgres:16-alpine
+        image: postgres:18-alpine
         env:
           POSTGRES_DB: laravel_test
           POSTGRES_USER: laravel
@@ -85,6 +85,11 @@ jobs:
           DB_USERNAME: laravel
           DB_PASSWORD: secret
 
+      # Clés Passport requises : les tests d'auth créent un personal access
+      # client (passport:client --personal) qui chiffre avec ces clés.
+      - name: 🔑 Generate Passport keys
+        run: php artisan passport:keys --force --no-interaction
+
       - name: 🧪 Run tests
         run: php artisan test --coverage-clover coverage.xml
         env:
@@ -100,7 +105,7 @@ jobs:
       # À monter par paliers au fur et à mesure que les tests réels arrivent.
       - name: 🚦 Coverage gate
         env:
-          COVERAGE_MIN: ${{ vars.COVERAGE_MIN || '1' }}
+          COVERAGE_MIN: ${{ vars.COVERAGE_MIN || '50' }}
         run: |
           php -r '
           $min = (float) getenv("COVERAGE_MIN");

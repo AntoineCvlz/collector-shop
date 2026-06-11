@@ -247,8 +247,8 @@ test('login returns 500 when an unexpected error occurs', function () {
 test('user info returns 500 when the query fails', function () {
     Passport::actingAs(User::factory()->create(), ['*'], 'api');
 
-    // La table n'existe plus → User::latest()->paginate() lève une QueryException.
-    Schema::drop('users');
+    // CASCADE requis : role_user a une FK sur users depuis l'ajout du système de rôles.
+    \Illuminate\Support\Facades\DB::statement('DROP TABLE users CASCADE');
 
     $this->getJson(route('get-user'))
         ->assertStatus(500)

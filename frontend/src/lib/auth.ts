@@ -1,4 +1,4 @@
-import type { UserInfo } from "../services/auth.service";
+import type { Role, UserInfo } from "../services/auth.service";
 
 const TOKEN_KEY = "auth_token";
 const USER_KEY = "auth_user";
@@ -31,4 +31,16 @@ export function getUser(): UserInfo | null {
 
 export function isAuthenticated(): boolean {
   return getToken() !== null;
+}
+
+export function hasRole(role: Role, user: UserInfo | null = getUser()): boolean {
+  return user?.roles?.includes(role) ?? false;
+}
+
+export function isAdmin(user: UserInfo | null = getUser()): boolean {
+  return hasRole("admin", user);
+}
+
+export function isSeller(user: UserInfo | null = getUser()): boolean {
+  return hasRole("seller", user);
 }

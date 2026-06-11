@@ -4,14 +4,13 @@ test.describe("Écran de connexion", () => {
   test("affiche le formulaire de connexion", async ({ page }) => {
     await page.goto("/login");
 
+    const form = page.getByRole("form", { name: "Sign in form" });
     await expect(
-      page.getByRole("heading", { name: "Connexion" }),
+      page.getByRole("heading", { name: "Welcome back" }),
     ).toBeVisible();
-    await expect(page.getByLabel("Email")).toBeVisible();
-    await expect(page.getByLabel("Mot de passe")).toBeVisible();
-    await expect(
-      page.getByRole("button", { name: "Se connecter" }),
-    ).toBeVisible();
+    await expect(form.getByLabel("Email")).toBeVisible();
+    await expect(form.getByLabel("Password", { exact: true })).toBeVisible();
+    await expect(form.getByRole("button", { name: "Log in" })).toBeVisible();
   });
 
   test("affiche une erreur avec des identifiants invalides", async ({
@@ -29,9 +28,10 @@ test.describe("Écran de connexion", () => {
 
     await page.goto("/login");
 
-    await page.getByLabel("Email").fill("inconnu@example.com");
-    await page.getByLabel("Mot de passe").fill("wrongpassword");
-    await page.getByRole("button", { name: "Se connecter" }).click();
+    const form = page.getByRole("form", { name: "Sign in form" });
+    await form.getByLabel("Email").fill("inconnu@example.com");
+    await form.getByLabel("Password", { exact: true }).fill("wrongpassword");
+    await form.getByRole("button", { name: "Log in" }).click();
 
     await expect(page.getByRole("alert")).toBeVisible();
   });
@@ -39,7 +39,8 @@ test.describe("Écran de connexion", () => {
   test("redirige vers la connexion depuis l'accueil", async ({ page }) => {
     await page.goto("/");
 
-    await page.getByRole("button", { name: "Se connecter" }).click();
+    // Le header (utilisateur non connecté) expose un lien "Log in".
+    await page.getByRole("link", { name: "Log in" }).click();
 
     await expect(page).toHaveURL(/\/login$/);
   });

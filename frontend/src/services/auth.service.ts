@@ -1,9 +1,12 @@
 import { apiFetch } from "../api/client";
 
+export type Role = "buyer" | "seller" | "admin";
+
 export interface UserInfo {
   id: number;
   name: string;
   email: string;
+  roles: Role[];
 }
 
 export interface LoginResponse {
@@ -18,6 +21,14 @@ export interface RegisterResponse {
   response_code: number;
   status: string;
   message: string;
+  user_info: UserInfo;
+}
+
+export interface MeResponse {
+  response_code: number;
+  status: string;
+  message: string;
+  user_info: UserInfo;
 }
 
 export interface LoginPayload {
@@ -29,6 +40,12 @@ export interface RegisterPayload {
   name: string;
   email: string;
   password: string;
+}
+
+export interface UpdateProfilePayload {
+  name?: string;
+  email?: string;
+  password?: string;
 }
 
 export const login = async (payload: LoginPayload): Promise<LoginResponse> => {
@@ -43,6 +60,24 @@ export const register = async (
 ): Promise<RegisterResponse> => {
   return apiFetch<RegisterResponse>("/api/register", {
     method: "POST",
+    body: JSON.stringify(payload),
+  });
+};
+
+export const getMe = async (token: string): Promise<MeResponse> => {
+  return apiFetch<MeResponse>("/api/me", {
+    method: "GET",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+};
+
+export const updateProfile = async (
+  token: string,
+  payload: UpdateProfilePayload,
+): Promise<MeResponse> => {
+  return apiFetch<MeResponse>("/api/profile", {
+    method: "PUT",
+    headers: { Authorization: `Bearer ${token}` },
     body: JSON.stringify(payload),
   });
 };

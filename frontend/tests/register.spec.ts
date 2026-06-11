@@ -4,23 +4,32 @@ test.describe("Écran d'inscription", () => {
   test("affiche le formulaire d'inscription", async ({ page }) => {
     await page.goto("/register");
 
+    const form = page.getByRole("form", { name: "Create account form" });
     await expect(
-      page.getByRole("heading", { name: "Créer un compte" }),
+      page.getByRole("heading", { name: "Join Collector.shop" }),
     ).toBeVisible();
-    await expect(page.getByLabel("Nom")).toBeVisible();
-    await expect(page.getByLabel("Email")).toBeVisible();
-    await expect(page.getByLabel("Mot de passe")).toBeVisible();
+    await expect(form.getByLabel("Full name")).toBeVisible();
+    await expect(form.getByLabel("Email")).toBeVisible();
+    await expect(form.getByLabel("Password", { exact: true })).toBeVisible();
     await expect(
-      page.getByRole("button", { name: "Créer mon compte" }),
+      form.getByRole("button", { name: "Create my account" }),
     ).toBeVisible();
   });
 
   test("navigue entre connexion et inscription", async ({ page }) => {
     await page.goto("/login");
-    await page.getByRole("link", { name: "Créer un compte" }).click();
+    // Lien interne au formulaire de connexion vers l'inscription.
+    await page
+      .getByRole("form", { name: "Sign in form" })
+      .getByRole("link", { name: "Sign up" })
+      .click();
     await expect(page).toHaveURL(/\/register$/);
 
-    await page.getByRole("link", { name: "Se connecter" }).click();
+    // Lien interne au formulaire d'inscription vers la connexion.
+    await page
+      .getByRole("form", { name: "Create account form" })
+      .getByRole("link", { name: "Log in" })
+      .click();
     await expect(page).toHaveURL(/\/login$/);
   });
 
@@ -36,10 +45,11 @@ test.describe("Écran d'inscription", () => {
 
     await page.goto("/register");
 
-    await page.getByLabel("Nom").fill("Jean Dupont");
-    await page.getByLabel("Email").fill("jean@example.com");
-    await page.getByLabel("Mot de passe").fill("password123");
-    await page.getByRole("button", { name: "Créer mon compte" }).click();
+    const form = page.getByRole("form", { name: "Create account form" });
+    await form.getByLabel("Full name").fill("Jean Dupont");
+    await form.getByLabel("Email").fill("jean@example.com");
+    await form.getByLabel("Password", { exact: true }).fill("password123");
+    await form.getByRole("button", { name: "Create my account" }).click();
 
     await expect(page.getByRole("alert")).toBeVisible();
   });

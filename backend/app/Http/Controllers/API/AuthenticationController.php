@@ -3,9 +3,12 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\LoginRequest;
+use App\Http\Requests\RegisterRequest;
+use App\Http\Requests\UpdateProfileRequest;
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
@@ -13,27 +16,27 @@ use Illuminate\Support\Facades\Log;
 class AuthenticationController extends Controller
 {
     /**
-     * Register a new account.
+     * Register a new account. Every new account is a buyer by default;
+     * the seller role is granted later (see Feature 2).
      */
-    public function register(Request $request): JsonResponse
+    public function register(RegisterRequest $request): JsonResponse
     {
-        $request->validate([
-            'name' => 'required|string|min:4',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8',
-        ]);
-
         try {
             $user = new User;
-            $user->name = (string) $request->string('name');
-            $user->email = (string) $request->string('email');
-            $user->password = Hash::make((string) $request->string('password'));
+            $user->name = $request->string('name')->value();
+            $user->email = $request->string('email')->value();
+            $user->password = Hash::make($request->string('password')->value());
             $user->save();
+
+            // Ensure the default role exists even if the seeder has not run.
+            Role::firstOrCreate(['name' => Role::DEFAULT]);
+            $user->assignRole(Role::DEFAULT);
 
             return response()->json([
                 'response_code' => 201,
                 'status' => 'success',
                 'message' => 'Successfully registered',
+                'user_info' => $this->userPayload($user),
             ], 201);
 
         } catch (\Exception $e) {
@@ -50,13 +53,8 @@ class AuthenticationController extends Controller
     /**
      * Login request.
      */
-    public function login(Request $request): JsonResponse
+    public function login(LoginRequest $request): JsonResponse
     {
-        $request->validate([
-            'email' => 'required|email',
-            'password' => 'required|string',
-        ]);
-
         try {
             $user = Auth::attempt(['email' => $request->email, 'password' => $request->password])
                 ? Auth::user()
@@ -69,11 +67,7 @@ class AuthenticationController extends Controller
                     'response_code' => 200,
                     'status' => 'success',
                     'message' => 'Login successful',
-                    'user_info' => [
-                        'id' => $user->id,
-                        'name' => $user->name,
-                        'email' => $user->email,
-                    ],
+                    'user_info' => $this->userPayload($user),
                     'token' => $accessToken,
                 ]);
             }
@@ -96,12 +90,83 @@ class AuthenticationController extends Controller
     }
 
     /**
-     * Get paginated user list (authenticated).
+     * Return the currently authenticated user and their roles.
      */
-    public function userInfo(): JsonResponse
+    public function me(): JsonResponse
     {
         try {
-            $users = User::latest()->paginate(10);
+            $user = Auth::user();
+
+            if (! $user instanceof User) {
+                return response()->json([
+                    'response_code' => 401,
+                    'status' => 'error',
+                    'message' => 'User not authenticated',
+                ], 401);
+            }
+
+            return response()->json([
+                'response_code' => 200,
+                'status' => 'success',
+                'message' => 'Fetched current user successfully',
+                'user_info' => $this->userPayload($user),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Current User Error: '.$e->getMessage());
+
+            return response()->json([
+                'response_code' => 500,
+                'status' => 'error',
+                'message' => 'Failed to fetch current user',
+            ], 500);
+        }
+    }
+
+    /**
+     * Update the authenticated user's own profile.
+     */
+    public function updateProfile(UpdateProfileRequest $request): JsonResponse
+    {
+        try {
+            /** @var User $user */
+            $user = $request->user();
+
+            if ($request->has('name')) {
+                $user->name = $request->string('name')->value();
+            }
+            if ($request->has('email')) {
+                $user->email = $request->string('email')->value();
+            }
+            if ($request->has('password')) {
+                $user->password = Hash::make($request->string('password')->value());
+            }
+
+            $user->save();
+
+            return response()->json([
+                'response_code' => 200,
+                'status' => 'success',
+                'message' => 'Profile updated successfully',
+                'user_info' => $this->userPayload($user->fresh() ?? $user),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Profile Update Error: '.$e->getMessage());
+
+            return response()->json([
+                'response_code' => 500,
+                'status' => 'error',
+                'message' => 'Failed to update profile',
+            ], 500);
+        }
+    }
+
+    /**
+     * Paginated list of all users (admin only).
+     */
+    public function usersList(): JsonResponse
+    {
+        try {
+            $users = User::with('roles')->latest()->paginate(10);
 
             return response()->json([
                 'response_code' => 200,
@@ -123,7 +188,7 @@ class AuthenticationController extends Controller
     /**
      * Logout the user and revoke token.
      */
-    public function logOut(Request $request): JsonResponse
+    public function logOut(): JsonResponse
     {
         try {
             $user = Auth::user();
@@ -152,5 +217,20 @@ class AuthenticationController extends Controller
                 'message' => 'An error occurred during logout',
             ], 500);
         }
+    }
+
+    /**
+     * Public-safe representation of a user.
+     *
+     * @return array{id: int, name: string, email: string, roles: list<string>}
+     */
+    private function userPayload(User $user): array
+    {
+        return [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'roles' => $user->roleNames(),
+        ];
     }
 }

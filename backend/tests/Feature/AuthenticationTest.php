@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -38,6 +39,21 @@ test('register creates a new user and returns 201', function () {
         'name' => 'John Doe',
         'email' => 'john@example.com',
     ]);
+});
+
+test('register assigns the buyer role by default', function () {
+    $this->postJson(route('register'), [
+        'name' => 'John Doe',
+        'email' => 'john@example.com',
+        'password' => 'password123',
+    ])->assertStatus(201)
+        ->assertJsonPath('user_info.roles', [\App\Models\Role::BUYER]);
+
+    $user = User::where('email', 'john@example.com')->first();
+
+    expect($user)->not->toBeNull();
+    expect($user->hasRole(\App\Models\Role::BUYER))->toBeTrue();
+    expect($user->hasRole(\App\Models\Role::SELLER))->toBeFalse();
 });
 
 test('register hashes the password', function () {
@@ -120,7 +136,7 @@ test('login succeeds with valid credentials and returns a token', function () {
             'message' => 'Login successful',
         ])
         ->assertJsonStructure([
-            'user_info' => ['id', 'name', 'email'],
+            'user_info' => ['id', 'name', 'email', 'roles'],
             'token',
         ]);
 });
@@ -156,28 +172,40 @@ test('login fails validation with missing fields', function () {
 });
 
 // ─────────────────────────────────────────────
-// USER INFO (route protégée)
+// ME (route protégée — utilisateur courant)
 // ─────────────────────────────────────────────
 
-test('user info returns the paginated user list when authenticated', function () {
-    User::factory()->count(3)->create();
-    Passport::actingAs(User::factory()->create(), ['*'], 'api');
+test('me returns the authenticated user and their roles', function () {
+    Role::create(['name' => Role::BUYER]);
+    $user = User::factory()->create();
+    $user->assignRole(Role::BUYER);
+    Passport::actingAs($user, ['*'], 'api');
 
-    $response = $this->getJson(route('get-user'));
-
-    $response->assertStatus(200)
+    $this->getJson(route('me'))
+        ->assertStatus(200)
         ->assertJson([
             'response_code' => 200,
             'status' => 'success',
-            'message' => 'Fetched user list successfully',
+            'message' => 'Fetched current user successfully',
         ])
-        ->assertJsonStructure([
-            'data_user_list' => ['data', 'current_page', 'total'],
-        ]);
+        ->assertJsonPath('user_info.id', $user->id)
+        ->assertJsonPath('user_info.email', $user->email)
+        ->assertJsonPath('user_info.roles', [Role::BUYER]);
 });
 
-test('user info is rejected when not authenticated', function () {
-    $this->getJson(route('get-user'))->assertStatus(401);
+test('me does not leak other users', function () {
+    User::factory()->count(3)->create();
+    $user = User::factory()->create();
+    Passport::actingAs($user, ['*'], 'api');
+
+    $this->getJson(route('me'))
+        ->assertStatus(200)
+        ->assertJsonMissingPath('data_user_list')
+        ->assertJsonPath('user_info.id', $user->id);
+});
+
+test('me is rejected when not authenticated', function () {
+    $this->getJson(route('me'))->assertStatus(401);
 });
 
 // ─────────────────────────────────────────────
@@ -244,18 +272,20 @@ test('login returns 500 when an unexpected error occurs', function () {
         ]);
 });
 
-test('user info returns 500 when the query fails', function () {
+test('me returns 500 when the query fails', function () {
     Passport::actingAs(User::factory()->create(), ['*'], 'api');
 
-    // CASCADE requis : role_user a une FK sur users depuis l'ajout du système de rôles.
-    \Illuminate\Support\Facades\DB::statement('DROP TABLE users CASCADE');
+    // roleNames() interroge la table roles via la relation : sans elle, la
+    // requête lève une QueryException → bloc catch (500).
+    Schema::drop('role_user');
+    Schema::drop('roles');
 
-    $this->getJson(route('get-user'))
+    $this->getJson(route('me'))
         ->assertStatus(500)
         ->assertJson([
             'response_code' => 500,
             'status' => 'error',
-            'message' => 'Failed to fetch user list',
+            'message' => 'Failed to fetch current user',
         ]);
 });
 

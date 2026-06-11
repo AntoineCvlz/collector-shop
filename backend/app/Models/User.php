@@ -48,6 +48,9 @@ class User extends Authenticatable
         ];
     }
 
+    /**
+     * @return BelongsToMany<Role, $this>
+     */
     public function roles(): BelongsToMany
     {
         return $this->belongsToMany(Role::class);
@@ -62,5 +65,18 @@ class User extends Authenticatable
     {
         $roleModel = Role::where('name', $role)->firstOrFail();
         $this->roles()->syncWithoutDetaching($roleModel);
+    }
+
+    /**
+     * Flat list of the user's role names, e.g. ['buyer', 'seller'].
+     *
+     * @return list<string>
+     */
+    public function roleNames(): array
+    {
+        /** @var list<string> $names */
+        $names = $this->roles()->pluck('name')->all();
+
+        return $names;
     }
 }

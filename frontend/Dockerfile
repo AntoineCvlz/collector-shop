@@ -27,8 +27,9 @@ RUN npm run build
 # ── Stage 2 : Serve avec Nginx ────────────────────────────────────
 FROM nginx:alpine
 
-# Refresh Alpine packages to pull latest security fixes in base image layers.
-RUN apk update && apk upgrade --no-cache libpng zlib libxml2 && rm -rf /var/cache/apk/*
+# Refresh Alpine packages to pull latest security fixes in base image layers
+# (includes openssl/libcrypto3/libssl3, otherwise flagged HIGH by Trivy).
+RUN apk update && apk upgrade --no-cache && rm -rf /var/cache/apk/*
 
 COPY --from=builder /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf

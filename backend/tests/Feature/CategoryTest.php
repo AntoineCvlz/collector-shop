@@ -149,3 +149,46 @@ test('a guest cannot delete a category', function () {
     $this->deleteJson(route('categories.destroy', $category))
         ->assertStatus(401);
 });
+
+// ─────────────────────────────────────────────
+// ERROR HANDLING (catch blocks → 500)
+// ─────────────────────────────────────────────
+
+test('store returns 500 when persistence fails', function () {
+    actingAsRole(Role::ADMIN);
+
+    // Force the write to fail after validation passes.
+    Category::saving(function () {
+        throw new \RuntimeException('boom');
+    });
+
+    $this->postJson(route('categories.store'), ['name' => 'Boom Category'])
+        ->assertStatus(500)
+        ->assertJson(['response_code' => 500, 'status' => 'error']);
+});
+
+test('update returns 500 when persistence fails', function () {
+    $category = Category::factory()->create(['name' => 'Edit Me', 'slug' => 'edit-me']);
+    actingAsRole(Role::ADMIN);
+
+    Category::saving(function () {
+        throw new \RuntimeException('boom');
+    });
+
+    $this->putJson(route('categories.update', $category), ['name' => 'New Name'])
+        ->assertStatus(500)
+        ->assertJson(['response_code' => 500, 'status' => 'error']);
+});
+
+test('destroy returns 500 when deletion fails', function () {
+    $category = Category::factory()->create();
+    actingAsRole(Role::ADMIN);
+
+    Category::deleting(function () {
+        throw new \RuntimeException('boom');
+    });
+
+    $this->deleteJson(route('categories.destroy', $category))
+        ->assertStatus(500)
+        ->assertJson(['response_code' => 500, 'status' => 'error']);
+});

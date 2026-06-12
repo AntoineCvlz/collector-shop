@@ -48,7 +48,9 @@ class ArticleController extends Controller
      */
     public function show(Article $article): JsonResponse
     {
-        if (! $article->isPublished()) {
+        $article->loadMissing('seller');
+
+        if (! $article->isPublished() || $article->seller?->isBanned()) {
             return response()->json([
                 'response_code' => 404,
                 'status' => 'error',

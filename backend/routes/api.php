@@ -51,6 +51,11 @@ Route::group(['namespace' => 'App\Http\Controllers\API'], function () {
             Route::get('moderation/articles', 'ArticleController@pending')->name('articles.pending');
             Route::patch('articles/{article}/approve', 'ArticleController@approve')->name('articles.approve')->whereNumber('article');
             Route::patch('articles/{article}/reject', 'ArticleController@reject')->name('articles.reject')->whereNumber('article');
+            Route::delete('moderation/articles/{article}', 'AdminController@destroyArticle')->name('articles.moderate.destroy')->whereNumber('article');
+
+            Route::get('moderation/sellers', 'AdminController@sellers')->name('sellers.index');
+            Route::patch('sellers/{user}/ban', 'AdminController@ban')->name('sellers.ban')->whereNumber('user');
+            Route::patch('sellers/{user}/unban', 'AdminController@unban')->name('sellers.unban')->whereNumber('user');
         });
     });
 });

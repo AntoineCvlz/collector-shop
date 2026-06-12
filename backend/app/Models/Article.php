@@ -78,7 +78,8 @@ class Article extends Model
      */
     public function scopePublished(Builder $query): void
     {
-        $query->where('status', self::STATUS_PUBLISHED);
+        $query->where('status', self::STATUS_PUBLISHED)
+            ->whereHas('seller', fn (Builder $seller) => $seller->whereNull('banned_at'));
     }
 
     public function isPublished(): bool

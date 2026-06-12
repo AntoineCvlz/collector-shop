@@ -32,6 +32,11 @@ Route::group(['namespace' => 'App\Http\Controllers\API'], function () {
         Route::post('articles', 'ArticleController@store')->name('articles.store')->middleware('role:seller');
         Route::put('articles/{article}', 'ArticleController@update')->name('articles.update')->whereNumber('article');
         Route::delete('articles/{article}', 'ArticleController@destroy')->name('articles.destroy')->whereNumber('article');
+        Route::get('my/sales', 'OrderController@mySales')->name('orders.sales')->middleware('role:seller');
+
+        // ---------------------- Buyer -------------------//
+        Route::post('articles/{article}/checkout', 'OrderController@checkout')->name('orders.checkout')->whereNumber('article')->middleware('role:buyer');
+        Route::get('my/orders', 'OrderController@myOrders')->name('orders.mine');
 
         // ---------------- Admin / Moderation ------------//
         Route::middleware('role:admin')->group(function () {

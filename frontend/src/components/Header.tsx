@@ -155,7 +155,7 @@ export default function Header() {
               </div>
 
               <Button asChild className="rounded-full font-semibold">
-                <Link to="/profile">Sell now</Link>
+                <Link to="/sell">Sell now</Link>
               </Button>
             </>
           ) : (

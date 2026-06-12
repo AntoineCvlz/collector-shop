@@ -1,6 +1,6 @@
 import { apiFetch } from "../api/client";
 
-export type Role = "buyer" | "seller" | "admin";
+export type Role = "buyer" | "seller" | "admin" | "moderator";
 
 export interface UserInfo {
   id: number;

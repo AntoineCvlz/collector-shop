@@ -61,6 +61,14 @@ class AuthenticationController extends Controller
                 : null;
 
             if ($user instanceof User) {
+                if ($user->isBanned()) {
+                    return response()->json([
+                        'response_code' => 403,
+                        'status' => 'error',
+                        'message' => 'This account has been banned',
+                    ], 403);
+                }
+
                 $accessToken = $user->createToken('authToken')->accessToken;
 
                 return response()->json([

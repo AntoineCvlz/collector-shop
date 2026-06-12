@@ -2,17 +2,20 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   ChevronDown,
+  GavelIcon,
   Heart,
   LayoutGrid,
   LogOut,
   Search,
   Shield,
   User,
+  Users,
 } from "lucide-react";
 
 import Logo from "./Logo";
 import { Button } from "./ui/button";
 import {
+  canModerate,
   clearSession,
   getToken,
   getUser,
@@ -131,6 +134,26 @@ export default function Header() {
                           navigate("/profile");
                         }}
                       />
+                      {canModerate(user) && (
+                        <MenuItem
+                          icon={GavelIcon}
+                          label="Moderation"
+                          onClick={() => {
+                            setOpen(false);
+                            navigate("/admin/moderation");
+                          }}
+                        />
+                      )}
+                      {canModerate(user) && (
+                        <MenuItem
+                          icon={Users}
+                          label="Sellers"
+                          onClick={() => {
+                            setOpen(false);
+                            navigate("/admin/sellers");
+                          }}
+                        />
+                      )}
                       {isAdmin(user) && (
                         <MenuItem
                           icon={Shield}

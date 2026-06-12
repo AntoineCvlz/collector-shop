@@ -20,6 +20,9 @@ Route::group(['namespace' => 'App\Http\Controllers\API'], function () {
     Route::get('articles', 'ArticleController@index')->name('articles.index');
     Route::get('articles/{article}', 'ArticleController@show')->name('articles.show')->whereNumber('article');
 
+    // Public reviews received by a user (e.g. seller reputation).
+    Route::get('users/{user}/reviews', 'ReviewController@forUser')->name('reviews.user')->whereNumber('user');
+
     // ------------------ Authenticated -------------------//
     Route::middleware('auth:api')->group(function () {
         // Current user profile (own data only).
@@ -37,6 +40,9 @@ Route::group(['namespace' => 'App\Http\Controllers\API'], function () {
         // ---------------------- Buyer -------------------//
         Route::post('articles/{article}/checkout', 'OrderController@checkout')->name('orders.checkout')->whereNumber('article')->middleware('role:buyer');
         Route::get('my/orders', 'OrderController@myOrders')->name('orders.mine');
+
+        // Reviews — leave a review on a transaction you took part in.
+        Route::post('orders/{order}/review', 'ReviewController@store')->name('reviews.store')->whereNumber('order');
 
         // Interests & recommendations (buyer).
         Route::get('me/interests', 'FavoriteController@interests')->name('interests.index')->middleware('role:buyer');

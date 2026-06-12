@@ -128,10 +128,10 @@ export default function Header() {
                       />
                       <MenuItem
                         icon={LayoutGrid}
-                        label="My items"
+                        label="My orders"
                         onClick={() => {
                           setOpen(false);
-                          navigate("/profile");
+                          navigate("/orders");
                         }}
                       />
                       {canModerate(user) && (

@@ -2,10 +2,12 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 import AdminCategories from "./pages/AdminCategories";
+import ArticleDetail from "./pages/ArticleDetail";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Profile from "./pages/Profile";
 import Register from "./pages/Register";
+import SellArticle from "./pages/SellArticle";
 
 const queryClient = new QueryClient();
 
@@ -15,6 +17,8 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/articles/:id" element={<ArticleDetail />} />
+          <Route path="/sell" element={<SellArticle />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/profile" element={<Profile />} />

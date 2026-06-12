@@ -1,61 +1,32 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { ShieldCheck, Sparkles, Tag } from "lucide-react";
+import { PackageOpen, ShieldCheck, Sparkles, Tag } from "lucide-react";
 
+import ArticleCard from "../components/ArticleCard";
 import Footer from "../components/Footer";
 import Header from "../components/Header";
-import ProductCard, { type Product } from "../components/ProductCard";
 import { Button } from "../components/ui/button";
 import { cn } from "../lib/utils";
 import { isAuthenticated } from "../lib/auth";
-
-const CATEGORIES = [
-  "All",
-  "Watches",
-  "Vinyl",
-  "Coins",
-  "Cameras",
-  "Jewellery",
-  "Comics",
-  "Toys",
-];
-
-const SAMPLE: Array<Omit<Product, "id">> = [
-  { title: "Omega Seamaster 1968", price: 1240, seller: "vintage_time", condition: "Very good", hue: 30, likes: 42 },
-  { title: "Pink Floyd — Animals LP", price: 38, seller: "wax_archive", condition: "Good", hue: 280, likes: 17 },
-  { title: "1921 Morgan Silver Dollar", price: 92, seller: "coin_vault", condition: "Excellent", hue: 90, likes: 8 },
-  { title: "Leica M3 rangefinder", price: 890, seller: "analog_house", condition: "Very good", hue: 220, likes: 64 },
-  { title: "Art Deco gold brooch", price: 215, seller: "atelier_lune", condition: "Excellent", hue: 50, likes: 23 },
-  { title: "Amazing Spider-Man #129", price: 460, seller: "panel_press", condition: "Good", hue: 10, likes: 51 },
-  { title: "Star Wars Kenner AT-AT", price: 140, seller: "retro_play", condition: "Used", hue: 200, likes: 19 },
-  { title: "Seiko 6139 chronograph", price: 520, seller: "vintage_time", condition: "Very good", hue: 160, likes: 30 },
-  { title: "The Beatles — Abbey Road", price: 55, seller: "wax_archive", condition: "Very good", hue: 320, likes: 27 },
-  { title: "Roman denarius, 2nd c.", price: 310, seller: "coin_vault", condition: "Good", hue: 70, likes: 12 },
-  { title: "Polaroid SX-70", price: 175, seller: "analog_house", condition: "Very good", hue: 250, likes: 38 },
-  { title: "Tiffany sterling ring", price: 280, seller: "atelier_lune", condition: "Excellent", hue: 40, likes: 44 },
-];
-
-const PRODUCTS: Product[] = SAMPLE.map((p, i) => ({ ...p, id: i + 1 }));
-
-// Loose mapping so chips actually filter the mock grid.
-const CATEGORY_OF: Record<string, string> = {
-  vintage_time: "Watches",
-  wax_archive: "Vinyl",
-  coin_vault: "Coins",
-  analog_house: "Cameras",
-  atelier_lune: "Jewellery",
-  panel_press: "Comics",
-  retro_play: "Toys",
-};
+import { listArticles } from "../services/article.service";
+import { listCategories } from "../services/category.service";
 
 export default function Home() {
   const authed = isAuthenticated();
-  const [active, setActive] = useState("All");
+  const [activeCategory, setActiveCategory] = useState<number | null>(null);
 
-  const products = useMemo(() => {
-    if (active === "All") return PRODUCTS;
-    return PRODUCTS.filter((p) => CATEGORY_OF[p.seller] === active);
-  }, [active]);
+  const { data: categories = [] } = useQuery({
+    queryKey: ["categories"],
+    queryFn: listCategories,
+  });
+
+  const { data: page, isLoading } = useQuery({
+    queryKey: ["articles", activeCategory],
+    queryFn: () => listArticles({ categoryId: activeCategory }),
+  });
+
+  const articles = page?.data ?? [];
 
   return (
     <div className="min-h-svh">
@@ -66,28 +37,20 @@ export default function Home() {
         <section className="animate-pop mt-6 overflow-hidden rounded-3xl bg-coral/10 p-8 sm:p-12">
           <div className="max-w-xl">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-coral px-3 py-1 text-xs font-bold text-coral-foreground">
-              <Sparkles className="size-3.5" /> New today
+              <Sparkles className="size-3.5" /> Collector.shop
             </span>
             <h1 className="mt-4 text-3xl font-extrabold tracking-tight text-balance sm:text-4xl">
               Find the piece you've been hunting for.
             </h1>
             <p className="mt-3 text-base text-muted-foreground">
-              Thousands of rare and vintage collectibles, listed by people who
-              love them as much as you do.
+              Rare and vintage collectibles, listed by people who love them as
+              much as you do.
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
               <Button asChild size="lg" className="rounded-full font-semibold">
-                <Link to={authed ? "/profile" : "/register"}>
+                <Link to={authed ? "/sell" : "/register"}>
                   {authed ? "Sell an item" : "Start collecting"}
                 </Link>
-              </Button>
-              <Button
-                asChild
-                size="lg"
-                variant="outline"
-                className="rounded-full border-border font-semibold"
-              >
-                <Link to="/">Browse all</Link>
               </Button>
             </div>
           </div>
@@ -98,49 +61,59 @@ export default function Home() {
           aria-label="Categories"
           className="mt-8 flex gap-2 overflow-x-auto pb-2"
         >
-          {CATEGORIES.map((cat) => (
-            <button
-              key={cat}
-              type="button"
-              onClick={() => setActive(cat)}
-              className={cn(
-                "shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition-colors",
-                active === cat
-                  ? "border-coral bg-coral text-coral-foreground"
-                  : "border-border bg-background text-foreground hover:bg-secondary",
-              )}
-            >
-              {cat}
-            </button>
+          <CategoryChip
+            label="All"
+            active={activeCategory === null}
+            onClick={() => setActiveCategory(null)}
+          />
+          {categories.map((cat) => (
+            <CategoryChip
+              key={cat.id}
+              label={cat.name}
+              active={activeCategory === cat.id}
+              onClick={() => setActiveCategory(cat.id)}
+            />
           ))}
         </nav>
 
-        {/* ── Product grid ── */}
+        {/* ── Article grid ── */}
         <section className="mt-6">
           <div className="flex items-baseline justify-between">
-            <h2 className="text-lg font-bold">
-              {active === "All" ? "Fresh finds" : active}
-            </h2>
-            <span className="text-sm text-muted-foreground">
-              {products.length} items
-            </span>
+            <h2 className="text-lg font-bold">Fresh finds</h2>
+            {page && (
+              <span className="text-sm text-muted-foreground">
+                {page.total} items
+              </span>
+            )}
           </div>
 
-          {products.length > 0 ? (
+          {isLoading ? (
             <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 xl:grid-cols-5">
-              {products.map((product, i) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
+              {Array.from({ length: 10 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="aspect-[3/4] animate-pulse rounded-2xl bg-secondary"
+                />
+              ))}
+            </div>
+          ) : articles.length > 0 ? (
+            <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 xl:grid-cols-5">
+              {articles.map((article, i) => (
+                <ArticleCard
+                  key={article.id}
+                  article={article}
                   className="animate-pop"
                   style={{ animationDelay: `${Math.min(i * 0.04, 0.4)}s` }}
                 />
               ))}
             </div>
           ) : (
-            <p className="mt-10 text-center text-sm text-muted-foreground">
-              No items in this category yet.
-            </p>
+            <div className="mt-10 flex flex-col items-center gap-3 py-16 text-center">
+              <PackageOpen className="size-10 text-muted-foreground" />
+              <p className="text-sm text-muted-foreground">
+                No items in this category yet.
+              </p>
+            </div>
           )}
         </section>
 
@@ -182,5 +155,28 @@ export default function Home() {
 
       <Footer />
     </div>
+  );
+}
+
+interface CategoryChipProps {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}
+
+function CategoryChip({ label, active, onClick }: CategoryChipProps) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition-colors",
+        active
+          ? "border-coral bg-coral text-coral-foreground"
+          : "border-border bg-background text-foreground hover:bg-secondary",
+      )}
+    >
+      {label}
+    </button>
   );
 }

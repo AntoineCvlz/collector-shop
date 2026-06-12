@@ -79,17 +79,18 @@ test('deleting a user cascades to role_user pivot', function () {
 // ROLE SEEDER
 // ─────────────────────────────────────────────
 
-test('role seeder creates the three default roles', function () {
+test('role seeder creates the default roles', function () {
     $this->seed(\Database\Seeders\RoleSeeder::class);
 
     expect(Role::where('name', Role::BUYER)->exists())->toBeTrue();
     expect(Role::where('name', Role::SELLER)->exists())->toBeTrue();
     expect(Role::where('name', Role::ADMIN)->exists())->toBeTrue();
+    expect(Role::where('name', Role::MODERATOR)->exists())->toBeTrue();
 });
 
 test('role seeder is idempotent and does not create duplicates', function () {
     $this->seed(\Database\Seeders\RoleSeeder::class);
     $this->seed(\Database\Seeders\RoleSeeder::class);
 
-    expect(Role::count())->toBe(3);
+    expect(Role::count())->toBe(count(Role::names()));
 });

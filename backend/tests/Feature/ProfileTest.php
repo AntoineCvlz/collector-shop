@@ -3,7 +3,6 @@
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Schema;
 use Laravel\Passport\Passport;
 
 beforeEach(function () {
@@ -102,9 +101,8 @@ test('profile update returns 500 when persistence fails', function () {
     $user = User::factory()->create();
     Passport::actingAs($user, ['*'], 'api');
 
-    // Drop the users table so save() raises a QueryException → catch block (500).
-    Schema::drop('role_user');
-    Schema::drop('users');
+    // Force the save to fail so the catch block (500) is exercised.
+    User::saving(fn () => throw new \RuntimeException('boom'));
 
     $this->putJson(route('profile.update'), ['name' => 'Crash'])
         ->assertStatus(500)

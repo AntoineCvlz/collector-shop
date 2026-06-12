@@ -58,6 +58,26 @@ class User extends Authenticatable
         return $this->hasMany(Article::class);
     }
 
+    /**
+     * Buyer's favourite categories (interests for recommendations).
+     *
+     * @return BelongsToMany<Category, $this>
+     */
+    public function favoriteCategories(): BelongsToMany
+    {
+        return $this->belongsToMany(Category::class);
+    }
+
+    /**
+     * Buyer's saved articles (wishlist).
+     *
+     * @return BelongsToMany<Article, $this>
+     */
+    public function favoriteArticles(): BelongsToMany
+    {
+        return $this->belongsToMany(Article::class);
+    }
+
     public function isBanned(): bool
     {
         return $this->banned_at !== null;

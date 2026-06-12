@@ -38,6 +38,16 @@ Route::group(['namespace' => 'App\Http\Controllers\API'], function () {
         Route::post('articles/{article}/checkout', 'OrderController@checkout')->name('orders.checkout')->whereNumber('article')->middleware('role:buyer');
         Route::get('my/orders', 'OrderController@myOrders')->name('orders.mine');
 
+        // Interests & recommendations (buyer).
+        Route::get('me/interests', 'FavoriteController@interests')->name('interests.index')->middleware('role:buyer');
+        Route::put('me/interests', 'FavoriteController@syncInterests')->name('interests.sync')->middleware('role:buyer');
+        Route::get('recommendations', 'FavoriteController@recommendations')->name('recommendations')->middleware('role:buyer');
+
+        // Wishlist (saved articles).
+        Route::get('me/favorites', 'FavoriteController@favorites')->name('favorites.index');
+        Route::post('articles/{article}/favorite', 'FavoriteController@store')->name('favorites.store')->whereNumber('article');
+        Route::delete('articles/{article}/favorite', 'FavoriteController@destroy')->name('favorites.destroy')->whereNumber('article');
+
         // ---------------- Admin / Moderation ------------//
         Route::middleware('role:admin')->group(function () {
             Route::get('users', 'AuthenticationController@usersList')->name('users.index');

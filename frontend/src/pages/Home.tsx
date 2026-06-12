@@ -8,12 +8,15 @@ import Footer from "../components/Footer";
 import Header from "../components/Header";
 import { Button } from "../components/ui/button";
 import { cn } from "../lib/utils";
-import { isAuthenticated } from "../lib/auth";
+import { getToken, getUser, isAuthenticated, isBuyer } from "../lib/auth";
 import { listArticles } from "../services/article.service";
 import { listCategories } from "../services/category.service";
+import { getRecommendations } from "../services/favorite.service";
 
 export default function Home() {
   const authed = isAuthenticated();
+  const token = getToken();
+  const buyer = isBuyer(getUser());
   const [activeCategory, setActiveCategory] = useState<number | null>(null);
 
   const { data: categories = [] } = useQuery({
@@ -24,6 +27,12 @@ export default function Home() {
   const { data: page, isLoading } = useQuery({
     queryKey: ["articles", activeCategory],
     queryFn: () => listArticles({ categoryId: activeCategory }),
+  });
+
+  const { data: recommended = [] } = useQuery({
+    queryKey: ["recommendations"],
+    queryFn: () => getRecommendations(token as string),
+    enabled: Boolean(token) && buyer,
   });
 
   const articles = page?.data ?? [];
@@ -55,6 +64,21 @@ export default function Home() {
             </div>
           </div>
         </section>
+
+        {/* ── Recommended for you (buyers) ── */}
+        {buyer && recommended.length > 0 && (
+          <section className="mt-10">
+            <div className="flex items-center gap-2">
+              <Sparkles className="size-5 text-coral" />
+              <h2 className="text-lg font-bold">Recommended for you</h2>
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 xl:grid-cols-5">
+              {recommended.slice(0, 5).map((article) => (
+                <ArticleCard key={article.id} article={article} />
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* ── Category chips ── */}
         <nav

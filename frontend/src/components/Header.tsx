@@ -82,7 +82,7 @@ export default function Header() {
           {authed && user ? (
             <>
               <Link
-                to="/profile"
+                to="/favorites"
                 className="hidden size-10 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground sm:grid"
                 aria-label="Favourites"
               >

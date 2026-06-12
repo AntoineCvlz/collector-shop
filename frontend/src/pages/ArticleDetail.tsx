@@ -7,6 +7,7 @@ import Footer from "../components/Footer";
 import Header from "../components/Header";
 import { Button } from "../components/ui/button";
 import { cn } from "../lib/utils";
+import { getUser, isAuthenticated } from "../lib/auth";
 import { getArticle } from "../services/article.service";
 
 export default function ArticleDetail() {
@@ -126,13 +127,32 @@ export default function ArticleDetail() {
               )}
 
               <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-                <Button
-                  size="lg"
-                  className="h-12 flex-1 rounded-full font-semibold"
-                  disabled
-                >
-                  Buy now — soon
-                </Button>
+                {!isAuthenticated() ? (
+                  <Button
+                    asChild
+                    size="lg"
+                    className="h-12 flex-1 rounded-full font-semibold"
+                  >
+                    <Link to="/login">Log in to buy</Link>
+                  </Button>
+                ) : getUser()?.id === article.seller?.id ? (
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="h-12 flex-1 rounded-full font-semibold"
+                    disabled
+                  >
+                    This is your listing
+                  </Button>
+                ) : (
+                  <Button
+                    asChild
+                    size="lg"
+                    className="h-12 flex-1 rounded-full font-semibold"
+                  >
+                    <Link to={`/articles/${article.id}/checkout`}>Buy now</Link>
+                  </Button>
+                )}
               </div>
 
               <div className="mt-4 flex items-center gap-2 rounded-xl bg-secondary/60 p-3 text-sm text-muted-foreground">

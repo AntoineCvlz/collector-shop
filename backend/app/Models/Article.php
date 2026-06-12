@@ -19,6 +19,8 @@ class Article extends Model
 
     public const STATUS_REJECTED = 'rejected';
 
+    public const STATUS_SOLD = 'sold';
+
     /**
      * @var list<string>
      */
@@ -82,5 +84,21 @@ class Article extends Model
     public function isPublished(): bool
     {
         return $this->status === self::STATUS_PUBLISHED;
+    }
+
+    /**
+     * Whether the article can still be bought.
+     */
+    public function isAvailable(): bool
+    {
+        return $this->status === self::STATUS_PUBLISHED;
+    }
+
+    /**
+     * @return HasMany<Order, $this>
+     */
+    public function orders(): HasMany
+    {
+        return $this->hasMany(Order::class);
     }
 }

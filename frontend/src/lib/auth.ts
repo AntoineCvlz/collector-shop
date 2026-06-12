@@ -48,3 +48,12 @@ export function isSeller(user: UserInfo | null = getUser()): boolean {
 export function isBuyer(user: UserInfo | null = getUser()): boolean {
   return hasRole("buyer", user);
 }
+
+export function isModerator(user: UserInfo | null = getUser()): boolean {
+  return hasRole("moderator", user);
+}
+
+/** Admins and moderators can access the back-office moderation tools. */
+export function canModerate(user: UserInfo | null = getUser()): boolean {
+  return isAdmin(user) || isModerator(user);
+}

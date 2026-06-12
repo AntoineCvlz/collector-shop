@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 import AdminCategories from "./pages/AdminCategories";
 import ArticleDetail from "./pages/ArticleDetail";
+import Checkout from "./pages/Checkout";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Profile from "./pages/Profile";
@@ -18,6 +19,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/articles/:id" element={<ArticleDetail />} />
+          <Route path="/articles/:id/checkout" element={<Checkout />} />
           <Route path="/sell" element={<SellArticle />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />

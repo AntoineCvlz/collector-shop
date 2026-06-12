@@ -44,3 +44,7 @@ export function isAdmin(user: UserInfo | null = getUser()): boolean {
 export function isSeller(user: UserInfo | null = getUser()): boolean {
   return hasRole("seller", user);
 }
+
+export function isBuyer(user: UserInfo | null = getUser()): boolean {
+  return hasRole("buyer", user);
+}

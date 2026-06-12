@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   AlertCircle,
   CheckCircle2,
@@ -125,6 +125,13 @@ export default function Profile() {
                   </div>
                 </div>
               </dl>
+
+              <Link
+                to="/orders"
+                className="mt-5 flex items-center justify-center rounded-full border border-border py-2 text-sm font-semibold transition-colors hover:bg-secondary"
+              >
+                View transaction history
+              </Link>
             </div>
 
             {/* Become a seller nudge for buyers */}

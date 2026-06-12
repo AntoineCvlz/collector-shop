@@ -78,6 +78,26 @@ class User extends Authenticatable
         return $this->belongsToMany(Article::class);
     }
 
+    /**
+     * Reviews this user has received (as a seller or a buyer).
+     *
+     * @return HasMany<Review, $this>
+     */
+    public function reviewsReceived(): HasMany
+    {
+        return $this->hasMany(Review::class, 'subject_id');
+    }
+
+    /**
+     * Average rating received, rounded to one decimal (null if none).
+     */
+    public function averageRating(): ?float
+    {
+        $avg = $this->reviewsReceived()->avg('rating');
+
+        return $avg !== null ? round((float) $avg, 1) : null;
+    }
+
     public function isBanned(): bool
     {
         return $this->banned_at !== null;

@@ -5,10 +5,12 @@ import { ArrowLeft, ImageOff, ShieldCheck, Truck } from "lucide-react";
 
 import Footer from "../components/Footer";
 import Header from "../components/Header";
+import StarRating from "../components/StarRating";
 import { Button } from "../components/ui/button";
 import { cn } from "../lib/utils";
 import { getUser, isAuthenticated } from "../lib/auth";
 import { getArticle } from "../services/article.service";
+import { getUserReviews } from "../services/review.service";
 
 export default function ArticleDetail() {
   const { id } = useParams<{ id: string }>();
@@ -23,6 +25,13 @@ export default function ArticleDetail() {
     queryKey: ["article", articleId],
     queryFn: () => getArticle(articleId),
     enabled: Number.isFinite(articleId),
+  });
+
+  const sellerId = article?.seller?.id;
+  const { data: sellerReviews } = useQuery({
+    queryKey: ["user-reviews", sellerId],
+    queryFn: () => getUserReviews(sellerId as number),
+    enabled: Boolean(sellerId),
   });
 
   return (
@@ -118,12 +127,30 @@ export default function ArticleDetail() {
               </div>
 
               {article.seller && (
-                <p className="mt-4 text-sm text-muted-foreground">
-                  Sold by{" "}
-                  <span className="font-medium text-foreground">
-                    {article.seller.name}
-                  </span>
-                </p>
+                <div className="mt-4">
+                  <p className="text-sm text-muted-foreground">
+                    Sold by{" "}
+                    <span className="font-medium text-foreground">
+                      {article.seller.name}
+                    </span>
+                  </p>
+                  {sellerReviews && sellerReviews.meta.total_reviews > 0 ? (
+                    <div className="mt-1.5 flex items-center gap-2">
+                      <StarRating
+                        value={sellerReviews.meta.average_rating ?? 0}
+                        size="sm"
+                      />
+                      <span className="text-sm text-muted-foreground">
+                        {sellerReviews.meta.average_rating} (
+                        {sellerReviews.meta.total_reviews})
+                      </span>
+                    </div>
+                  ) : (
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      No reviews yet
+                    </p>
+                  )}
+                </div>
               )}
 
               <div className="mt-6 flex flex-col gap-3 sm:flex-row">

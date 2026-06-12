@@ -1,17 +1,20 @@
 import { Link } from "react-router-dom";
 import { ImageOff } from "lucide-react";
 
+import FavoriteButton from "./FavoriteButton";
 import { cn } from "../lib/utils";
 import type { Article } from "../services/article.service";
 
 interface ArticleCardProps {
   article: Article;
+  favorited?: boolean;
   className?: string;
   style?: React.CSSProperties;
 }
 
 export default function ArticleCard({
   article,
+  favorited = false,
   className,
   style,
 }: ArticleCardProps) {
@@ -40,6 +43,11 @@ export default function ArticleCard({
             <ImageOff className="size-8" />
           </div>
         )}
+        <FavoriteButton
+          articleId={article.id}
+          initialFavorited={favorited}
+          className="absolute top-3 right-3"
+        />
       </div>
 
       <div className="flex flex-1 flex-col p-3">

@@ -12,12 +12,13 @@ import {
 
 import Footer from "../components/Footer";
 import Header from "../components/Header";
+import InterestsCard from "../components/InterestsCard";
 import RoleBadge from "../components/RoleBadge";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { getMe, updateProfile } from "../services/auth.service";
 import type { UserInfo } from "../services/auth.service";
-import { getToken, getUser, isSeller, saveSession } from "../lib/auth";
+import { getToken, getUser, isBuyer, isSeller, saveSession } from "../lib/auth";
 
 function initials(name: string): string {
   return name
@@ -186,6 +187,13 @@ export default function Profile() {
             )}
           </section>
         </div>
+
+        {/* ── Interests (buyers) ── */}
+        {isBuyer(user) && (
+          <div className="animate-pop mt-6" style={{ animationDelay: "0.18s" }}>
+            <InterestsCard token={token} />
+          </div>
+        )}
       </main>
 
       <Footer />

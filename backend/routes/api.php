@@ -13,6 +13,10 @@ Route::group(['namespace' => 'App\Http\Controllers\API'], function () {
     Route::post('register', 'AuthenticationController@register')->name('register');
     Route::post('login', 'AuthenticationController@login')->name('login');
 
+    // ------------------ Public catalogue -----------------//
+    Route::get('categories', 'CategoryController@index')->name('categories.index');
+    Route::get('categories/{category}', 'CategoryController@show')->name('categories.show');
+
     // ------------------ Authenticated -------------------//
     Route::middleware('auth:api')->group(function () {
         // Current user profile (own data only).
@@ -23,6 +27,10 @@ Route::group(['namespace' => 'App\Http\Controllers\API'], function () {
         // --------------------- Admin --------------------//
         Route::middleware('role:admin')->group(function () {
             Route::get('users', 'AuthenticationController@usersList')->name('users.index');
+
+            Route::post('categories', 'CategoryController@store')->name('categories.store');
+            Route::put('categories/{category}', 'CategoryController@update')->name('categories.update');
+            Route::delete('categories/{category}', 'CategoryController@destroy')->name('categories.destroy');
         });
     });
 });

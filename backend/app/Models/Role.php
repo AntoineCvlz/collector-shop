@@ -13,6 +13,8 @@ class Role extends Model
 
     public const ADMIN = 'admin';
 
+    public const MODERATOR = 'moderator';
+
     /**
      * Role assigned to every account on registration.
      */
@@ -27,7 +29,7 @@ class Role extends Model
      */
     public static function names(): array
     {
-        return [self::BUYER, self::SELLER, self::ADMIN];
+        return [self::BUYER, self::SELLER, self::ADMIN, self::MODERATOR];
     }
 
     /**

@@ -134,10 +134,10 @@ export default function Header() {
                       {isAdmin(user) && (
                         <MenuItem
                           icon={Shield}
-                          label="Admin"
+                          label="Categories"
                           onClick={() => {
                             setOpen(false);
-                            navigate("/profile");
+                            navigate("/admin/categories");
                           }}
                         />
                       )}

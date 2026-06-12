@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
+import AdminCategories from "./pages/AdminCategories";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Profile from "./pages/Profile";
@@ -17,6 +18,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/admin/categories" element={<AdminCategories />} />
           {/* Catch-all : toute URL inconnue (ex. /index.html) renvoie à l'accueil. */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

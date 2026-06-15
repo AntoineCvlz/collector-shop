@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { useTranslation } from "react-i18next";
 import { useMutation } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
 import { AlertCircle, ArrowRight, Lock, Mail, User } from "lucide-react";
@@ -8,6 +9,7 @@ import { Input } from "./ui/input";
 import { register } from "../services/auth.service";
 
 export default function RegisterForm() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -34,16 +36,16 @@ export default function RegisterForm() {
     >
       <header>
         <h1 className="text-2xl font-extrabold tracking-tight">
-          Join Collector.shop
+          {t("auth.joinTitle")}
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Create your free account and start collecting today.
+          {t("auth.registerSubtitle")}
         </p>
       </header>
 
       <div className="flex flex-col gap-1.5">
         <label htmlFor="name" className="text-sm font-medium">
-          Full name
+          {t("auth.fullName")}
         </label>
         <div className="relative">
           <User className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -64,7 +66,7 @@ export default function RegisterForm() {
 
       <div className="flex flex-col gap-1.5">
         <label htmlFor="email" className="text-sm font-medium">
-          Email
+          {t("auth.email")}
         </label>
         <div className="relative">
           <Mail className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -84,7 +86,7 @@ export default function RegisterForm() {
 
       <div className="flex flex-col gap-1.5">
         <label htmlFor="password" className="text-sm font-medium">
-          Password
+          {t("auth.password")}
         </label>
         <div className="relative">
           <Lock className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -93,7 +95,7 @@ export default function RegisterForm() {
             name="password"
             type="password"
             autoComplete="new-password"
-            placeholder="At least 8 characters"
+            placeholder="••••••••"
             required
             minLength={8}
             value={password}
@@ -101,7 +103,7 @@ export default function RegisterForm() {
             className="h-11 pl-9"
           />
         </div>
-        <p className="text-xs text-muted-foreground">Minimum 8 characters.</p>
+        <p className="text-xs text-muted-foreground">{t("auth.minChars")}</p>
       </div>
 
       {mutation.isError && (
@@ -110,7 +112,7 @@ export default function RegisterForm() {
           className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
         >
           <AlertCircle className="size-4 shrink-0" />
-          Couldn't create the account. Check your details and try again.
+          {t("auth.registerError")}
         </p>
       )}
 
@@ -120,19 +122,19 @@ export default function RegisterForm() {
         disabled={mutation.isPending}
         className="group h-12 rounded-full font-semibold"
       >
-        {mutation.isPending ? "Creating…" : "Create my account"}
+        {mutation.isPending ? t("auth.creating") : t("auth.createAccount")}
         {!mutation.isPending && (
           <ArrowRight className="transition-transform group-hover:translate-x-0.5" />
         )}
       </Button>
 
       <p className="text-center text-sm text-muted-foreground">
-        Already a member?{" "}
+        {t("auth.alreadyMember")}{" "}
         <Link
           to="/login"
           className="font-semibold text-coral underline-offset-4 hover:underline"
         >
-          Log in
+          {t("nav.login")}
         </Link>
       </p>
     </form>

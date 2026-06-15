@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { CheckCircle2, Heart } from "lucide-react";
 
@@ -15,6 +16,7 @@ interface InterestsCardProps {
  * Lets a buyer pick favourite categories to drive recommendations.
  */
 export default function InterestsCard({ token }: InterestsCardProps) {
+  const { t } = useTranslation();
   const [saved, setSaved] = useState(false);
   // Local edits layered on top of the loaded interests. Null = not edited yet,
   // so we mirror whatever the server returned.
@@ -51,10 +53,10 @@ export default function InterestsCard({ token }: InterestsCardProps) {
     <div className="rounded-2xl border border-border bg-card p-6">
       <div className="flex items-center gap-2">
         <Heart className="size-4 text-coral" />
-        <h2 className="text-base font-bold">Your interests</h2>
+        <h2 className="text-base font-bold">{t("interests.title")}</h2>
       </div>
       <p className="mt-1 text-sm text-muted-foreground">
-        Pick categories you love to get tailored recommendations.
+        {t("interests.subtitle")}
       </p>
 
       <div className="mt-4 flex flex-wrap gap-2">
@@ -86,11 +88,11 @@ export default function InterestsCard({ token }: InterestsCardProps) {
           onClick={() => mutation.mutate()}
           disabled={mutation.isPending}
         >
-          {mutation.isPending ? "Saving…" : "Save interests"}
+          {mutation.isPending ? t("interests.saving") : t("interests.save")}
         </Button>
         {saved && (
           <span className="flex items-center gap-1 text-sm text-coral">
-            <CheckCircle2 className="size-4" /> Saved
+            <CheckCircle2 className="size-4" /> {t("interests.saved")}
           </span>
         )}
       </div>

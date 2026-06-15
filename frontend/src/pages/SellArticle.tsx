@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
+import { useTranslation } from "react-i18next";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { AlertCircle, CheckCircle2, ImagePlus, X } from "lucide-react";
@@ -12,6 +13,7 @@ import { createArticle } from "../services/article.service";
 import { listCategories } from "../services/category.service";
 
 export default function SellArticle() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const token = getToken();
   const user = getUser();
@@ -70,31 +72,31 @@ export default function SellArticle() {
       <Header />
 
       <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-10 sm:px-6">
-        <h1 className="text-3xl font-extrabold tracking-tight">Sell an item</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Your listing goes live once it passes our quick review.
-        </p>
+        <h1 className="text-3xl font-extrabold tracking-tight">
+          {t("sell.title")}
+        </h1>
+        <p className="mt-1 text-sm text-muted-foreground">{t("sell.subtitle")}</p>
 
         {submitted ? (
           <div className="mt-8 rounded-2xl border border-coral/30 bg-coral/5 p-8 text-center">
             <CheckCircle2 className="mx-auto size-10 text-coral" />
-            <h2 className="mt-4 text-xl font-bold">Submitted for review</h2>
+            <h2 className="mt-4 text-xl font-bold">{t("sell.submittedTitle")}</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              We'll publish your item as soon as it's approved.
+              {t("sell.submittedBody")}
             </p>
             <div className="mt-6 flex justify-center gap-3">
               <Button
                 className="rounded-full font-semibold"
                 onClick={() => navigate("/profile")}
               >
-                Go to my profile
+                {t("sell.goToProfile")}
               </Button>
               <Button
                 variant="outline"
                 className="rounded-full font-semibold"
                 onClick={() => window.location.reload()}
               >
-                List another
+                {t("sell.listAnother")}
               </Button>
             </div>
           </div>
@@ -106,7 +108,7 @@ export default function SellArticle() {
           >
             <div className="flex flex-col gap-1.5">
               <label htmlFor="category" className="text-sm font-medium">
-                Category
+                {t("sell.category")}
               </label>
               <select
                 id="category"
@@ -117,7 +119,7 @@ export default function SellArticle() {
                 }
                 className="h-11 rounded-lg border border-input bg-transparent px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
               >
-                <option value="">Select a category…</option>
+                <option value="">{t("sell.selectCategory")}</option>
                 {categories.map((cat) => (
                   <option key={cat.id} value={cat.id}>
                     {cat.name}
@@ -128,7 +130,7 @@ export default function SellArticle() {
 
             <div className="flex flex-col gap-1.5">
               <label htmlFor="title" className="text-sm font-medium">
-                Title
+                {t("sell.titleField")}
               </label>
               <Input
                 id="title"
@@ -137,13 +139,13 @@ export default function SellArticle() {
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 className="h-11"
-                placeholder="e.g. Omega Seamaster 1968"
+                placeholder={t("sell.titlePlaceholder")}
               />
             </div>
 
             <div className="flex flex-col gap-1.5">
               <label htmlFor="description" className="text-sm font-medium">
-                Description
+                {t("sell.description")}
               </label>
               <textarea
                 id="description"
@@ -153,14 +155,14 @@ export default function SellArticle() {
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 className="rounded-lg border border-input bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
-                placeholder="Condition, history, any flaws…"
+                placeholder={t("sell.descriptionPlaceholder")}
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-1.5">
                 <label htmlFor="price" className="text-sm font-medium">
-                  Price (€)
+                  {t("sell.price")}
                 </label>
                 <Input
                   id="price"
@@ -175,7 +177,7 @@ export default function SellArticle() {
               </div>
               <div className="flex flex-col gap-1.5">
                 <label htmlFor="shipping" className="text-sm font-medium">
-                  Shipping (€)
+                  {t("sell.shipping")}
                 </label>
                 <Input
                   id="shipping"
@@ -191,10 +193,10 @@ export default function SellArticle() {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <span className="text-sm font-medium">Photos (up to 6)</span>
+              <span className="text-sm font-medium">{t("sell.photos")}</span>
               <label className="flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-border py-6 text-sm text-muted-foreground transition-colors hover:border-coral/50 hover:text-foreground">
                 <ImagePlus className="size-5" />
-                Add photos
+                {t("sell.addPhotos")}
                 <input
                   type="file"
                   accept="image/*"
@@ -233,7 +235,7 @@ export default function SellArticle() {
                 className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
               >
                 <AlertCircle className="size-4 shrink-0" />
-                Couldn't submit the listing. Check your inputs and try again.
+                {t("sell.error")}
               </p>
             )}
 
@@ -243,7 +245,7 @@ export default function SellArticle() {
               className="h-12 rounded-full font-semibold"
               disabled={mutation.isPending}
             >
-              {mutation.isPending ? "Submitting…" : "Submit for review"}
+              {mutation.isPending ? t("sell.submitting") : t("sell.submit")}
             </Button>
           </form>
         )}

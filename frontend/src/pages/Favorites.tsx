@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
 import { HeartCrack } from "lucide-react";
@@ -10,6 +11,7 @@ import { getToken } from "../lib/auth";
 import { getFavorites } from "../services/favorite.service";
 
 export default function Favorites() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const token = getToken();
 
@@ -36,9 +38,11 @@ export default function Favorites() {
       <Header />
 
       <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-10 sm:px-6">
-        <h1 className="text-3xl font-extrabold tracking-tight">Favourites</h1>
+        <h1 className="text-3xl font-extrabold tracking-tight">
+          {t("favorites.title")}
+        </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Items you've saved for later.
+          {t("favorites.subtitle")}
         </p>
 
         {isLoading ? (
@@ -54,13 +58,13 @@ export default function Favorites() {
           <div className="mt-10 flex flex-col items-center gap-3 py-16 text-center">
             <HeartCrack className="size-10 text-muted-foreground" />
             <p className="text-sm text-muted-foreground">
-              No favourites yet — tap the heart on any item to save it.
+              {t("favorites.empty")}
             </p>
             <Link
               to="/"
               className="text-sm font-semibold text-coral hover:underline"
             >
-              Browse the catalogue
+              {t("common.browseCatalogue")}
             </Link>
           </div>
         ) : (

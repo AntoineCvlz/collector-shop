@@ -1,5 +1,12 @@
 import { test, expect } from "@playwright/test";
 
+// Force English so the UI copy matches the assertions regardless of locale.
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    window.localStorage.setItem("lang", "en");
+  });
+});
+
 test.describe("Écran d'inscription", () => {
   test("affiche le formulaire d'inscription", async ({ page }) => {
     await page.goto("/register");

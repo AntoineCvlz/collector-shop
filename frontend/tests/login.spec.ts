@@ -1,5 +1,13 @@
 import { test, expect } from "@playwright/test";
 
+// Force English so the UI copy matches the assertions regardless of the
+// browser's locale (the app auto-detects and persists the language).
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    window.localStorage.setItem("lang", "en");
+  });
+});
+
 test.describe("Écran de connexion", () => {
   test("affiche le formulaire de connexion", async ({ page }) => {
     await page.goto("/login");

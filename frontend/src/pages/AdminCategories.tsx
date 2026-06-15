@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
+import { useTranslation } from "react-i18next";
 import {
   useMutation,
   useQuery,
@@ -21,6 +22,7 @@ import {
 import { getToken, getUser, isAdmin } from "../lib/auth";
 
 export default function AdminCategories() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const token = getToken();
@@ -55,13 +57,13 @@ export default function AdminCategories() {
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-10 sm:px-6">
         <header className="mb-6">
           <p className="text-xs font-semibold tracking-[0.2em] text-coral uppercase">
-            Admin
+            {t("roles.admin")}
           </p>
           <h1 className="mt-2 text-3xl font-extrabold tracking-tight">
-            Categories
+            {t("admin.categoriesTitle")}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Create, rename and remove the catalogue categories.
+            {t("admin.categoriesSubtitle")}
           </p>
         </header>
 
@@ -69,10 +71,12 @@ export default function AdminCategories() {
 
         <section className="mt-6 rounded-2xl border border-border bg-card">
           {isLoading ? (
-            <p className="p-6 text-sm text-muted-foreground">Loading…</p>
+            <p className="p-6 text-sm text-muted-foreground">
+              {t("common.loading")}
+            </p>
           ) : categories.length === 0 ? (
             <p className="p-6 text-sm text-muted-foreground">
-              No categories yet. Create your first one above.
+              {t("admin.noCategories")}
             </p>
           ) : (
             <ul className="divide-y divide-border">
@@ -100,6 +104,7 @@ interface CreateCategoryProps {
 }
 
 function CreateCategory({ token, onCreated }: CreateCategoryProps) {
+  const { t } = useTranslation();
   const [name, setName] = useState("");
 
   const mutation = useMutation({
@@ -123,8 +128,8 @@ function CreateCategory({ token, onCreated }: CreateCategoryProps) {
     >
       <div className="flex flex-col gap-3 sm:flex-row">
         <Input
-          aria-label="Category name"
-          placeholder="New category name"
+          aria-label={t("admin.newCategory")}
+          placeholder={t("admin.newCategory")}
           minLength={2}
           required
           value={name}
@@ -137,7 +142,7 @@ function CreateCategory({ token, onCreated }: CreateCategoryProps) {
           disabled={mutation.isPending}
         >
           <Plus className="size-4" />
-          {mutation.isPending ? "Adding…" : "Add category"}
+          {mutation.isPending ? t("admin.adding") : t("admin.addCategory")}
         </Button>
       </div>
       {mutation.isError && (
@@ -146,7 +151,7 @@ function CreateCategory({ token, onCreated }: CreateCategoryProps) {
           className="mt-2 flex items-center gap-2 text-sm text-destructive"
         >
           <AlertCircle className="size-4 shrink-0" />
-          Couldn't create the category (name may already exist).
+          {t("admin.createError")}
         </p>
       )}
     </form>
@@ -160,6 +165,7 @@ interface CategoryRowProps {
 }
 
 function CategoryRow({ category, token, onChanged }: CategoryRowProps) {
+  const { t } = useTranslation();
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(category.name);
 
@@ -180,7 +186,7 @@ function CategoryRow({ category, token, onChanged }: CategoryRowProps) {
     return (
       <li className="flex items-center gap-2 p-4">
         <Input
-          aria-label="Edit category name"
+          aria-label={t("common.edit")}
           value={name}
           minLength={2}
           onChange={(e) => setName(e.target.value)}
@@ -192,7 +198,7 @@ function CategoryRow({ category, token, onChanged }: CategoryRowProps) {
           className="size-10 shrink-0 rounded-full"
           onClick={() => update.mutate()}
           disabled={update.isPending}
-          aria-label="Save"
+          aria-label={t("common.save")}
         >
           <Check className="size-4" />
         </Button>
@@ -205,7 +211,7 @@ function CategoryRow({ category, token, onChanged }: CategoryRowProps) {
             setName(category.name);
             setEditing(false);
           }}
-          aria-label="Cancel"
+          aria-label={t("common.cancel")}
         >
           <X className="size-4" />
         </Button>
@@ -226,7 +232,7 @@ function CategoryRow({ category, token, onChanged }: CategoryRowProps) {
           variant="ghost"
           className="size-9 rounded-full"
           onClick={() => setEditing(true)}
-          aria-label={`Edit ${category.name}`}
+          aria-label={`${t("common.edit")} ${category.name}`}
         >
           <Pencil className="size-4" />
         </Button>
@@ -236,12 +242,12 @@ function CategoryRow({ category, token, onChanged }: CategoryRowProps) {
           variant="ghost"
           className="size-9 rounded-full text-destructive hover:bg-destructive/10"
           onClick={() => {
-            if (window.confirm(`Delete category "${category.name}"?`)) {
+            if (window.confirm(t("admin.confirmRemove", { title: category.name }))) {
               remove.mutate();
             }
           }}
           disabled={remove.isPending}
-          aria-label={`Delete ${category.name}`}
+          aria-label={`${t("common.delete")} ${category.name}`}
         >
           <Trash2 className="size-4" />
         </Button>

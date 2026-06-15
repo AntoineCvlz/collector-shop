@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
+import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -30,6 +31,7 @@ function initials(name: string): string {
 }
 
 export default function Profile() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const token = getToken();
@@ -76,14 +78,14 @@ export default function Profile() {
           </span>
           <div>
             <h1 className="text-3xl font-extrabold tracking-tight">
-              {user ? user.name : "My profile"}
+              {user ? user.name : t("profile.title")}
             </h1>
             <div className="mt-2 flex flex-wrap items-center gap-2">
               {user?.roles?.length ? (
                 user.roles.map((role) => <RoleBadge key={role} role={role} />)
               ) : (
                 <span className="text-sm text-muted-foreground">
-                  No roles assigned yet.
+                  {t("profile.noRoles")}
                 </span>
               )}
             </div>
@@ -94,14 +96,18 @@ export default function Profile() {
           {/* ── Snapshot card ── */}
           <aside className="animate-pop" style={{ animationDelay: "0.06s" }}>
             <div className="rounded-2xl border border-border bg-card p-6">
-              <h2 className="text-base font-bold">Account details</h2>
+              <h2 className="text-base font-bold">
+                {t("profile.accountDetails")}
+              </h2>
               <dl className="mt-5 space-y-4 text-sm">
                 <div className="flex items-center gap-3">
                   <span className="grid size-9 shrink-0 place-items-center rounded-full bg-secondary text-muted-foreground">
                     <UserIcon className="size-4" />
                   </span>
                   <div>
-                    <dt className="text-xs text-muted-foreground">Name</dt>
+                    <dt className="text-xs text-muted-foreground">
+                      {t("profile.name")}
+                    </dt>
                     <dd className="font-medium">{user?.name ?? "—"}</dd>
                   </div>
                 </div>
@@ -110,7 +116,9 @@ export default function Profile() {
                     <Mail className="size-4" />
                   </span>
                   <div>
-                    <dt className="text-xs text-muted-foreground">Email</dt>
+                    <dt className="text-xs text-muted-foreground">
+                      {t("profile.email")}
+                    </dt>
                     <dd className="font-medium break-all">
                       {user?.email ?? "—"}
                     </dd>
@@ -121,7 +129,9 @@ export default function Profile() {
                     <Tag className="size-4" />
                   </span>
                   <div>
-                    <dt className="text-xs text-muted-foreground">Member ID</dt>
+                    <dt className="text-xs text-muted-foreground">
+                      {t("profile.memberId")}
+                    </dt>
                     <dd className="font-medium">#{user?.id ?? "—"}</dd>
                   </div>
                 </div>
@@ -131,7 +141,7 @@ export default function Profile() {
                 to="/orders"
                 className="mt-5 flex items-center justify-center rounded-full border border-border py-2 text-sm font-semibold transition-colors hover:bg-secondary"
               >
-                View transaction history
+                {t("profile.viewHistory")}
               </Link>
             </div>
 
@@ -141,9 +151,9 @@ export default function Profile() {
                 <span className="grid size-10 place-items-center rounded-full bg-coral/15 text-coral">
                   <Sparkles className="size-5" />
                 </span>
-                <h3 className="mt-3 font-bold">Ready to sell?</h3>
+                <h3 className="mt-3 font-bold">{t("profile.readyToSell")}</h3>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Apply for a seller account to list your own items.
+                  {t("profile.readyToSellBody")}
                 </p>
                 <Button
                   variant="outline"
@@ -151,7 +161,7 @@ export default function Profile() {
                   className="mt-4 rounded-full font-semibold"
                   disabled
                 >
-                  Become a seller — soon
+                  {t("profile.becomeSeller")}
                 </Button>
               </div>
             )}
@@ -162,14 +172,15 @@ export default function Profile() {
             className="animate-pop rounded-2xl border border-border bg-card p-6 sm:p-8"
             style={{ animationDelay: "0.12s" }}
           >
-            <h2 className="text-xl font-bold">Edit profile</h2>
+            <h2 className="text-xl font-bold">{t("profile.editProfile")}</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Update your details. Leave the password blank to keep it
-              unchanged.
+              {t("profile.editSubtitle")}
             </p>
 
             {isLoading && !user ? (
-              <p className="mt-6 text-sm text-muted-foreground">Loading…</p>
+              <p className="mt-6 text-sm text-muted-foreground">
+                {t("common.loading")}
+              </p>
             ) : (
               <ProfileForm
                 token={token}
@@ -208,6 +219,7 @@ interface ProfileFormProps {
 }
 
 function ProfileForm({ token, user, onSaved }: ProfileFormProps) {
+  const { t } = useTranslation();
   const [name, setName] = useState(user?.name ?? "");
   const [email, setEmail] = useState(user?.email ?? "");
   const [password, setPassword] = useState("");
@@ -244,7 +256,7 @@ function ProfileForm({ token, user, onSaved }: ProfileFormProps) {
     <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-5">
       <div className="flex flex-col gap-1.5">
         <label htmlFor="p-name" className="text-sm font-medium">
-          Full name
+          {t("auth.fullName")}
         </label>
         <Input
           id="p-name"
@@ -258,7 +270,7 @@ function ProfileForm({ token, user, onSaved }: ProfileFormProps) {
 
       <div className="flex flex-col gap-1.5">
         <label htmlFor="p-email" className="text-sm font-medium">
-          Email
+          {t("profile.email")}
         </label>
         <Input
           id="p-email"
@@ -271,7 +283,7 @@ function ProfileForm({ token, user, onSaved }: ProfileFormProps) {
 
       <div className="flex flex-col gap-1.5">
         <label htmlFor="p-password" className="text-sm font-medium">
-          New password
+          {t("profile.newPassword")}
         </label>
         <Input
           id="p-password"
@@ -291,14 +303,14 @@ function ProfileForm({ token, user, onSaved }: ProfileFormProps) {
           className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
         >
           <AlertCircle className="size-4 shrink-0" />
-          Couldn't save your changes. Please review and try again.
+          {t("profile.updateError")}
         </p>
       )}
 
       {done && (
         <p className="flex items-center gap-2 rounded-lg border border-coral/40 bg-coral/10 px-3 py-2 text-sm text-coral">
           <CheckCircle2 className="size-4 shrink-0" />
-          Profile updated.
+          {t("profile.updated")}
         </p>
       )}
 
@@ -309,7 +321,7 @@ function ProfileForm({ token, user, onSaved }: ProfileFormProps) {
           className="h-11 rounded-full font-semibold"
           disabled={mutation.isPending || !dirty}
         >
-          {mutation.isPending ? "Saving…" : "Save changes"}
+          {mutation.isPending ? t("profile.saving") : t("profile.saveChanges")}
         </Button>
       </div>
     </form>

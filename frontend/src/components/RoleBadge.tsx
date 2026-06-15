@@ -1,13 +1,14 @@
+import { useTranslation } from "react-i18next";
 import { Crown, GavelIcon, ShoppingBag, Tag } from "lucide-react";
 
 import { cn } from "../lib/utils";
 import type { Role } from "../services/auth.service";
 
-const ROLE_META: Record<Role, { label: string; icon: typeof Crown }> = {
-  buyer: { label: "Collector", icon: ShoppingBag },
-  seller: { label: "Seller", icon: Tag },
-  admin: { label: "Admin", icon: Crown },
-  moderator: { label: "Moderator", icon: GavelIcon },
+const ROLE_ICON: Record<Role, typeof Crown> = {
+  buyer: ShoppingBag,
+  seller: Tag,
+  admin: Crown,
+  moderator: GavelIcon,
 };
 
 interface RoleBadgeProps {
@@ -20,8 +21,8 @@ interface RoleBadgeProps {
  * reads as a special badge; buyer/seller stay neutral.
  */
 export default function RoleBadge({ role, className }: RoleBadgeProps) {
-  const meta = ROLE_META[role] ?? { label: role, icon: ShoppingBag };
-  const Icon = meta.icon;
+  const { t } = useTranslation();
+  const Icon = ROLE_ICON[role] ?? ShoppingBag;
   const accent = role === "admin" || role === "moderator";
 
   return (
@@ -35,7 +36,7 @@ export default function RoleBadge({ role, className }: RoleBadgeProps) {
       )}
     >
       <Icon className="size-3.5" />
-      {meta.label}
+      {t(`roles.${role}`)}
     </span>
   );
 }

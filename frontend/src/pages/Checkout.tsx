@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
+import { useTranslation } from "react-i18next";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
@@ -18,6 +19,7 @@ import { getArticle } from "../services/article.service";
 import { checkout } from "../services/order.service";
 
 export default function Checkout() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const articleId = Number(id);
   const navigate = useNavigate();
@@ -72,26 +74,30 @@ export default function Checkout() {
         {mutation.isSuccess ? (
           <div className="rounded-2xl border border-coral/30 bg-card p-8 text-center">
             <CheckCircle2 className="mx-auto size-12 text-coral" />
-            <h1 className="mt-4 text-2xl font-extrabold">Payment successful</h1>
+            <h1 className="mt-4 text-2xl font-extrabold">
+              {t("checkout.successTitle")}
+            </h1>
             <p className="mt-2 text-sm text-muted-foreground">
-              Your order is confirmed. The seller has been notified.
+              {t("checkout.successBody")}
             </p>
             <div className="mt-6 flex justify-center gap-3">
               <Button asChild className="rounded-full font-semibold">
-                <Link to="/profile">View my orders</Link>
+                <Link to="/orders">{t("checkout.viewOrders")}</Link>
               </Button>
               <Button
                 asChild
                 variant="outline"
                 className="rounded-full font-semibold"
               >
-                <Link to="/">Keep browsing</Link>
+                <Link to="/">{t("checkout.keepBrowsing")}</Link>
               </Button>
             </div>
           </div>
         ) : (
           <>
-            <h1 className="text-3xl font-extrabold tracking-tight">Checkout</h1>
+            <h1 className="text-3xl font-extrabold tracking-tight">
+              {t("checkout.title")}
+            </h1>
 
             <div className="mt-8 grid gap-6 md:grid-cols-[1.4fr_1fr]">
               {/* Card form */}
@@ -105,12 +111,12 @@ export default function Checkout() {
               >
                 <div className="flex items-center gap-2 text-sm font-semibold">
                   <CreditCard className="size-4 text-coral" />
-                  Card details
+                  {t("checkout.cardDetails")}
                 </div>
 
                 <div className="flex flex-col gap-1.5">
                   <label htmlFor="number" className="text-sm font-medium">
-                    Card number
+                    {t("checkout.cardNumber")}
                   </label>
                   <Input
                     id="number"
@@ -126,7 +132,7 @@ export default function Checkout() {
 
                 <div className="flex flex-col gap-1.5">
                   <label htmlFor="name" className="text-sm font-medium">
-                    Name on card
+                    {t("checkout.nameOnCard")}
                   </label>
                   <Input
                     id="name"
@@ -142,7 +148,7 @@ export default function Checkout() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="flex flex-col gap-1.5">
                     <label htmlFor="expiry" className="text-sm font-medium">
-                      Expiry (MM/YY)
+                      {t("checkout.expiry")}
                     </label>
                     <Input
                       id="expiry"
@@ -179,7 +185,7 @@ export default function Checkout() {
                     className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
                   >
                     <AlertCircle className="size-4 shrink-0" />
-                    Payment failed. Check your card details and try again.
+                    {t("checkout.error")}
                   </p>
                 )}
 
@@ -191,18 +197,18 @@ export default function Checkout() {
                 >
                   <Lock className="size-4" />
                   {mutation.isPending
-                    ? "Processing…"
-                    : `Pay €${total.toFixed(2)}`}
+                    ? t("checkout.processing")
+                    : t("checkout.pay", { amount: total.toFixed(2) })}
                 </Button>
 
                 <p className="text-center text-xs text-muted-foreground">
-                  This is a simulated payment — no real card is charged.
+                  {t("checkout.simulated")}
                 </p>
               </form>
 
               {/* Order summary */}
               <aside className="h-fit rounded-2xl border border-border bg-card p-6">
-                <h2 className="text-sm font-bold">Order summary</h2>
+                <h2 className="text-sm font-bold">{t("checkout.summary")}</h2>
                 {article && (
                   <p className="mt-3 line-clamp-2 text-sm font-medium">
                     {article.title}
@@ -210,22 +216,25 @@ export default function Checkout() {
                 )}
                 <dl className="mt-4 space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <dt className="text-muted-foreground">Item price</dt>
+                    <dt className="text-muted-foreground">
+                      {t("checkout.itemPrice")}
+                    </dt>
                     <dd>€{price.toFixed(2)}</dd>
                   </div>
                   <div className="flex justify-between">
-                    <dt className="text-muted-foreground">Shipping</dt>
+                    <dt className="text-muted-foreground">
+                      {t("checkout.shipping")}
+                    </dt>
                     <dd>€{shipping.toFixed(2)}</dd>
                   </div>
                   <div className="mt-2 flex justify-between border-t border-border pt-2 text-base font-extrabold">
-                    <dt>Total</dt>
+                    <dt>{t("checkout.total")}</dt>
                     <dd className="text-coral">€{total.toFixed(2)}</dd>
                   </div>
                 </dl>
                 <div className="mt-5 flex items-start gap-2 rounded-xl bg-secondary/60 p-3 text-xs text-muted-foreground">
                   <ShieldCheck className="mt-0.5 size-4 shrink-0 text-coral" />
-                  Includes Collector.shop buyer protection. A 5% fee is taken
-                  from the seller's payout.
+                  {t("checkout.protectionNote")}
                 </div>
               </aside>
             </div>

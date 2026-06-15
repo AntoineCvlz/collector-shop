@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
 import { Ban, RotateCcw } from "lucide-react";
@@ -15,6 +16,7 @@ import {
 } from "../services/admin.service";
 
 export default function AdminSellers() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const token = getToken();
@@ -51,28 +53,28 @@ export default function AdminSellers() {
         <div className="mb-6 flex items-end justify-between gap-4">
           <div>
             <p className="text-xs font-semibold tracking-[0.2em] text-coral uppercase">
-              Moderation
+              {t("admin.moderationLabel")}
             </p>
             <h1 className="mt-2 text-3xl font-extrabold tracking-tight">
-              Sellers
+              {t("admin.sellersTitle")}
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Ban sellers who break the charter, or lift a ban.
+              {t("admin.sellersSubtitle")}
             </p>
           </div>
           <Link
             to="/admin/moderation"
             className="text-sm font-semibold text-coral hover:underline"
           >
-            ← Review queue
+            {t("admin.reviewQueue")}
           </Link>
         </div>
 
         {isLoading ? (
-          <p className="text-sm text-muted-foreground">Loading…</p>
+          <p className="text-sm text-muted-foreground">{t("common.loading")}</p>
         ) : sellers.length === 0 ? (
           <div className="rounded-2xl border border-border bg-card p-10 text-center text-sm text-muted-foreground">
-            No sellers yet.
+            {t("admin.noSellers")}
           </div>
         ) : (
           <ul className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card">
@@ -100,6 +102,7 @@ interface RowProps {
 }
 
 function SellerRow({ seller, token, onDone }: RowProps) {
+  const { t } = useTranslation();
   const ban = useMutation({
     mutationFn: () => banSeller(token, seller.id),
     onSuccess: onDone,
@@ -119,14 +122,13 @@ function SellerRow({ seller, token, onDone }: RowProps) {
           <p className="truncate font-medium">{seller.name}</p>
           {banned && (
             <span className="rounded-full bg-destructive/10 px-2 py-0.5 text-xs font-semibold text-destructive">
-              Banned
+              {t("admin.banned")}
             </span>
           )}
         </div>
         <p className="truncate text-sm text-muted-foreground">{seller.email}</p>
         <p className="text-xs text-muted-foreground">
-          {seller.articles_count} listing
-          {seller.articles_count === 1 ? "" : "s"}
+          {t("admin.listing", { count: seller.articles_count })}
         </p>
       </div>
 
@@ -138,7 +140,7 @@ function SellerRow({ seller, token, onDone }: RowProps) {
           onClick={() => unban.mutate()}
           disabled={busy}
         >
-          <RotateCcw className="size-4" /> Unban
+          <RotateCcw className="size-4" /> {t("admin.unban")}
         </Button>
       ) : (
         <Button
@@ -146,13 +148,13 @@ function SellerRow({ seller, token, onDone }: RowProps) {
           variant="outline"
           className="rounded-full font-semibold text-destructive hover:bg-destructive/10"
           onClick={() => {
-            if (window.confirm(`Ban ${seller.name}? Their listings will be hidden.`)) {
+            if (window.confirm(t("admin.confirmBan", { name: seller.name }))) {
               ban.mutate();
             }
           }}
           disabled={busy}
         >
-          <Ban className="size-4" /> Ban
+          <Ban className="size-4" /> {t("admin.ban")}
         </Button>
       )}
     </li>

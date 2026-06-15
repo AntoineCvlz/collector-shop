@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
 import { Check, ImageOff, Trash2, X } from "lucide-react";
@@ -16,6 +17,7 @@ import {
 } from "../services/admin.service";
 
 export default function AdminModeration() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const token = getToken();
@@ -52,28 +54,28 @@ export default function AdminModeration() {
         <div className="mb-6 flex items-end justify-between gap-4">
           <div>
             <p className="text-xs font-semibold tracking-[0.2em] text-coral uppercase">
-              Moderation
+              {t("admin.moderationLabel")}
             </p>
             <h1 className="mt-2 text-3xl font-extrabold tracking-tight">
-              Pending review
+              {t("admin.pendingTitle")}
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Approve, reject or remove submitted listings.
+              {t("admin.pendingSubtitle")}
             </p>
           </div>
           <Link
             to="/admin/sellers"
             className="text-sm font-semibold text-coral hover:underline"
           >
-            Manage sellers →
+            {t("admin.manageSellers")}
           </Link>
         </div>
 
         {isLoading ? (
-          <p className="text-sm text-muted-foreground">Loading…</p>
+          <p className="text-sm text-muted-foreground">{t("common.loading")}</p>
         ) : articles.length === 0 ? (
           <div className="rounded-2xl border border-border bg-card p-10 text-center text-sm text-muted-foreground">
-            Nothing to review right now. 🎉
+            {t("admin.nothingToReview")}
           </div>
         ) : (
           <ul className="space-y-3">
@@ -101,6 +103,7 @@ interface RowProps {
 }
 
 function ModerationRow({ article, token, onDone }: RowProps) {
+  const { t } = useTranslation();
   const cover = article.images?.[0]?.url;
 
   const approve = useMutation({
@@ -152,7 +155,7 @@ function ModerationRow({ article, token, onDone }: RowProps) {
           onClick={() => approve.mutate()}
           disabled={busy}
         >
-          <Check className="size-4" /> Approve
+          <Check className="size-4" /> {t("admin.approve")}
         </Button>
         <Button
           size="sm"
@@ -161,15 +164,15 @@ function ModerationRow({ article, token, onDone }: RowProps) {
           onClick={() => reject.mutate()}
           disabled={busy}
         >
-          <X className="size-4" /> Reject
+          <X className="size-4" /> {t("admin.reject")}
         </Button>
         <Button
           size="icon"
           variant="ghost"
           className="size-9 rounded-full text-destructive hover:bg-destructive/10"
-          aria-label="Remove listing"
+          aria-label={t("admin.removeListing")}
           onClick={() => {
-            if (window.confirm(`Remove "${article.title}" permanently?`)) {
+            if (window.confirm(t("admin.confirmRemove", { title: article.title }))) {
               remove.mutate();
             }
           }}

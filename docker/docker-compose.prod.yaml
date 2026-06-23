@@ -72,7 +72,7 @@ services:
       POSTGRES_USER: ${DB_USERNAME:-user}
       POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD requis}
     volumes:
-      - db-data:/var/lib/postgresql/data
+      - db-data:/var/lib/postgresql
     networks:
       - app-network
     healthcheck:

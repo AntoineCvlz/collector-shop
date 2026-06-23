@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
 import { PackageOpen, Receipt, Store } from "lucide-react";
@@ -19,6 +20,7 @@ import { createReview } from "../services/review.service";
 type Tab = "purchases" | "sales";
 
 export default function Orders() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const token = getToken();
   const user = getUser();
@@ -56,10 +58,10 @@ export default function Orders() {
 
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-10 sm:px-6">
         <h1 className="text-3xl font-extrabold tracking-tight">
-          Transaction history
+          {t("orders.title")}
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Track everything you've bought and sold.
+          {t("orders.subtitle")}
         </p>
 
         {/* Tabs */}
@@ -68,35 +70,37 @@ export default function Orders() {
             active={tab === "purchases"}
             onClick={() => setTab("purchases")}
             icon={Receipt}
-            label="Purchases"
+            label={t("orders.purchases")}
           />
           {seller && (
             <TabButton
               active={tab === "sales"}
               onClick={() => setTab("sales")}
               icon={Store}
-              label="Sales"
+              label={t("orders.sales")}
             />
           )}
         </div>
 
         <section className="mt-5">
           {active.isLoading ? (
-            <p className="text-sm text-muted-foreground">Loading…</p>
+            <p className="text-sm text-muted-foreground">
+              {t("common.loading")}
+            </p>
           ) : orders.length === 0 ? (
             <div className="flex flex-col items-center gap-3 rounded-2xl border border-border bg-card py-16 text-center">
               <PackageOpen className="size-10 text-muted-foreground" />
               <p className="text-sm text-muted-foreground">
                 {tab === "purchases"
-                  ? "You haven't bought anything yet."
-                  : "You haven't sold anything yet."}
+                  ? t("orders.emptyPurchases")
+                  : t("orders.emptySales")}
               </p>
               {tab === "purchases" && (
                 <Link
                   to="/"
                   className="text-sm font-semibold text-coral hover:underline"
                 >
-                  Browse the catalogue
+                  {t("common.browseCatalogue")}
                 </Link>
               )}
             </div>
@@ -154,6 +158,7 @@ function OrderRow({
   mode: Tab;
   token: string;
 }) {
+  const { t } = useTranslation();
   const [reviewing, setReviewing] = useState(false);
   const [done, setDone] = useState(false);
   const date = order.paid_at
@@ -179,11 +184,11 @@ function OrderRow({
             </p>
           )}
           <p className="text-sm text-muted-foreground">
-            {mode === "purchases" ? "Sold by" : "Bought by"}{" "}
+            {mode === "purchases" ? t("orders.soldBy") : t("orders.boughtBy")}{" "}
             {counterpart ?? "—"} · {date}
           </p>
           <p className="text-xs text-muted-foreground">
-            Card •••• {order.card_last4}
+            {t("orders.card")} •••• {order.card_last4}
           </p>
         </div>
 
@@ -198,7 +203,7 @@ function OrderRow({
                 +€{Number(order.seller_payout).toFixed(2)}
               </p>
               <p className="text-xs text-muted-foreground">
-                fee €{Number(order.commission).toFixed(2)}
+                {t("orders.fee")} €{Number(order.commission).toFixed(2)}
               </p>
             </>
           )}
@@ -208,7 +213,7 @@ function OrderRow({
       {/* Review affordance */}
       <div className="mt-3 border-t border-border pt-3">
         {done ? (
-          <p className="text-sm font-medium text-coral">Thanks for your review!</p>
+          <p className="text-sm font-medium text-coral">{t("orders.thanks")}</p>
         ) : reviewing ? (
           <ReviewForm
             token={token}
@@ -227,7 +232,9 @@ function OrderRow({
             onClick={() => setReviewing(true)}
             className="text-sm font-semibold text-coral hover:underline"
           >
-            {mode === "purchases" ? "Review the seller" : "Review the buyer"}
+            {mode === "purchases"
+              ? t("orders.reviewSeller")
+              : t("orders.reviewBuyer")}
           </button>
         )}
       </div>
@@ -250,6 +257,7 @@ function ReviewForm({
   onDone: () => void;
   onCancel: () => void;
 }) {
+  const { t } = useTranslation();
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
 
@@ -258,22 +266,26 @@ function ReviewForm({
     onSuccess: onDone,
   });
 
+  const heading = counterpart
+    ? t("orders.rate", { name: counterpart })
+    : mode === "purchases"
+      ? t("orders.rateSeller")
+      : t("orders.rateBuyer");
+
   return (
     <div className="space-y-3">
-      <p className="text-sm font-medium">
-        Rate {counterpart ?? (mode === "purchases" ? "the seller" : "the buyer")}
-      </p>
+      <p className="text-sm font-medium">{heading}</p>
       <StarRating value={rating} onChange={setRating} />
       <textarea
         rows={2}
         value={comment}
         onChange={(e) => setComment(e.target.value)}
-        placeholder="Add a comment (optional)"
+        placeholder={t("orders.commentPlaceholder")}
         className="w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
       />
       {mutation.isError && (
         <p role="alert" className="text-sm text-destructive">
-          Couldn't submit your review (maybe already reviewed).
+          {t("orders.reviewError")}
         </p>
       )}
       <div className="flex gap-2">
@@ -283,7 +295,7 @@ function ReviewForm({
           disabled={rating === 0 || mutation.isPending}
           onClick={() => mutation.mutate()}
         >
-          {mutation.isPending ? "Submitting…" : "Submit review"}
+          {mutation.isPending ? t("orders.submitting") : t("orders.submitReview")}
         </Button>
         <Button
           size="sm"
@@ -291,7 +303,7 @@ function ReviewForm({
           className="rounded-full font-semibold"
           onClick={onCancel}
         >
-          Cancel
+          {t("common.cancel")}
         </Button>
       </div>
     </div>

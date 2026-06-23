@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, ImageOff, ShieldCheck, Truck } from "lucide-react";
@@ -13,6 +14,7 @@ import { getArticle } from "../services/article.service";
 import { getUserReviews } from "../services/review.service";
 
 export default function ArticleDetail() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const articleId = Number(id);
   const [active, setActive] = useState(0);
@@ -43,7 +45,7 @@ export default function ArticleDetail() {
           to="/"
           className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
         >
-          <ArrowLeft className="size-4" /> Back to catalogue
+          <ArrowLeft className="size-4" /> {t("article.backToCatalogue")}
         </Link>
 
         {isLoading ? (
@@ -57,12 +59,12 @@ export default function ArticleDetail() {
           </div>
         ) : isError || !article ? (
           <div className="mt-16 text-center">
-            <h1 className="text-2xl font-extrabold">Article not found</h1>
+            <h1 className="text-2xl font-extrabold">{t("article.notFound")}</h1>
             <p className="mt-2 text-sm text-muted-foreground">
-              It may have been removed or is awaiting review.
+              {t("article.notFoundBody")}
             </p>
             <Button asChild className="mt-6 rounded-full font-semibold">
-              <Link to="/">Browse the catalogue</Link>
+              <Link to="/">{t("common.browseCatalogue")}</Link>
             </Button>
           </div>
         ) : (
@@ -122,14 +124,15 @@ export default function ArticleDetail() {
                 </span>
                 <span className="flex items-center gap-1 text-sm text-muted-foreground">
                   <Truck className="size-4" />+€
-                  {Number(article.shipping_cost ?? 0).toFixed(2)} shipping
+                  {Number(article.shipping_cost ?? 0).toFixed(2)}{" "}
+                  {t("common.shipping")}
                 </span>
               </div>
 
               {article.seller && (
                 <div className="mt-4">
                   <p className="text-sm text-muted-foreground">
-                    Sold by{" "}
+                    {t("article.soldBy")}{" "}
                     <span className="font-medium text-foreground">
                       {article.seller.name}
                     </span>
@@ -147,7 +150,7 @@ export default function ArticleDetail() {
                     </div>
                   ) : (
                     <p className="mt-1 text-xs text-muted-foreground">
-                      No reviews yet
+                      {t("article.noReviews")}
                     </p>
                   )}
                 </div>
@@ -160,7 +163,7 @@ export default function ArticleDetail() {
                     size="lg"
                     className="h-12 flex-1 rounded-full font-semibold"
                   >
-                    <Link to="/login">Log in to buy</Link>
+                    <Link to="/login">{t("article.loginToBuy")}</Link>
                   </Button>
                 ) : getUser()?.id === article.seller?.id ? (
                   <Button
@@ -169,7 +172,7 @@ export default function ArticleDetail() {
                     className="h-12 flex-1 rounded-full font-semibold"
                     disabled
                   >
-                    This is your listing
+                    {t("article.yourListing")}
                   </Button>
                 ) : (
                   <Button
@@ -177,18 +180,20 @@ export default function ArticleDetail() {
                     size="lg"
                     className="h-12 flex-1 rounded-full font-semibold"
                   >
-                    <Link to={`/articles/${article.id}/checkout`}>Buy now</Link>
+                    <Link to={`/articles/${article.id}/checkout`}>
+                      {t("article.buyNow")}
+                    </Link>
                   </Button>
                 )}
               </div>
 
               <div className="mt-4 flex items-center gap-2 rounded-xl bg-secondary/60 p-3 text-sm text-muted-foreground">
                 <ShieldCheck className="size-4 shrink-0 text-coral" />
-                Protected by Collector.shop buyer protection.
+                {t("article.protection")}
               </div>
 
               <div className="mt-8">
-                <h2 className="text-sm font-bold">Description</h2>
+                <h2 className="text-sm font-bold">{t("article.description")}</h2>
                 <p className="mt-2 text-sm leading-relaxed whitespace-pre-line text-muted-foreground">
                   {article.description}
                 </p>

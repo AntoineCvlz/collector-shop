@@ -1,23 +1,41 @@
+import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 
 import Logo from "./Logo";
 
-const COLUMNS = [
-  {
-    title: "Collector.shop",
-    links: ["About", "How it works", "Careers", "Sustainability"],
-  },
-  {
-    title: "Discover",
-    links: ["Browse catalogue", "Today's finds", "Recently sold", "Categories"],
-  },
-  {
-    title: "Help",
-    links: ["Help centre", "Selling guide", "Buyer protection", "Contact us"],
-  },
-];
-
 export default function Footer() {
+  const { t } = useTranslation();
+
+  const columns = [
+    {
+      title: t("footer.colCompany"),
+      links: [
+        t("footer.about"),
+        t("footer.howItWorks"),
+        t("footer.careers"),
+        t("footer.sustainability"),
+      ],
+    },
+    {
+      title: t("footer.colDiscover"),
+      links: [
+        t("common.browseCatalogue"),
+        t("footer.todaysFinds"),
+        t("footer.recentlySold"),
+        t("nav.categories"),
+      ],
+    },
+    {
+      title: t("footer.colHelp"),
+      links: [
+        t("footer.helpCentre"),
+        t("footer.sellingGuide"),
+        t("footer.buyerProtection"),
+        t("footer.contactUs"),
+      ],
+    },
+  ];
+
   return (
     <footer className="mt-8 border-t border-border bg-secondary/30">
       <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6">
@@ -25,12 +43,11 @@ export default function Footer() {
           <div className="max-w-xs">
             <Logo asStatic />
             <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-              The marketplace for collectors. Buy and sell rare, vintage and
-              remarkable finds — safely.
+              {t("footer.tagline")}
             </p>
           </div>
 
-          {COLUMNS.map((col) => (
+          {columns.map((col) => (
             <div key={col.title}>
               <h4 className="text-sm font-bold">{col.title}</h4>
               <ul className="mt-4 space-y-2.5">
@@ -50,16 +67,16 @@ export default function Footer() {
         </div>
 
         <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-border pt-6 text-xs text-muted-foreground sm:flex-row">
-          <p>© {new Date().getFullYear()} Collector.shop. All rights reserved.</p>
+          <p>{t("footer.rights", { year: new Date().getFullYear() })}</p>
           <div className="flex gap-6">
             <Link to="/" className="transition-colors hover:text-foreground">
-              Terms
+              {t("footer.terms")}
             </Link>
             <Link to="/" className="transition-colors hover:text-foreground">
-              Privacy
+              {t("footer.privacy")}
             </Link>
             <Link to="/" className="transition-colors hover:text-foreground">
-              Cookies
+              {t("footer.cookies")}
             </Link>
           </div>
         </div>

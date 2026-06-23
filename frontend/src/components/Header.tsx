@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 import {
   ChevronDown,
@@ -12,6 +13,7 @@ import {
   Users,
 } from "lucide-react";
 
+import LanguageSwitcher from "./LanguageSwitcher";
 import Logo from "./Logo";
 import { Button } from "./ui/button";
 import {
@@ -34,6 +36,7 @@ function initials(name: string): string {
 }
 
 export default function Header() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const authed = isAuthenticated();
   const user = getUser();
@@ -73,18 +76,19 @@ export default function Header() {
           <Search className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground" />
           <input
             type="search"
-            placeholder="Search for watches, vinyl, coins…"
+            placeholder={t("nav.searchPlaceholder")}
             className="h-11 w-full rounded-full border border-border bg-secondary/60 pr-4 pl-11 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-coral/40 focus:bg-background focus:ring-2 focus:ring-coral/20"
           />
         </div>
 
         <div className="ml-auto flex items-center gap-2 md:ml-0">
+          <LanguageSwitcher className="hidden sm:inline-flex" />
           {authed && user ? (
             <>
               <Link
                 to="/favorites"
                 className="hidden size-10 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground sm:grid"
-                aria-label="Favourites"
+                aria-label={t("nav.favourites")}
               >
                 <Heart className="size-5" />
               </Link>
@@ -120,7 +124,7 @@ export default function Header() {
                     <div className="p-1.5">
                       <MenuItem
                         icon={User}
-                        label="My profile"
+                        label={t("nav.myProfile")}
                         onClick={() => {
                           setOpen(false);
                           navigate("/profile");
@@ -128,7 +132,7 @@ export default function Header() {
                       />
                       <MenuItem
                         icon={LayoutGrid}
-                        label="My orders"
+                        label={t("nav.myOrders")}
                         onClick={() => {
                           setOpen(false);
                           navigate("/orders");
@@ -137,7 +141,7 @@ export default function Header() {
                       {canModerate(user) && (
                         <MenuItem
                           icon={GavelIcon}
-                          label="Moderation"
+                          label={t("nav.moderation")}
                           onClick={() => {
                             setOpen(false);
                             navigate("/admin/moderation");
@@ -147,7 +151,7 @@ export default function Header() {
                       {canModerate(user) && (
                         <MenuItem
                           icon={Users}
-                          label="Sellers"
+                          label={t("nav.sellers")}
                           onClick={() => {
                             setOpen(false);
                             navigate("/admin/sellers");
@@ -157,7 +161,7 @@ export default function Header() {
                       {isAdmin(user) && (
                         <MenuItem
                           icon={Shield}
-                          label="Categories"
+                          label={t("nav.categories")}
                           onClick={() => {
                             setOpen(false);
                             navigate("/admin/categories");
@@ -168,7 +172,7 @@ export default function Header() {
                     <div className="border-t border-border p-1.5">
                       <MenuItem
                         icon={LogOut}
-                        label="Log out"
+                        label={t("nav.logout")}
                         destructive
                         onClick={handleLogout}
                       />
@@ -178,7 +182,7 @@ export default function Header() {
               </div>
 
               <Button asChild className="rounded-full font-semibold">
-                <Link to="/sell">Sell now</Link>
+                <Link to="/sell">{t("nav.sellNow")}</Link>
               </Button>
             </>
           ) : (
@@ -188,10 +192,10 @@ export default function Header() {
                 variant="ghost"
                 className="hidden rounded-full font-semibold sm:inline-flex"
               >
-                <Link to="/login">Log in</Link>
+                <Link to="/login">{t("nav.login")}</Link>
               </Button>
               <Button asChild className="rounded-full font-semibold">
-                <Link to="/register">Sign up</Link>
+                <Link to="/register">{t("nav.signup")}</Link>
               </Button>
             </>
           )}
@@ -204,7 +208,7 @@ export default function Header() {
           <Search className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground" />
           <input
             type="search"
-            placeholder="Search items…"
+            placeholder={t("nav.searchPlaceholderMobile")}
             className="h-10 w-full rounded-full border border-border bg-secondary/60 pr-4 pl-11 text-sm outline-none placeholder:text-muted-foreground focus:border-coral/40 focus:bg-background focus:ring-2 focus:ring-coral/20"
           />
         </div>

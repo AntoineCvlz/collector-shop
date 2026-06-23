@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { PackageOpen, ShieldCheck, Sparkles, Tag } from "lucide-react";
@@ -14,6 +15,7 @@ import { listCategories } from "../services/category.service";
 import { getRecommendations } from "../services/favorite.service";
 
 export default function Home() {
+  const { t } = useTranslation();
   const authed = isAuthenticated();
   const token = getToken();
   const buyer = isBuyer(getUser());
@@ -46,19 +48,18 @@ export default function Home() {
         <section className="animate-pop mt-6 overflow-hidden rounded-3xl bg-coral/10 p-8 sm:p-12">
           <div className="max-w-xl">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-coral px-3 py-1 text-xs font-bold text-coral-foreground">
-              <Sparkles className="size-3.5" /> Collector.shop
+              <Sparkles className="size-3.5" /> {t("home.badge")}
             </span>
             <h1 className="mt-4 text-3xl font-extrabold tracking-tight text-balance sm:text-4xl">
-              Find the piece you've been hunting for.
+              {t("home.heroTitle")}
             </h1>
             <p className="mt-3 text-base text-muted-foreground">
-              Rare and vintage collectibles, listed by people who love them as
-              much as you do.
+              {t("home.heroSubtitle")}
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
               <Button asChild size="lg" className="rounded-full font-semibold">
                 <Link to={authed ? "/sell" : "/register"}>
-                  {authed ? "Sell an item" : "Start collecting"}
+                  {authed ? t("home.sellAnItem") : t("home.startCollecting")}
                 </Link>
               </Button>
             </div>
@@ -70,7 +71,7 @@ export default function Home() {
           <section className="mt-10">
             <div className="flex items-center gap-2">
               <Sparkles className="size-5 text-coral" />
-              <h2 className="text-lg font-bold">Recommended for you</h2>
+              <h2 className="text-lg font-bold">{t("home.recommended")}</h2>
             </div>
             <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 xl:grid-cols-5">
               {recommended.slice(0, 5).map((article) => (
@@ -86,7 +87,7 @@ export default function Home() {
           className="mt-8 flex gap-2 overflow-x-auto pb-2"
         >
           <CategoryChip
-            label="All"
+            label={t("home.all")}
             active={activeCategory === null}
             onClick={() => setActiveCategory(null)}
           />
@@ -103,10 +104,10 @@ export default function Home() {
         {/* ── Article grid ── */}
         <section className="mt-6">
           <div className="flex items-baseline justify-between">
-            <h2 className="text-lg font-bold">Fresh finds</h2>
+            <h2 className="text-lg font-bold">{t("home.freshFinds")}</h2>
             {page && (
               <span className="text-sm text-muted-foreground">
-                {page.total} items
+                {t("common.items", { count: page.total })}
               </span>
             )}
           </div>
@@ -134,9 +135,7 @@ export default function Home() {
           ) : (
             <div className="mt-10 flex flex-col items-center gap-3 py-16 text-center">
               <PackageOpen className="size-10 text-muted-foreground" />
-              <p className="text-sm text-muted-foreground">
-                No items in this category yet.
-              </p>
+              <p className="text-sm text-muted-foreground">{t("home.empty")}</p>
             </div>
           )}
         </section>
@@ -146,18 +145,18 @@ export default function Home() {
           {[
             {
               icon: ShieldCheck,
-              title: "Buyer protection",
-              body: "Your money is held safely until you confirm the item.",
+              title: t("home.trust.protectionTitle"),
+              body: t("home.trust.protectionBody"),
             },
             {
               icon: Tag,
-              title: "Fair, flat fee",
-              body: "A simple 5% on each sale — no hidden charges.",
+              title: t("home.trust.feeTitle"),
+              body: t("home.trust.feeBody"),
             },
             {
               icon: Sparkles,
-              title: "Curated quality",
-              body: "Every listing is reviewed before it goes live.",
+              title: t("home.trust.qualityTitle"),
+              body: t("home.trust.qualityBody"),
             },
           ].map((item) => {
             const Icon = item.icon;

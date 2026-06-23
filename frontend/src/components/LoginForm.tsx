@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { useTranslation } from "react-i18next";
 import { useMutation } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
 import { AlertCircle, ArrowRight, Lock, Mail } from "lucide-react";
@@ -9,6 +10,7 @@ import { login } from "../services/auth.service";
 import { saveSession } from "../lib/auth";
 
 export default function LoginForm() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -33,15 +35,17 @@ export default function LoginForm() {
       aria-label="Sign in form"
     >
       <header>
-        <h1 className="text-2xl font-extrabold tracking-tight">Welcome back</h1>
+        <h1 className="text-2xl font-extrabold tracking-tight">
+          {t("auth.welcomeBack")}
+        </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Log in to manage your items and favourites.
+          {t("auth.loginSubtitle")}
         </p>
       </header>
 
       <div className="flex flex-col gap-1.5">
         <label htmlFor="email" className="text-sm font-medium">
-          Email
+          {t("auth.email")}
         </label>
         <div className="relative">
           <Mail className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -62,13 +66,13 @@ export default function LoginForm() {
       <div className="flex flex-col gap-1.5">
         <div className="flex items-center justify-between">
           <label htmlFor="password" className="text-sm font-medium">
-            Password
+            {t("auth.password")}
           </label>
           <Link
             to="/login"
             className="text-xs font-medium text-coral transition-colors hover:underline"
           >
-            Forgot?
+            {t("auth.forgot")}
           </Link>
         </div>
         <div className="relative">
@@ -93,7 +97,7 @@ export default function LoginForm() {
           className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
         >
           <AlertCircle className="size-4 shrink-0" />
-          Invalid credentials. Please try again.
+          {t("auth.invalidCredentials")}
         </p>
       )}
 
@@ -103,19 +107,19 @@ export default function LoginForm() {
         disabled={mutation.isPending}
         className="group h-12 rounded-full font-semibold"
       >
-        {mutation.isPending ? "Logging in…" : "Log in"}
+        {mutation.isPending ? t("auth.loggingIn") : t("nav.login")}
         {!mutation.isPending && (
           <ArrowRight className="transition-transform group-hover:translate-x-0.5" />
         )}
       </Button>
 
       <p className="text-center text-sm text-muted-foreground">
-        New to Collector.shop?{" "}
+        {t("auth.newHere")}{" "}
         <Link
           to="/register"
           className="font-semibold text-coral underline-offset-4 hover:underline"
         >
-          Sign up
+          {t("nav.signup")}
         </Link>
       </p>
     </form>

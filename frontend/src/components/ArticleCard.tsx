@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { ImageOff } from "lucide-react";
 
@@ -18,6 +19,7 @@ export default function ArticleCard({
   className,
   style,
 }: ArticleCardProps) {
+  const { t } = useTranslation();
   const cover = article.images?.[0]?.url;
   const total = Number(article.price) + Number(article.shipping_cost ?? 0);
 
@@ -62,11 +64,11 @@ export default function ArticleCard({
             €{Number(article.price).toFixed(2)}
           </span>
           <span className="text-xs text-muted-foreground">
-            +€{Number(article.shipping_cost ?? 0).toFixed(2)} ship
+            +€{Number(article.shipping_cost ?? 0).toFixed(2)} {t("common.ship")}
           </span>
         </div>
         <p className="mt-0.5 text-[11px] text-muted-foreground">
-          €{total.toFixed(2)} total
+          €{total.toFixed(2)} {t("common.total")}
         </p>
       </div>
     </Link>

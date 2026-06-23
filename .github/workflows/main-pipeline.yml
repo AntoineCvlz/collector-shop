@@ -122,8 +122,11 @@ jobs:
     with:
       backend_image: ${{ vars.DEPLOY_APPLI_NAME }}
       frontend_image: ${{ vars.DEPLOY_APPLI_NAME_FRONT }}
-    secrets:
-      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+    # inherit : transmet TOUS les secrets (repo + environnement production),
+    # dont SSH_HOST / SSH_USER / SSH_PRIVATE_KEY requis par appleboy/*-action.
+    # L'appel explicite ne passait que DOCKERHUB_USERNAME, d'où l'erreur
+    # "can't connect without a private SSH key or password".
+    secrets: inherit
 
   # ═══════════════════════════════════════════════
   # ÉTAPE 10 : Notifications (toujours exécuté, même en cas d'échec)

@@ -35,6 +35,19 @@ if ! command -v docker &>/dev/null; then
 fi
 usermod -aG docker deploy
 
+# DNS pour les conteneurs : sur Ubuntu, systemd-resolved expose 127.0.0.53
+# qui n'est PAS joignable depuis un conteneur → la résolution DNS échoue
+# (ex: Caddy ne peut pas joindre Let's Encrypt). On fixe un resolver public.
+if [[ ! -f /etc/docker/daemon.json ]]; then
+  install -d -m 755 /etc/docker
+  cat > /etc/docker/daemon.json <<'JSON'
+{
+  "dns": ["1.1.1.1", "8.8.8.8"]
+}
+JSON
+  systemctl restart docker
+fi
+
 echo "▶ 3/5 Firewall (ufw : 22 + 80 + 443)"
 apt-get update -y && apt-get install -y ufw
 ufw allow 22/tcp

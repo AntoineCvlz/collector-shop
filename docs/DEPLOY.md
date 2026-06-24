@@ -143,6 +143,12 @@ et obtient le certificat. Il est stocké dans le volume `caddy-data`
 le DNS pointe bien vers le VPS, les ports 80 **et** 443 sont ouverts (ufw),
 et qu'aucun autre service ne tient le port 80 (`sudo lsof -i :80`).
 
+> **Erreur `lookup ... on 127.0.0.53:53: connection refused`** dans les logs
+> Caddy : les conteneurs ne résolvent pas le DNS (le systemd-resolved d'Ubuntu
+> n'est pas joignable depuis Docker). Créer `/etc/docker/daemon.json` avec
+> `{ "dns": ["1.1.1.1", "8.8.8.8"] }`, `sudo systemctl restart docker`, puis
+> relancer les `up`. (`provision-vps.sh` le configure automatiquement.)
+
 ## Évolutions
 
 - **Staging** : ajouter un second environnement/VPS et réintroduire un job

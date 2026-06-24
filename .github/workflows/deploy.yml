@@ -60,15 +60,20 @@ jobs:
             # Réseau frontal partagé proxy ⇄ applis (idempotent).
             docker network inspect web >/dev/null 2>&1 || docker network create web
 
-            # Proxy Caddy frontal (SSL Let's Encrypt auto) : démarre / recharge
-            # la conf après sync. Partagé par toutes les applis du VPS.
-            docker compose -f proxy/docker-compose.proxy.yaml up -d
-            docker compose -f proxy/docker-compose.proxy.yaml exec -T caddy \
-              caddy reload --config /etc/caddy/Caddyfile || true
-
+            # IMPORTANT : recréer l'appli AVANT de lancer Caddy.
+            # L'ancien app_edge pouvait publier :80 sur l'hôte ; le recréer
+            # avec la nouvelle conf (plus de port publié) LIBÈRE le port 80
+            # pour que Caddy puisse le prendre.
             # Le .env (secrets prod) vit sur le VPS et n'est jamais committé.
             docker compose -f docker-compose.prod.yaml pull
             docker compose -f docker-compose.prod.yaml up -d --remove-orphans
+
+            # Proxy Caddy frontal (SSL Let's Encrypt auto) : démarre / recharge
+            # la conf. Partagé par toutes les applis du VPS. Le reload prend en
+            # compte un Caddyfile modifié même si le conteneur tournait déjà.
+            docker compose -f proxy/docker-compose.proxy.yaml up -d
+            docker compose -f proxy/docker-compose.proxy.yaml exec -T caddy \
+              caddy reload --config /etc/caddy/Caddyfile || true
             # Migrations Laravel (idempotentes, --force = non interactif en prod)
             docker compose -f docker-compose.prod.yaml exec -T backend php artisan migrate --force
             docker compose -f docker-compose.prod.yaml exec -T backend php artisan config:cache

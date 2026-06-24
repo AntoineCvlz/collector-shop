@@ -37,7 +37,7 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "docker/docker-compose.prod.yaml,docker/nginx/default.conf,docker/nginx/edge.prod.conf"
+          source: "docker/docker-compose.prod.yaml,docker/nginx/default.conf,docker/nginx/edge.prod.conf,docker/proxy/docker-compose.proxy.yaml,docker/proxy/Caddyfile"
           target: "/opt/collector-shop"
           strip_components: 1
 
@@ -56,6 +56,16 @@ jobs:
             # On déploie "latest" pour éviter tout décalage de sha entre back et front
             # (le front n'est rebuildé que lorsque frontend/** change).
             export IMAGE_TAG='latest'
+
+            # Réseau frontal partagé proxy ⇄ applis (idempotent).
+            docker network inspect web >/dev/null 2>&1 || docker network create web
+
+            # Proxy Caddy frontal (SSL Let's Encrypt auto) : démarre / recharge
+            # la conf après sync. Partagé par toutes les applis du VPS.
+            docker compose -f proxy/docker-compose.proxy.yaml up -d
+            docker compose -f proxy/docker-compose.proxy.yaml exec -T caddy \
+              caddy reload --config /etc/caddy/Caddyfile || true
+
             # Le .env (secrets prod) vit sur le VPS et n'est jamais committé.
             docker compose -f docker-compose.prod.yaml pull
             docker compose -f docker-compose.prod.yaml up -d --remove-orphans
@@ -66,5 +76,7 @@ jobs:
 
       - name: 🏥 Health check production
         run: |
-          sleep 15
+          # 1ère émission du certificat Let's Encrypt = quelques secondes.
+          sleep 20
+          # PRODUCTION_URL doit valoir https://collector-shop.antoine-cuvilliez.fr
           curl --fail --retry 5 --retry-delay 5 "${{ vars.PRODUCTION_URL }}/up"

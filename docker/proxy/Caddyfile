@@ -1,0 +1,31 @@
+# ─────────────────────────────────────────────────────────────
+# Caddyfile — routage par sous-domaine vers chaque appli du VPS.
+#
+# Caddy obtient et renouvelle automatiquement les certificats
+# Let's Encrypt pour chaque domaine listé ici (challenge HTTP-01
+# sur le port 80, redirection HTTP→HTTPS automatique).
+#
+# Pré-requis pour chaque sous-domaine :
+#   - un enregistrement DNS A (et AAAA si IPv6) pointant vers l'IP du VPS
+#   - le conteneur cible sur le réseau Docker "web"
+#
+# Pour ajouter une appli plus tard : copier un bloc, changer le
+# sous-domaine et le nom du conteneur upstream. C'est tout.
+# ─────────────────────────────────────────────────────────────
+
+collector-shop.antoine-cuvilliez.fr {
+	# app_edge = nginx-edge de collector-shop (écoute sur :80 en interne)
+	reverse_proxy app_edge:80
+
+	encode gzip zstd
+	# uploads d'images d'articles (cf. client_max_body_size côté edge)
+	request_body {
+		max_size 25MB
+	}
+}
+
+# ── Exemple pour une future appli (à dé-commenter / adapter) ──
+# autre-appli.antoine-cuvilliez.fr {
+# 	reverse_proxy autre_edge:80
+# 	encode gzip zstd
+# }

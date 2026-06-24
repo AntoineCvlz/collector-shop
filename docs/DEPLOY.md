@@ -1,13 +1,23 @@
 # Déploiement en production (VPS unique)
 
-Architecture : **1 VPS** (IONOS/Hetzner/…) faisant tourner, via Docker Compose,
-le front (React/Vite), le back (Laravel/PHP-FPM), Postgres et un **nginx-edge**
-en frontal. Front et back sont servis sur la **même origine** → pas de CORS.
+Architecture : **1 VPS** (IONOS/…) avec un **proxy Caddy frontal partagé**
+(SSL Let's Encrypt automatique) qui route **par sous-domaine** vers chaque
+appli. Chaque appli tourne dans sa propre stack Docker Compose ; pour
+collector-shop : front (React/Vite), back (Laravel/PHP-FPM), Postgres et un
+**nginx-edge**. Front et back sont sur la **même origine** → pas de CORS.
 
 ```
-Internet :80 → nginx-edge ──/──────────→ frontend (:8080)
-                          └─/api,/up,…──→ nginx → backend (PHP-FPM :9000) → postgres
+Internet :80/:443
+   │  Caddy (frontal partagé, SSL auto, réseau Docker "web")
+   ├─ collector-shop.antoine-cuvilliez.fr → app_edge ─/────────→ frontend (:8080)
+   │                                                 └─/api,/up,…→ nginx → backend (:9000) → postgres
+   └─ <futur>.antoine-cuvilliez.fr        → autre_edge (autre appli)
 ```
+
+> **Ajouter une appli plus tard** : la rattacher au réseau externe `web`
+> (sans publier de port hôte), puis ajouter un bloc dans
+> `docker/proxy/Caddyfile` (`sous-domaine { reverse_proxy son_edge:80 }`)
+> et un enregistrement DNS A vers l'IP du VPS. Caddy gère le certificat.
 
 Le déploiement est **automatique** : un push sur `main` déclenche la CI
 (tests, sécurité, build, publication Docker Hub) puis, après approbation
@@ -30,8 +40,20 @@ DEPLOY_PUBKEY="ssh-ed25519 AAAA... github-actions-collector-shop" \
   bash provision-vps.sh
 ```
 
-(ou exécuter manuellement les étapes : user `deploy`, Docker, ufw 22+80,
-`/opt/collector-shop`). Le script est dans `docker/provision-vps.sh`.
+(ou exécuter manuellement les étapes : user `deploy`, Docker, ufw 22+80+443,
+réseau Docker `web`, `/opt/collector-shop`). Script : `docker/provision-vps.sh`.
+
+### DNS (chez IONOS)
+
+Dans la zone DNS de `antoine-cuvilliez.fr`, créer un enregistrement **A** :
+
+| Type | Nom (sous-domaine) | Valeur      | TTL    |
+|------|--------------------|-------------|--------|
+| A    | `collector-shop`   | `<IP_VPS>`  | 1 h    |
+
+(et un **AAAA** vers l'IPv6 du VPS si tu en as une). Vérifier la propagation
+avant le déploiement : `dig +short collector-shop.antoine-cuvilliez.fr`
+doit renvoyer l'IP du VPS — sinon Let's Encrypt échouera à émettre le certif.
 
 Vérifier l'accès par clé depuis ta machine :
 
@@ -74,9 +96,9 @@ Coller la valeur dans `APP_KEY=` du `.env`. Mettre un `DB_PASSWORD` fort.
 
 **Settings → Secrets and variables → Actions → Variables** (niveau repo) :
 
-| Nom                        | Valeur                          |
-|----------------------------|---------------------------------|
-| `PRODUCTION_URL`           | `http://<IP_VPS>`               |
+| Nom                        | Valeur                                          |
+|----------------------------|-------------------------------------------------|
+| `PRODUCTION_URL`           | `https://collector-shop.antoine-cuvilliez.fr`   |
 | `DEPLOY_APPLI_NAME`        | nom image **backend** (Hub)     |
 | `DEPLOY_APPLI_NAME_FRONT`  | nom image **frontend** (Hub)    |
 
@@ -102,12 +124,28 @@ ssh -i ~/.ssh/collector_deploy deploy@<IP_VPS>
 cd /opt/collector-shop
 docker compose -f docker-compose.prod.yaml ps
 docker compose -f docker-compose.prod.yaml logs -f edge backend
-curl -f http://localhost/up        # health Laravel
+
+# Proxy / SSL
+docker compose -f proxy/docker-compose.proxy.yaml logs -f caddy   # voir l'émission du certif
+docker exec proxy_caddy caddy reload --config /etc/caddy/Caddyfile  # recharger après edit du Caddyfile
+curl -f https://collector-shop.antoine-cuvilliez.fr/up             # health Laravel via HTTPS
 ```
+
+> Penser à passer `APP_URL=https://collector-shop.antoine-cuvilliez.fr` dans
+> le `.env` du VPS (Laravel génère URLs/liens à partir de là), puis
+> `php artisan config:cache`. nginx-edge fixe déjà `X-Forwarded-Proto`.
+
+### Premier certificat : que se passe-t-il ?
+
+Au 1er `up`, Caddy contacte Let's Encrypt (challenge HTTP-01 sur le port 80)
+et obtient le certificat. Il est stocké dans le volume `caddy-data`
+(persistant) et **renouvelé automatiquement**. Si l'émission échoue, vérifier :
+le DNS pointe bien vers le VPS, les ports 80 **et** 443 sont ouverts (ufw),
+et qu'aucun autre service ne tient le port 80 (`sudo lsof -i :80`).
 
 ## Évolutions
 
-- **HTTPS + domaine** : pointer un domaine sur l'IP, remplacer nginx-edge par
-  Caddy/Traefik (Let's Encrypt auto) et passer `APP_URL` en `https://`.
 - **Staging** : ajouter un second environnement/VPS et réintroduire un job
   `deploy-staging` en amont de la prod.
+- **Nouvelle appli** : nouvelle stack rattachée au réseau `web` + un bloc dans
+  `docker/proxy/Caddyfile` + un DNS A. (cf. encadré en tête de doc.)

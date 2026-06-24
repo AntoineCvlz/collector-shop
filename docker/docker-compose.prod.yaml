@@ -5,7 +5,9 @@
 #   - on PULL les images depuis Docker Hub (publiées par la CI) au lieu de builder
 #   - pas de volumes de code monté (images immuables)
 #   - frontend buildé statique (pas le mode Vite dev)
-#   - nginx-edge en frontal = point d'entrée unique sur le port 80
+#   - nginx-edge = point d'entrée de CETTE appli, joint via le proxy Caddy
+#     (réseau externe "web") qui termine le TLS. app_edge n'expose donc
+#     plus de port sur l'hôte (cf. docker/proxy/ pour le frontal partagé).
 #
 # Variables attendues dans /opt/collector-shop/.env (cf. .env.prod.example) :
 #   DOCKERHUB_USERNAME, BACKEND_IMAGE, FRONTEND_IMAGE, IMAGE_TAG,
@@ -47,17 +49,18 @@ services:
     networks:
       - app-network
 
-  # --- NGINX EDGE (point d'entrée unique, port 80) ---
+  # --- NGINX EDGE (entrée de l'appli, derrière le proxy Caddy) ---
+  # Pas de port publié sur l'hôte : Caddy (réseau "web") le joint
+  # par son nom de conteneur (app_edge:80) et termine le TLS.
   edge:
     image: nginx:alpine
     container_name: app_edge
     restart: unless-stopped
-    ports:
-      - "${APP_PORT:-80}:80"
     volumes:
       - ./nginx/edge.prod.conf:/etc/nginx/conf.d/default.conf:ro
     networks:
-      - app-network
+      - app-network   # parle au frontend/backend internes
+      - web           # joignable par le proxy Caddy frontal
     depends_on:
       - frontend
       - nginx
@@ -84,6 +87,10 @@ services:
 networks:
   app-network:
     driver: bridge
+  # Réseau frontal partagé entre le proxy Caddy et toutes les applis.
+  # Créé une fois sur le VPS :  docker network create web
+  web:
+    external: true
 
 volumes:
   db-data:

@@ -1,0 +1,42 @@
+# ─────────────────────────────────────────────────────────────
+# Caddy — reverse-proxy frontal PARTAGÉ du VPS.
+#
+# Point d'entrée unique sur 80/443 pour TOUTES les applis du VPS.
+# SSL Let's Encrypt automatique (obtention + renouvellement).
+#
+# Chaque appli (collector-shop, …) tourne dans sa propre stack et
+# rejoint le réseau Docker EXTERNE "web" pour être joignable par Caddy
+# via le nom de son conteneur (ex: app_edge:80).
+#
+# Réseau partagé à créer UNE FOIS sur le VPS :
+#   docker network create web
+#
+# Déploiement :
+#   docker compose -f docker-compose.proxy.yaml up -d
+# ─────────────────────────────────────────────────────────────
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    container_name: proxy_caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"   # HTTP/3
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data       # certificats Let's Encrypt (PERSISTANT)
+      - caddy-config:/config
+    networks:
+      - web
+
+networks:
+  web:
+    external: true
+
+volumes:
+  caddy-data:
+    driver: local
+  caddy-config:
+    driver: local

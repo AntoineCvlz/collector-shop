@@ -35,11 +35,16 @@ if ! command -v docker &>/dev/null; then
 fi
 usermod -aG docker deploy
 
-echo "▶ 3/5 Firewall (ufw : 22 + 80)"
+echo "▶ 3/5 Firewall (ufw : 22 + 80 + 443)"
 apt-get update -y && apt-get install -y ufw
 ufw allow 22/tcp
-ufw allow 80/tcp
+ufw allow 80/tcp                 # ACME HTTP-01 + redirection HTTP→HTTPS
+ufw allow 443/tcp               # HTTPS (Caddy)
+ufw allow 443/udp               # HTTP/3
 ufw --force enable
+
+# Réseau Docker frontal partagé entre le proxy Caddy et les applis.
+docker network inspect web >/dev/null 2>&1 || docker network create web
 
 echo "▶ 4/5 Dossier de déploiement"
 install -d -o deploy -g deploy /opt/collector-shop

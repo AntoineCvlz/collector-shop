@@ -1,0 +1,115 @@
+# ─────────────────────────────────────────────────────────────
+# Observabilité — stack DÉDIÉE (Prometheus + Grafana + exporters infra)
+#
+# Découplée de l'appli : se déploie/redémarre indépendamment.
+#   docker compose -f docker-compose.monitoring.yaml up -d
+#
+# Ce qu'on collecte (périmètre INFRA) :
+#   - node-exporter : métriques de l'HÔTE (CPU, RAM, disque, réseau)
+#   - cadvisor      : métriques PAR CONTENEUR Docker
+#   - prometheus    : scrape + stockage (INTERNE, non exposé publiquement)
+#   - grafana       : dashboards, exposé via le proxy Caddy en HTTPS
+#                     (grafana.antoine-cuvilliez.fr → réseau "web")
+#
+# Pré-requis sur le VPS :
+#   - réseau Docker externe "web" (créé par provision-vps.sh)
+#   - un .env à côté de ce fichier (cf. .env.monitoring.example)
+#   - DNS : grafana.antoine-cuvilliez.fr → IP du VPS
+#   - bloc Caddy ajouté (cf. docker/proxy/Caddyfile)
+# ─────────────────────────────────────────────────────────────
+
+services:
+  # --- PROMETHEUS (scrape + TSDB) — INTERNE, pas de port publié ---
+  prometheus:
+    image: prom/prometheus:v3.1.0
+    container_name: mon_prometheus
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=15d
+      - --web.enable-lifecycle
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    networks:
+      - monitoring
+    depends_on:
+      - node-exporter
+      - cadvisor
+
+  # --- GRAFANA — exposé via Caddy (réseau "web"), TLS auto ---
+  grafana:
+    image: grafana/grafana:11.4.0
+    container_name: mon_grafana
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      # URL publique servie par Caddy (cf. Caddyfile)
+      GF_SERVER_ROOT_URL: https://grafana.antoine-cuvilliez.fr
+      # Caddy termine le TLS et parle en HTTP au conteneur
+      GF_SERVER_ENFORCE_DOMAIN: "false"
+      # Pas d'inscription publique
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      # Admin provisionné depuis le .env
+      GF_SECURITY_ADMIN_USER: ${GF_SECURITY_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GF_SECURITY_ADMIN_PASSWORD:?GF_SECURITY_ADMIN_PASSWORD requis}
+    volumes:
+      - grafana-data:/var/lib/grafana
+      # Datasource + provider de dashboards auto-provisionnés (zéro clic).
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      # Dashboards JSON chargés au démarrage (cf. provider dashboards.yaml).
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    networks:
+      - monitoring   # parle à Prometheus
+      - web          # joignable par le proxy Caddy frontal
+    depends_on:
+      - prometheus
+
+  # --- NODE EXPORTER — métriques de l'HÔTE ---
+  node-exporter:
+    image: prom/node-exporter:v1.8.2
+    container_name: mon_node_exporter
+    restart: unless-stopped
+    command:
+      - --path.rootfs=/host
+      - --path.procfs=/host/proc
+      - --path.sysfs=/host/sys
+      - --collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)
+    pid: host
+    volumes:
+      - /:/host:ro,rslave
+    networks:
+      - monitoring
+
+  # --- cADVISOR — métriques par conteneur Docker ---
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    container_name: mon_cadvisor
+    restart: unless-stopped
+    privileged: true
+    devices:
+      - /dev/kmsg
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    networks:
+      - monitoring
+
+networks:
+  # Réseau interne de la stack d'observabilité.
+  monitoring:
+    driver: bridge
+  # Réseau frontal partagé (créé par provision-vps.sh) : seul Grafana le rejoint.
+  web:
+    external: true
+
+volumes:
+  prometheus-data:
+    driver: local
+  grafana-data:
+    driver: local

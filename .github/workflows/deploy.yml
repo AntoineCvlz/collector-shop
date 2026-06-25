@@ -37,7 +37,7 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "docker/docker-compose.prod.yaml,docker/nginx/default.conf,docker/nginx/edge.prod.conf,docker/proxy/docker-compose.proxy.yaml,docker/proxy/Caddyfile"
+          source: "docker/docker-compose.prod.yaml,docker/nginx/default.conf,docker/nginx/edge.prod.conf,docker/proxy/docker-compose.proxy.yaml,docker/proxy/Caddyfile,docker/monitoring/docker-compose.monitoring.yaml,docker/monitoring/.env.monitoring.example,docker/monitoring/prometheus/prometheus.yml,docker/monitoring/grafana/provisioning/datasources/prometheus.yaml,docker/monitoring/grafana/provisioning/dashboards/dashboards.yaml,docker/monitoring/grafana/dashboards/node-exporter-full.json,docker/monitoring/grafana/dashboards/cadvisor.json"
           target: "/opt/collector-shop"
           strip_components: 1
 
@@ -74,6 +74,19 @@ jobs:
             docker compose -f proxy/docker-compose.proxy.yaml up -d
             docker compose -f proxy/docker-compose.proxy.yaml exec -T caddy \
               caddy reload --config /etc/caddy/Caddyfile || true
+
+            # Stack d'observabilité (Prometheus + Grafana + exporters infra).
+            # Découplée de l'app mais déployée dans le même flux.
+            # Le .env (secret admin Grafana) vit sur le VPS et n'est jamais
+            # committé : créé à la main une fois (cf. docker/monitoring/README.md).
+            if [ -f monitoring/.env ]; then
+              docker compose -f monitoring/docker-compose.monitoring.yaml pull
+              docker compose -f monitoring/docker-compose.monitoring.yaml up -d --remove-orphans
+            else
+              echo "⚠ monitoring/.env absent → stack monitoring NON démarrée."
+              echo "  cp monitoring/.env.monitoring.example monitoring/.env puis remplir GF_SECURITY_ADMIN_PASSWORD."
+            fi
+
             # Migrations Laravel (idempotentes, --force = non interactif en prod)
             docker compose -f docker-compose.prod.yaml exec -T backend php artisan migrate --force
             docker compose -f docker-compose.prod.yaml exec -T backend php artisan config:cache

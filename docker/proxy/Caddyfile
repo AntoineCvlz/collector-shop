@@ -24,6 +24,14 @@ collector-shop.antoine-cuvilliez.fr {
 	}
 }
 
+# ── Grafana (stack d'observabilité, cf. docker/monitoring/) ──
+# Pré-requis : DNS grafana.antoine-cuvilliez.fr → IP du VPS, et le
+# conteneur mon_grafana sur le réseau "web".
+grafana.antoine-cuvilliez.fr {
+	reverse_proxy mon_grafana:3000
+	encode gzip zstd
+}
+
 # ── Exemple pour une future appli (à dé-commenter / adapter) ──
 # autre-appli.antoine-cuvilliez.fr {
 # 	reverse_proxy autre_edge:80

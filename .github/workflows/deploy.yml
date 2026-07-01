@@ -73,24 +73,37 @@ jobs:
             docker compose -f docker-compose.prod.yaml pull
             docker compose -f docker-compose.prod.yaml up -d --remove-orphans
 
-            # Proxy Caddy frontal (SSL Let's Encrypt auto) : démarre / recharge
-            # la conf. Partagé par toutes les applis du VPS. Le reload prend en
-            # compte un Caddyfile modifié même si le conteneur tournait déjà.
-            docker compose -f proxy/docker-compose.proxy.yaml up -d
-            docker compose -f proxy/docker-compose.proxy.yaml exec -T caddy \
-              caddy reload --config /etc/caddy/Caddyfile || true
+            # Proxy Caddy frontal (SSL Let's Encrypt auto). Partagé par toutes
+            # les applis du VPS. Les certificats vivent dans le volume /data,
+            # donc recréer le conteneur ne les perd pas et ne re-sollicite pas
+            # Let's Encrypt inutilement.
+            #
+            # --force-recreate est REQUIS ici : le SCP REMPLACE le Caddyfile
+            # (nouvel inode), or le bind-mount du conteneur reste accroché à
+            # l'ANCIEN inode → un simple `caddy reload` relit l'ancien contenu
+            # ("config is unchanged") et ignore tout nouveau bloc (ex. grafana).
+            # Recréer le conteneur ré-attache le bind au fichier courant.
+            docker compose -f proxy/docker-compose.proxy.yaml up -d --force-recreate
 
             # Stack d'observabilité (Prometheus + Grafana + exporters infra/pg/app).
             # Découplée de l'app mais déployée dans le même flux, à chaque merge.
             # Le .env (secrets Grafana + connexion PG de l'exporter) est généré
             # ICI depuis les secrets GitHub de l'environnement "production" :
             # il n'est jamais committé et reste sur le VPS.
+            #
+            # Écriture ATOMIQUE et TOLÉRANTE : on écrit un fichier temporaire en
+            # 600 puis on le déplace en place. `rm -f` d'abord car un ancien
+            # monitoring/.env appartenant à root (déploiements antérieurs) ferait
+            # échouer une redirection `>` en tant qu'utilisateur deploy.
             umask 077
-            cat > monitoring/.env <<ENV
+            rm -f monitoring/.env
+            install -m 600 /dev/null monitoring/.env.tmp
+            cat > monitoring/.env.tmp <<ENV
             GF_SECURITY_ADMIN_USER=${{ secrets.GF_SECURITY_ADMIN_USER }}
             GF_SECURITY_ADMIN_PASSWORD=${{ secrets.GF_SECURITY_ADMIN_PASSWORD }}
             DATA_SOURCE_NAME=${{ secrets.MONITORING_DATA_SOURCE_NAME }}
             ENV
+            mv -f monitoring/.env.tmp monitoring/.env
             docker compose -f monitoring/docker-compose.monitoring.yaml pull
             docker compose -f monitoring/docker-compose.monitoring.yaml up -d --remove-orphans
 

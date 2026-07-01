@@ -55,6 +55,18 @@ services:
       # Admin provisionné depuis le .env
       GF_SECURITY_ADMIN_USER: ${GF_SECURITY_ADMIN_USER:-admin}
       GF_SECURITY_ADMIN_PASSWORD: ${GF_SECURITY_ADMIN_PASSWORD:?GF_SECURITY_ADMIN_PASSWORD requis}
+      # --- SMTP pour l'envoi des alertes (contact point "email-admin") ---
+      # Renseigné depuis le .env (secrets CI). Si GF_SMTP_HOST est vide,
+      # Grafana démarre quand même : les alertes se déclenchent mais ne
+      # partent pas par mail (visibles dans l'UI Alerting).
+      GF_SMTP_ENABLED: ${GF_SMTP_ENABLED:-false}
+      GF_SMTP_HOST: ${GF_SMTP_HOST:-}
+      GF_SMTP_USER: ${GF_SMTP_USER:-}
+      GF_SMTP_PASSWORD: ${GF_SMTP_PASSWORD:-}
+      GF_SMTP_FROM_ADDRESS: ${GF_SMTP_FROM_ADDRESS:-}
+      GF_SMTP_FROM_NAME: "Grafana Collector Shop"
+      # Destinataire des alertes, interpolé dans contact-points.yaml.
+      GF_ALERT_EMAIL_TO: ${GF_ALERT_EMAIL_TO:-}
     volumes:
       - grafana-data:/var/lib/grafana
       # Datasource + provider de dashboards auto-provisionnés (zéro clic).

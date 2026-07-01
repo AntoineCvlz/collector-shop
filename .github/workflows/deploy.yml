@@ -37,7 +37,7 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "docker/docker-compose.prod.yaml,docker/nginx/default.conf,docker/nginx/edge.prod.conf,docker/proxy/docker-compose.proxy.yaml,docker/proxy/Caddyfile,docker/monitoring/docker-compose.monitoring.yaml,docker/monitoring/.env.monitoring.example,docker/monitoring/prometheus/prometheus.yml,docker/monitoring/grafana/provisioning/datasources/prometheus.yaml,docker/monitoring/grafana/provisioning/dashboards/dashboards.yaml,docker/monitoring/grafana/dashboards/node-exporter-full.json,docker/monitoring/grafana/dashboards/cadvisor.json,docker/monitoring/grafana/dashboards/laravel-app.json,docker/monitoring/grafana/dashboards/postgres.json"
+          source: "docker/docker-compose.prod.yaml,docker/nginx/default.conf,docker/nginx/edge.prod.conf,docker/proxy/docker-compose.proxy.yaml,docker/proxy/Caddyfile,docker/monitoring/docker-compose.monitoring.yaml,docker/monitoring/.env.monitoring.example,docker/monitoring/prometheus/prometheus.yml,docker/monitoring/grafana/provisioning/datasources/prometheus.yaml,docker/monitoring/grafana/provisioning/dashboards/dashboards.yaml,docker/monitoring/grafana/provisioning/alerting/contact-points.yaml,docker/monitoring/grafana/provisioning/alerting/rules.yaml,docker/monitoring/grafana/dashboards/node-exporter-full.json,docker/monitoring/grafana/dashboards/cadvisor.json,docker/monitoring/grafana/dashboards/laravel-app.json,docker/monitoring/grafana/dashboards/postgres.json"
           target: "/opt/collector-shop"
           strip_components: 1
 
@@ -102,6 +102,12 @@ jobs:
             GF_SECURITY_ADMIN_USER=${{ secrets.GF_SECURITY_ADMIN_USER }}
             GF_SECURITY_ADMIN_PASSWORD=${{ secrets.GF_SECURITY_ADMIN_PASSWORD }}
             DATA_SOURCE_NAME=${{ secrets.MONITORING_DATA_SOURCE_NAME }}
+            GF_SMTP_ENABLED=${{ vars.GF_SMTP_ENABLED || 'false' }}
+            GF_SMTP_HOST=${{ secrets.GF_SMTP_HOST }}
+            GF_SMTP_USER=${{ secrets.GF_SMTP_USER }}
+            GF_SMTP_PASSWORD=${{ secrets.GF_SMTP_PASSWORD }}
+            GF_SMTP_FROM_ADDRESS=${{ secrets.GF_SMTP_FROM_ADDRESS }}
+            GF_ALERT_EMAIL_TO=${{ secrets.GF_ALERT_EMAIL_TO }}
             ENV
             mv -f monitoring/.env.tmp monitoring/.env
             docker compose -f monitoring/docker-compose.monitoring.yaml pull

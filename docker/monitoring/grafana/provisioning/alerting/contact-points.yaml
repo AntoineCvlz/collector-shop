@@ -1,0 +1,27 @@
+# Point de contact des alertes Grafana : email de l'admin.
+# L'envoi SMTP est configuré via les variables GF_SMTP_* du conteneur Grafana
+# (cf. docker-compose.monitoring.yaml), alimentées par le .env (secrets CI).
+apiVersion: 1
+
+contactPoints:
+  - orgId: 1
+    name: email-admin
+    receivers:
+      - uid: email-admin
+        type: email
+        settings:
+          # Destinataire fourni par le .env (GF_ALERT_EMAIL_TO). Grafana
+          # interpole ${...} depuis l'environnement du conteneur.
+          addresses: ${GF_ALERT_EMAIL_TO}
+          singleEmail: false
+        disableResolveMessage: false
+
+# Politique de notification : tout passe par le contact point email-admin.
+policies:
+  - orgId: 1
+    receiver: email-admin
+    group_by: ["grafana_folder", "alertname"]
+    # Regroupe les alertes, limite le spam.
+    group_wait: 30s
+    group_interval: 5m
+    repeat_interval: 4h

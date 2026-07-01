@@ -100,12 +100,32 @@ services:
     networks:
       - monitoring
 
+  # --- POSTGRES EXPORTER — métriques de la base de l'app (app_db) ---
+  # Rejoint aussi "app-network" (réseau de l'app) pour joindre app_db:5432.
+  # La chaîne de connexion (idéalement un rôle read-only) vient du .env.
+  postgres-exporter:
+    image: quay.io/prometheuscommunity/postgres-exporter:v0.16.0
+    container_name: mon_postgres_exporter
+    restart: unless-stopped
+    environment:
+      DATA_SOURCE_NAME: ${DATA_SOURCE_NAME:?DATA_SOURCE_NAME requis (connexion à app_db)}
+    networks:
+      - monitoring     # scrapé par Prometheus
+      - app-network    # joint la base app_db
+
 networks:
-  # Réseau interne de la stack d'observabilité.
+  # Réseau interne de la stack d'observabilité. Nom fixe : l'app le rejoint
+  # (déclaré "external" côté docker-compose.prod.yaml) pour exposer /metrics.
   monitoring:
+    name: monitoring
     driver: bridge
   # Réseau frontal partagé (créé par provision-vps.sh) : seul Grafana le rejoint.
   web:
+    external: true
+  # Réseau de l'app (créé par docker-compose.prod.yaml) : le postgres-exporter
+  # le rejoint pour joindre app_db. L'app est déployée avant le monitoring.
+  app-network:
+    name: app-network
     external: true
 
 volumes:

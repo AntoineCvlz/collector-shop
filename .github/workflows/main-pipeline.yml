@@ -5,11 +5,13 @@ on:
     branches: ["main"]
     paths:
       - "backend/**"
+      - "docker/**"
       - ".github/workflows/**"
   pull_request:
     branches: ["main"]
     paths:
       - "backend/**"
+      - "docker/**"
       - ".github/workflows/**"
   schedule:
     - cron: "0 2 * * 1"

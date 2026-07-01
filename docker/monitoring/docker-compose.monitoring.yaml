@@ -116,9 +116,13 @@ services:
 networks:
   # Réseau interne de la stack d'observabilité. Nom fixe : l'app le rejoint
   # (déclaré "external" côté docker-compose.prod.yaml) pour exposer /metrics.
+  # EXTERNAL : créé une seule fois par le job de déploiement (docker network
+  # create monitoring) AVANT tout compose, puis référencé à l'identique par
+  # l'app et par cette stack. Le déclarer non-external ici ferait échouer
+  # Compose s'il trouve un réseau "monitoring" qu'il n'a pas lui-même créé.
   monitoring:
     name: monitoring
-    driver: bridge
+    external: true
   # Réseau frontal partagé (créé par provision-vps.sh) : seul Grafana le rejoint.
   web:
     external: true

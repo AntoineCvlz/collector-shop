@@ -45,6 +45,10 @@ services:
       - storage-public:/var/www/html/public/storage:ro
     networks:
       - app-network
+      # Réseau d'observabilité : Prometheus (stack monitoring) scrape
+      # /metrics du backend via ce conteneur (app_nginx:80), en INTERNE.
+      # /metrics n'est PAS proxifié par nginx-edge → pas d'exposition publique.
+      - monitoring
     depends_on:
       - backend
 
@@ -92,11 +96,19 @@ services:
       retries: 5
 
 networks:
+  # Nom fixe (sinon Compose préfixe par le projet) pour que la stack
+  # monitoring puisse joindre app_db via ce réseau, déclaré "external" là-bas.
   app-network:
+    name: app-network
     driver: bridge
   # Réseau frontal partagé entre le proxy Caddy et toutes les applis.
   # Créé une fois sur le VPS :  docker network create web
   web:
+    external: true
+  # Réseau d'observabilité, créé et possédé par la stack monitoring
+  # (docker/monitoring/). L'app le rejoint pour être scrapée par Prometheus.
+  monitoring:
+    name: monitoring
     external: true
 
 volumes:

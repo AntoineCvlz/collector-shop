@@ -13,7 +13,8 @@
         "api-platform/laravel": "^4.2",
         "laravel/framework": "^12.0",
         "laravel/passport": "^12.4.3",
-        "laravel/tinker": "^2.10.1"
+        "laravel/tinker": "^2.10.1",
+        "promphp/prometheus_client_php": "^2.13"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
@@ -73,6 +74,9 @@
         "pre-package-uninstall": [
             "Illuminate\\Foundation\\ComposerScripts::prePackageUninstall"
         ]
+    },
+    "suggest": {
+        "ext-apcu": "Recommandé en production : stockage en mémoire partagée des métriques Prometheus (/metrics). Sans lui, le registre retombe sur un stockage InMemory (par requête)."
     },
     "extra": {
         "laravel": {

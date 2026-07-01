@@ -15,6 +15,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => \App\Http\Middleware\EnsureUserHasRole::class,
         ]);
+
+        // Instrumente toutes les requêtes (compteur + latence) pour Prometheus.
+        $middleware->append(\App\Http\Middleware\CollectHttpMetrics::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

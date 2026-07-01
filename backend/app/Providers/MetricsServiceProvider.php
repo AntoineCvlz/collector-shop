@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Prometheus\CollectorRegistry;
+use Prometheus\Storage\Adapter;
 use Prometheus\Storage\APC;
 use Prometheus\Storage\InMemory;
 
@@ -24,12 +25,23 @@ class MetricsServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(CollectorRegistry::class, function (): CollectorRegistry {
-            $storage = \extension_loaded('apcu') && \filter_var(\ini_get('apc.enabled'), FILTER_VALIDATE_BOOL)
-                ? new APC
-                : new InMemory;
-
             // $registerDefaultMetrics = false : on ne veut que nos propres séries.
-            return new CollectorRegistry($storage, false);
+            return new CollectorRegistry($this->makeStorage(), false);
         });
+    }
+
+    /**
+     * APCu quand il est RÉELLEMENT actif (apcu_enabled() est la seule source de
+     * vérité : apc.enabled peut valoir 1 sans APCu opérationnel, ex. en CLI avec
+     * apc.enable_cli=0). Sinon InMemory — le registre reste fonctionnel, seules
+     * les valeurs ne survivent pas à la requête (suffisant en test/CLI).
+     */
+    private function makeStorage(): Adapter
+    {
+        if (\extension_loaded('apcu') && \function_exists('apcu_enabled') && \apcu_enabled()) {
+            return new APC;
+        }
+
+        return new InMemory;
     }
 }

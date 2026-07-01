@@ -1,0 +1,163 @@
+# Règles d'alerte Grafana provisionnées (périmètre infra + app + DB).
+# Évaluées contre la datasource Prometheus (uid: prometheus).
+#
+# Chaque règle : une condition PromQL (refId A) réduite en seuil booléen
+# (refId C via l'expression "threshold"). Alerte si la condition tient
+# pendant la durée "for".
+apiVersion: 1
+
+groups:
+  - orgId: 1
+    name: collector-shop
+    folder: Alerts
+    interval: 1m
+    rules:
+      # ---- Application Laravel injoignable (cible /metrics down) ----
+      - uid: app-down
+        title: Application Laravel down
+        condition: C
+        for: 2m
+        data:
+          - refId: A
+            relativeTimeRange: { from: 300, to: 0 }
+            datasourceUid: prometheus
+            model:
+              expr: up{job="laravel"}
+              instant: true
+              refId: A
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: { type: lt, params: [1] }
+              refId: C
+        labels: { severity: critical }
+        annotations:
+          summary: "L'endpoint /metrics de l'app ne répond plus (up=0)."
+
+      # ---- PostgreSQL injoignable ----
+      - uid: postgres-down
+        title: PostgreSQL down
+        condition: C
+        for: 2m
+        data:
+          - refId: A
+            relativeTimeRange: { from: 300, to: 0 }
+            datasourceUid: prometheus
+            model:
+              expr: pg_up
+              instant: true
+              refId: A
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: { type: lt, params: [1] }
+              refId: C
+        labels: { severity: critical }
+        annotations:
+          summary: "La base PostgreSQL ne répond plus (pg_up=0)."
+
+      # ---- Disque hôte presque plein (< 10% libre sur /) ----
+      - uid: disk-low
+        title: Espace disque faible (hôte)
+        condition: C
+        for: 5m
+        data:
+          - refId: A
+            relativeTimeRange: { from: 300, to: 0 }
+            datasourceUid: prometheus
+            model:
+              expr: node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"} * 100
+              instant: true
+              refId: A
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: { type: lt, params: [10] }
+              refId: C
+        labels: { severity: warning }
+        annotations:
+          summary: "Moins de 10% d'espace disque libre sur / (hôte)."
+
+      # ---- Mémoire hôte saturée (< 10% disponible) ----
+      - uid: memory-high
+        title: Mémoire faible (hôte)
+        condition: C
+        for: 5m
+        data:
+          - refId: A
+            relativeTimeRange: { from: 300, to: 0 }
+            datasourceUid: prometheus
+            model:
+              expr: node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes * 100
+              instant: true
+              refId: A
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: { type: lt, params: [10] }
+              refId: C
+        labels: { severity: warning }
+        annotations:
+          summary: "Moins de 10% de mémoire disponible sur l'hôte."
+
+      # ---- CPU hôte élevé (> 90% en moyenne 5 min) ----
+      - uid: cpu-high
+        title: CPU élevé (hôte)
+        condition: C
+        for: 10m
+        data:
+          - refId: A
+            relativeTimeRange: { from: 300, to: 0 }
+            datasourceUid: prometheus
+            model:
+              expr: 100 - (avg(rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)
+              instant: true
+              refId: A
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [90] }
+              refId: C
+        labels: { severity: warning }
+        annotations:
+          summary: "Utilisation CPU hôte > 90% pendant 10 min."
+
+      # ---- Taux d'erreurs 5xx applicatives élevé ----
+      - uid: http-5xx-high
+        title: Erreurs HTTP 5xx élevées
+        condition: C
+        for: 5m
+        data:
+          - refId: A
+            relativeTimeRange: { from: 300, to: 0 }
+            datasourceUid: prometheus
+            model:
+              expr: sum(rate(collector_http_requests_total{status=~"5.."}[5m]))
+              instant: true
+              refId: A
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [0.5] }
+              refId: C
+        labels: { severity: warning }
+        annotations:
+          summary: "Plus de 0,5 erreur 5xx/s sur l'app pendant 5 min."

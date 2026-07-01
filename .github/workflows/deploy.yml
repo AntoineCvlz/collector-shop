@@ -37,7 +37,7 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "docker/docker-compose.prod.yaml,docker/nginx/default.conf,docker/nginx/edge.prod.conf,docker/proxy/docker-compose.proxy.yaml,docker/proxy/Caddyfile,docker/monitoring/docker-compose.monitoring.yaml,docker/monitoring/.env.monitoring.example,docker/monitoring/prometheus/prometheus.yml,docker/monitoring/grafana/provisioning/datasources/prometheus.yaml,docker/monitoring/grafana/provisioning/dashboards/dashboards.yaml,docker/monitoring/grafana/dashboards/node-exporter-full.json,docker/monitoring/grafana/dashboards/cadvisor.json,docker/monitoring/grafana/dashboards/laravel-app.json,docker/monitoring/grafana/dashboards/postgres.json"
+          source: "docker/docker-compose.prod.yaml,docker/nginx/default.conf,docker/nginx/edge.prod.conf,docker/proxy/docker-compose.proxy.yaml,docker/proxy/Caddyfile,docker/monitoring/docker-compose.monitoring.yaml,docker/monitoring/.env.monitoring.example,docker/monitoring/prometheus/prometheus.yml,docker/monitoring/grafana/provisioning/datasources/prometheus.yaml,docker/monitoring/grafana/provisioning/dashboards/dashboards.yaml,docker/monitoring/grafana/provisioning/alerting/contact-points.yaml,docker/monitoring/grafana/provisioning/alerting/rules.yaml,docker/monitoring/grafana/dashboards/node-exporter-full.json,docker/monitoring/grafana/dashboards/cadvisor.json,docker/monitoring/grafana/dashboards/laravel-app.json,docker/monitoring/grafana/dashboards/postgres.json"
           target: "/opt/collector-shop"
           strip_components: 1
 
@@ -64,6 +64,12 @@ jobs:
             #                 dans les deux composes → doit préexister.
             docker network inspect web >/dev/null 2>&1 || docker network create web
             docker network inspect monitoring >/dev/null 2>&1 || docker network create monitoring
+
+            # ROLLBACK : mémoriser l'image backend ACTUELLEMENT en service avant
+            # de pull la nouvelle. On la re-taguera si les smoke tests échouent.
+            # (chaîne vide au tout premier déploiement → pas de rollback possible).
+            PREV_BACKEND_IMAGE="$(docker inspect --format '{{.Image}}' app_backend 2>/dev/null || true)"
+            echo "Image backend précédente : ${PREV_BACKEND_IMAGE:-<aucune>}"
 
             # IMPORTANT : recréer l'appli AVANT de lancer Caddy.
             # L'ancien app_edge pouvait publier :80 sur l'hôte ; le recréer
@@ -102,6 +108,12 @@ jobs:
             GF_SECURITY_ADMIN_USER=${{ secrets.GF_SECURITY_ADMIN_USER }}
             GF_SECURITY_ADMIN_PASSWORD=${{ secrets.GF_SECURITY_ADMIN_PASSWORD }}
             DATA_SOURCE_NAME=${{ secrets.MONITORING_DATA_SOURCE_NAME }}
+            GF_SMTP_ENABLED=${{ vars.GF_SMTP_ENABLED || 'false' }}
+            GF_SMTP_HOST=${{ secrets.GF_SMTP_HOST }}
+            GF_SMTP_USER=${{ secrets.GF_SMTP_USER }}
+            GF_SMTP_PASSWORD=${{ secrets.GF_SMTP_PASSWORD }}
+            GF_SMTP_FROM_ADDRESS=${{ secrets.GF_SMTP_FROM_ADDRESS }}
+            GF_ALERT_EMAIL_TO=${{ secrets.GF_ALERT_EMAIL_TO }}
             ENV
             mv -f monitoring/.env.tmp monitoring/.env
             docker compose -f monitoring/docker-compose.monitoring.yaml pull
@@ -110,6 +122,49 @@ jobs:
             # Migrations Laravel (idempotentes, --force = non interactif en prod)
             docker compose -f docker-compose.prod.yaml exec -T backend php artisan migrate --force
             docker compose -f docker-compose.prod.yaml exec -T backend php artisan config:cache
+
+            # ─── SMOKE TESTS (endpoints critiques, en INTERNE via app_edge) ───
+            # On teste la vraie stack déployée avant de la valider. Test interne
+            # (app_edge:80) pour ne pas dépendre de la propagation TLS/DNS.
+            smoke_test() {
+              echo "▶ Smoke tests…"
+              # Laisser le backend démarrer (php-fpm + opcache).
+              sleep 10
+              # /up : health Laravel — doit répondre 200.
+              docker exec app_edge wget -qO- --timeout=10 http://localhost/up >/dev/null \
+                || { echo "✗ /up KO"; return 1; }
+              # /api/articles : catalogue public — doit répondre (200).
+              docker exec app_edge wget -qO- --timeout=10 http://localhost/api/articles >/dev/null \
+                || { echo "✗ /api/articles KO"; return 1; }
+              # /api/categories : autre endpoint public clé.
+              docker exec app_edge wget -qO- --timeout=10 http://localhost/api/categories >/dev/null \
+                || { echo "✗ /api/categories KO"; return 1; }
+              echo "✓ Smoke tests OK"
+            }
+
+            # ─── ROLLBACK auto si les smoke tests échouent ───
+            if ! smoke_test; then
+              echo "❌ Smoke tests en échec."
+              # Nom d'image EXACT attendu par le compose : ${DOCKERHUB_USERNAME}/
+              # ${BACKEND_IMAGE}:latest. DOCKERHUB_USERNAME vit dans le .env prod
+              # (lu par compose), pas dans ce shell → on le récupère depuis là.
+              DHU="$(grep -E '^DOCKERHUB_USERNAME=' .env | cut -d= -f2- || true)"
+              TARGET_TAG="${DHU}/${BACKEND_IMAGE}:latest"
+              if [ -n "$PREV_BACKEND_IMAGE" ] && [ -n "$DHU" ]; then
+                echo "↩ Rollback : re-déploiement de l'image backend précédente ($TARGET_TAG)."
+                docker tag "$PREV_BACKEND_IMAGE" "$TARGET_TAG"
+                docker compose -f docker-compose.prod.yaml up -d --no-pull backend nginx edge
+                sleep 10
+                docker exec app_edge wget -qO- --timeout=10 http://localhost/up >/dev/null \
+                  && echo "↩ Rollback appliqué (ancienne version de nouveau en service)." \
+                  || echo "⚠ Rollback tenté mais /up ne répond toujours pas."
+              else
+                echo "⚠ Rollback impossible (pas d'image précédente ou DOCKERHUB_USERNAME introuvable)."
+              fi
+              docker image prune -f
+              exit 1
+            fi
+
             docker image prune -f
 
       - name: 🏥 Health check production

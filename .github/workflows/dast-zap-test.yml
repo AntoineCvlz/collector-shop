@@ -115,6 +115,9 @@ jobs:
 
       - name: Run OWASP ZAP DAST scan
         run: |
+          # -J : rapport JSON (parsé par le gate) ; -r : rapport HTML (humain).
+          # -I : ne PAS faire échouer le conteneur ZAP sur alerte (le gate
+          #      dédié ci-dessous décide du blocage à partir du JSON).
           docker run --rm \
             -v ${{ github.workspace }}/zap-reports:/zap/wrk/:rw \
             -v /tmp/zap-home:/home/zap:rw \
@@ -123,6 +126,7 @@ jobs:
             zap-baseline.py \
             -t http://localhost:8080 \
             -r zap-report.html \
+            -J zap-report.json \
             -I
         continue-on-error: true
 
@@ -130,15 +134,35 @@ jobs:
       # pas réellement balayé l'app (app morte, réseau, crash) → on échoue.
       - name: Verify ZAP actually scanned the app
         run: |
-          test -s "${{ github.workspace }}/zap-reports/zap-report.html" \
-            || { echo "::error::ZAP n'a produit aucun rapport — le scan DAST n'a pas eu lieu."; exit 1; }
+          test -s "${{ github.workspace }}/zap-reports/zap-report.json" \
+            || { echo "::error::ZAP n'a produit aucun rapport JSON — le scan DAST n'a pas eu lieu."; exit 1; }
+
+      # ─── GATE : bloque sur les alertes de risque HIGH ───
+      # riskcode ZAP : 3 = High, 2 = Medium, 1 = Low, 0 = Informational.
+      # On échoue le job s'il existe ≥1 alerte High (les Medium/Low restent
+      # visibles dans les rapports uploadés, non bloquantes).
+      - name: 🚦 ZAP gate (blocking on HIGH risk alerts)
+        run: |
+          REPORT="${{ github.workspace }}/zap-reports/zap-report.json"
+          # riskcode peut être une string ("3") ou un nombre selon la version
+          # de ZAP → on normalise en nombre (tonumber?) avant la comparaison.
+          HIGH=$(jq '[.site[].alerts[] | select((.riskcode | tonumber?) == 3)] | length' "$REPORT")
+          echo "Alertes ZAP de risque HIGH : ${HIGH}"
+          if [ "${HIGH:-0}" -gt 0 ]; then
+            echo "::error::DAST : ${HIGH} alerte(s) HIGH détectée(s) — voir l'artifact zap-scan-reports."
+            jq -r '.site[].alerts[] | select((.riskcode | tonumber?) == 3) | "  - \(.alert) (\(.instances | length) instance(s))"' "$REPORT"
+            exit 1
+          fi
+          echo "✓ Aucune alerte HIGH."
 
       - name: Upload ZAP reports
         if: always()
         uses: actions/upload-artifact@v6
         with:
           name: zap-scan-reports
-          path: zap-reports/zap-report.html
+          path: |
+            zap-reports/zap-report.html
+            zap-reports/zap-report.json
 
       - name: Stop test containers
         if: always()

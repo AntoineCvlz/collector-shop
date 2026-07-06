@@ -25,6 +25,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment: production      # secrets SSH_* scopés ici + approbation manuelle
+    # Sérialise les déploiements : deux merges rapprochés sur main ne doivent
+    # JAMAIS lancer deux `docker compose up` SSH concurrents sur le même VPS
+    # (état imprévisible). cancel-in-progress: false → on ne tue jamais un
+    # déploiement en cours ; le suivant attend que celui-ci finisse.
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
 
     steps:
       - name: 📥 Checkout

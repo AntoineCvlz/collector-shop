@@ -56,11 +56,27 @@ jobs:
         with:
           node-version: "20"
 
+      # Cache le store npm. Dépend du lockfile s'il existe (clé stable), sinon
+      # du package.json (le repo n'a pas ENCORE de package-lock.json committé).
+      - name: 📦 Cache npm
+        uses: actions/cache@v5
+        with:
+          path: ~/.npm
+          key: npm-${{ runner.os }}-${{ hashFiles('backend/package-lock.json', 'backend/package.json') }}
+          restore-keys: npm-${{ runner.os }}-
+
       # Compilation des assets front Laravel (Vite). Les dépendances PHP
       # passent par Composer ci-dessus ; npm ne sert qu'au build des assets.
+      # `npm ci` (reproductible, respecte le lock) DÈS qu'un package-lock.json
+      # est committé ; fallback `npm install` tant qu'il n'existe pas.
       - name: ⚡ Install NPM dependencies & Build assets
         run: |
-          npm install
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            echo "::warning::Pas de package-lock.json committé — build NON reproductible (npm install). Committe backend/package-lock.json."
+            npm install
+          fi
           npm run build
 
       - name: ⚙️ Prepare Laravel Environment

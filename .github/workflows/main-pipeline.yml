@@ -221,8 +221,11 @@ jobs:
     secrets: inherit
 
   # ═══════════════════════════════════════════════
-  # ÉTAPE 10 : Notifications (toujours exécuté, même en cas d'échec)
+  # ÉTAPE 11 : Notifications (TOUJOURS exécuté, en DERNIER — deploy inclus)
   # ═══════════════════════════════════════════════
+  # if: always() → part même si un job amont échoue (ou si deploy est skipped
+  # sur une PR). Attend TOUTE la pipeline, back + front + déploiement, pour que
+  # le mail reflète l'état final réel, mise en prod comprise.
   send-notifications:
     needs:
       - build-and-test
@@ -235,10 +238,7 @@ jobs:
       - build-and-scan-docker
       - publish-docker-hub
       - dast-zap-test
-      # Voie front : les notifications attendent AUSSI la fin de la CI front.
-      # (Les résultats front ne sont pas encore inclus dans le mail : le
-      # workflow send-notifications.yml n'accepte que les inputs back. À
-      # étendre si tu veux le détail front dans la notification.)
+      # Voie front (résultats désormais inclus dans le mail).
       - build-and-test-front
       - code-quality-sast-front
       - sca-dependency-scan-front
@@ -249,6 +249,8 @@ jobs:
       - build-and-scan-docker-front
       - publish-docker-hub-front
       - dast-zap-test-front
+      # Déploiement (skipped sur PR — traité comme non-échec par le statut).
+      - deploy
     uses: ./.github/workflows/send-notifications.yml
     if: always()
     secrets:
@@ -278,3 +280,5 @@ jobs:
       result_build_and_scan_docker_front: ${{ needs.build-and-scan-docker-front.result }}
       result_publish_docker_hub_front: ${{ needs.publish-docker-hub-front.result }}
       result_dast_zap_test_front: ${{ needs.dast-zap-test-front.result }}
+      # Déploiement (orchestré back→front)
+      result_deploy: ${{ needs.deploy.result }}

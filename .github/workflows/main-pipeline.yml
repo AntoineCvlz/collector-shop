@@ -87,6 +87,9 @@ jobs:
     uses: ./.github/workflows/build-docker-image.yml
     with:
       app_name: ${{ vars.DEPLOY_APPLI_NAME }}
+    secrets:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
 
   # ═══════════════════════════════════════════════
   # ÉTAPE 7 : PUBLICATION DOCKER HUB
@@ -124,10 +127,14 @@ jobs:
     with:
       backend_image: ${{ vars.DEPLOY_APPLI_NAME }}
       frontend_image: ${{ vars.DEPLOY_APPLI_NAME_FRONT }}
-    # inherit : transmet TOUS les secrets (repo + environnement production),
-    # dont SSH_HOST / SSH_USER / SSH_PRIVATE_KEY requis par appleboy/*-action.
-    # L'appel explicite ne passait que DOCKERHUB_USERNAME, d'où l'erreur
-    # "can't connect without a private SSH key or password".
+    # `inherit` est REQUIS ici (et non un raccourci) : les secrets SSH_*/GF_*/
+    # MONITORING_* sont scopés à l'environnement "production", que seul le
+    # workflow APPELÉ (deploy.yml) déclare. Un job qui `uses:` un reusable
+    # workflow ne peut PAS déclarer lui-même `environment:` (interdit par
+    # GitHub) → il ne pourrait pas résoudre ces secrets pour les passer un à un.
+    # `inherit` les transmet en les laissant se résoudre côté deploy.yml.
+    # La portée reste bornée : deploy.yml ne tourne que sur push main, après
+    # approbation manuelle de l'environnement production.
     secrets: inherit
 
   # ═══════════════════════════════════════════════

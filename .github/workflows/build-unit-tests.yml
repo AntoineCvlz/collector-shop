@@ -117,11 +117,12 @@ jobs:
           DB_PASSWORD: secret
 
       # Seuil pilotable sans toucher au workflow : définir la variable repo
-      # COVERAGE_MIN (Settings → Variables). Cible finale : 80 %.
-      # À monter par paliers au fur et à mesure que les tests réels arrivent.
+      # COVERAGE_MIN (Settings → Variables). Défaut = cible finale 80 %.
+      # Descendre temporairement via COVERAGE_MIN si un refactor fait chuter
+      # la couverture, plutôt que d'abaisser ce défaut.
       - name: 🚦 Coverage gate
         env:
-          COVERAGE_MIN: ${{ vars.COVERAGE_MIN || '50' }}
+          COVERAGE_MIN: ${{ vars.COVERAGE_MIN || '80' }}
         run: |
           php -r '
           $min = (float) getenv("COVERAGE_MIN");

@@ -23,26 +23,14 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - name: Download Docker image artifact
-        uses: actions/download-artifact@v8
-        with:
-          name: docker-image-${{ inputs.app_name }}-${{ github.sha }}
-
-      - name: Load Docker image
-        run: docker load < docker-image.tar.gz
-
+      # L'image est DÉJÀ poussée par build-and-scan-docker (après le gate Trivy).
+      # Ce job ne fait que la PROVENANCE : signature Cosign + SBOM, sur l'image
+      # présente au registre. Login requis pour que Cosign écrive la signature.
       - name: Login to Docker Hub
         uses: docker/login-action@v4
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Tag and push Docker image
-        run: |
-          docker tag ${{ inputs.app_name }}:${{ github.sha }} ${{ secrets.DOCKERHUB_USERNAME }}/${{ inputs.app_name }}:latest
-          docker tag ${{ inputs.app_name }}:${{ github.sha }} ${{ secrets.DOCKERHUB_USERNAME }}/${{ inputs.app_name }}:${{ github.sha }}
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ inputs.app_name }}:latest
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ inputs.app_name }}:${{ github.sha }}
 
       - name: 🔏 Install Cosign
         uses: sigstore/cosign-installer@v3

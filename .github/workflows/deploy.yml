@@ -126,19 +126,26 @@ jobs:
             # ─── SMOKE TESTS (endpoints critiques, en INTERNE via app_edge) ───
             # On teste la vraie stack déployée avant de la valider. Test interne
             # (app_edge:80) pour ne pas dépendre de la propagation TLS/DNS.
+            #
+            # Attente active : app_edge/app_backend viennent d'être recréés,
+            # nginx + php-fpm mettent quelques secondes à écouter → on RÉESSAIE
+            # au lieu d'un sleep fixe (qui donnait "Connection refused").
+            probe() {
+              # $1 = chemin ; réessaie jusqu'à ~60s.
+              local path="$1" i
+              for i in $(seq 1 20); do
+                if docker exec app_edge wget -qO- --timeout=5 "http://localhost${path}" >/dev/null 2>&1; then
+                  return 0
+                fi
+                sleep 3
+              done
+              return 1
+            }
             smoke_test() {
               echo "▶ Smoke tests…"
-              # Laisser le backend démarrer (php-fpm + opcache).
-              sleep 10
-              # /up : health Laravel — doit répondre 200.
-              docker exec app_edge wget -qO- --timeout=10 http://localhost/up >/dev/null \
-                || { echo "✗ /up KO"; return 1; }
-              # /api/articles : catalogue public — doit répondre (200).
-              docker exec app_edge wget -qO- --timeout=10 http://localhost/api/articles >/dev/null \
-                || { echo "✗ /api/articles KO"; return 1; }
-              # /api/categories : autre endpoint public clé.
-              docker exec app_edge wget -qO- --timeout=10 http://localhost/api/categories >/dev/null \
-                || { echo "✗ /api/categories KO"; return 1; }
+              probe /up             || { echo "✗ /up KO";             return 1; }
+              probe /api/articles   || { echo "✗ /api/articles KO";   return 1; }
+              probe /api/categories || { echo "✗ /api/categories KO"; return 1; }
               echo "✓ Smoke tests OK"
             }
 
@@ -152,12 +159,17 @@ jobs:
               TARGET_TAG="${DHU}/${BACKEND_IMAGE}:latest"
               if [ -n "$PREV_BACKEND_IMAGE" ] && [ -n "$DHU" ]; then
                 echo "↩ Rollback : re-déploiement de l'image backend précédente ($TARGET_TAG)."
+                # On re-tague l'ancienne image sous le tag "latest" : le
+                # up --force-recreate réutilise cette image LOCALE (Compose ne
+                # pull que si l'image est absente), donc pas besoin d'un flag
+                # --no-pull/--pull (non portable selon la version de Compose).
                 docker tag "$PREV_BACKEND_IMAGE" "$TARGET_TAG"
-                docker compose -f docker-compose.prod.yaml up -d --no-pull backend nginx edge
-                sleep 10
-                docker exec app_edge wget -qO- --timeout=10 http://localhost/up >/dev/null \
-                  && echo "↩ Rollback appliqué (ancienne version de nouveau en service)." \
-                  || echo "⚠ Rollback tenté mais /up ne répond toujours pas."
+                docker compose -f docker-compose.prod.yaml up -d --force-recreate backend nginx edge
+                if probe /up; then
+                  echo "↩ Rollback appliqué (ancienne version de nouveau en service)."
+                else
+                  echo "⚠ Rollback tenté mais /up ne répond toujours pas."
+                fi
               else
                 echo "⚠ Rollback impossible (pas d'image précédente ou DOCKERHUB_USERNAME introuvable)."
               fi

@@ -117,11 +117,14 @@ jobs:
       LARAVEL_APP_KEY: ${{ secrets.LARAVEL_APP_KEY }}
 
   # ═══════════════════════════════════════════════
-  # ÉTAPE 9 : DÉPLOIEMENT PRODUCTION (VPS unique, back + front)
+  # ÉTAPE 9 : DÉPLOIEMENT PRODUCTION (VPS unique — services BACK)
   # Uniquement sur push main (pas sur les PRs)
   # ═══════════════════════════════════════════════
+  # Gate mutation-tests EN PLUS de dast-zap-test : le déploiement ne part que
+  # si les mutations passent (protège la prod), sans que mutation-tests (~45 min)
+  # ne ralentisse la publication de l'image ni le DAST, qui n'en dépendent pas.
   deploy:
-    needs: dast-zap-test
+    needs: [dast-zap-test, mutation-tests]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     uses: ./.github/workflows/deploy.yml
     with:

@@ -83,8 +83,28 @@ jobs:
             # avec la nouvelle conf (plus de port publié) LIBÈRE le port 80
             # pour que Caddy puisse le prendre.
             # Le .env (secrets prod) vit sur le VPS et n'est jamais committé.
-            docker compose -f docker-compose.prod.yaml pull
-            docker compose -f docker-compose.prod.yaml up -d --remove-orphans
+            #
+            # ─── DÉCOUPLAGE FRONT ───
+            # Ce déploiement BACK ne doit PAS recréer app_frontend : l'image
+            # frontend:latest peut provenir d'un pipeline front NON validé
+            # (le build front publie `latest` AVANT son DAST/E2E). Le front est
+            # géré par SON propre flux de déploiement. On ne touche donc qu'aux
+            # services back. `edge` dépend de `frontend` → au tout premier
+            # déploiement (front absent), on amorce la stack COMPLÈTE une fois ;
+            # ensuite on ne recrée que le back, `app_frontend` reste intact.
+            BACKEND_SERVICES="db backend nginx edge"
+            if docker inspect app_frontend >/dev/null 2>&1; then
+              echo "▶ Déploiement back seul (app_frontend préservé)."
+              # PAS de --remove-orphans ici : avec une liste de services, Compose
+              # traiterait `frontend` (non listé) comme orphelin et le
+              # SUPPRIMERAIT — exactement ce qu'on veut éviter.
+              docker compose -f docker-compose.prod.yaml pull $BACKEND_SERVICES
+              docker compose -f docker-compose.prod.yaml up -d $BACKEND_SERVICES
+            else
+              echo "▶ Amorçage : app_frontend absent → démarrage de la stack complète."
+              docker compose -f docker-compose.prod.yaml pull
+              docker compose -f docker-compose.prod.yaml up -d --remove-orphans
+            fi
 
             # Proxy Caddy frontal (SSL Let's Encrypt auto). Partagé par toutes
             # les applis du VPS. Les certificats vivent dans le volume /data,

@@ -5,6 +5,11 @@ on:
         required: true
         type: string
         description: "Docker image name (without DockerHub username prefix)"
+    secrets:
+      DOCKERHUB_USERNAME:
+        required: true
+      DOCKERHUB_TOKEN:
+        required: true
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -26,7 +31,10 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
 
-      - name: Build Docker image
+      # Build LOCAL uniquement (load: true, pas de push) : on scanne l'image
+      # AVANT toute publication. Le push a lieu plus bas, seulement si le gate
+      # Trivy passe → une image vulnérable n'atteint jamais le registre.
+      - name: Build Docker image (local, pour scan)
         uses: docker/build-push-action@v7
         with:
           context: ./frontend
@@ -71,12 +79,19 @@ jobs:
             --exit-code 1 \
             ${{ inputs.app_name }}:${{ github.sha }}
 
-      - name: Save Docker image as archive
-        run: docker save ${{ inputs.app_name }}:${{ github.sha }} | gzip > docker-image-front.tar.gz
-
-      - name: Upload Docker image artifact
-        uses: actions/upload-artifact@v6
+      # ─── PUSH (uniquement si le gate Trivy ci-dessus a passé) ───
+      # On pousse l'image LOCALE déjà buildée (docker tag + push), sans rebuild.
+      # Remplace l'ancien save/upload → download/load côté publish : plus rapide,
+      # pas d'artifact tar.gz de plusieurs centaines de Mo.
+      - name: Login to Docker Hub
+        uses: docker/login-action@v4
         with:
-          name: docker-image-${{ inputs.app_name }}-${{ github.sha }}
-          path: docker-image-front.tar.gz
-          retention-days: 1
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Tag and push Docker image
+        run: |
+          docker tag ${{ inputs.app_name }}:${{ github.sha }} ${{ secrets.DOCKERHUB_USERNAME }}/${{ inputs.app_name }}:${{ github.sha }}
+          docker tag ${{ inputs.app_name }}:${{ github.sha }} ${{ secrets.DOCKERHUB_USERNAME }}/${{ inputs.app_name }}:latest
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ inputs.app_name }}:${{ github.sha }}
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ inputs.app_name }}:latest

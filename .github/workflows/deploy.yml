@@ -76,7 +76,9 @@ jobs:
             # de pull la nouvelle. On la re-taguera si les smoke tests échouent.
             # (chaîne vide au tout premier déploiement → pas de rollback possible).
             PREV_BACKEND_IMAGE="$(docker inspect --format '{{.Image}}' app_backend 2>/dev/null || true)"
-            echo "Image backend précédente : ${PREV_BACKEND_IMAGE:-<aucune>}"
+            PREV_FRONTEND_IMAGE="$(docker inspect --format '{{.Image}}' app_frontend 2>/dev/null || true)"
+            echo "Image backend précédente  : ${PREV_BACKEND_IMAGE:-<aucune>}"
+            echo "Image frontend précédente : ${PREV_FRONTEND_IMAGE:-<aucune>}"
 
             # IMPORTANT : recréer l'appli AVANT de lancer Caddy.
             # L'ancien app_edge pouvait publier :80 sur l'hôte ; le recréer
@@ -84,27 +86,23 @@ jobs:
             # pour que Caddy puisse le prendre.
             # Le .env (secrets prod) vit sur le VPS et n'est jamais committé.
             #
-            # ─── DÉCOUPLAGE FRONT ───
-            # Ce déploiement BACK ne doit PAS recréer app_frontend : l'image
-            # frontend:latest peut provenir d'un pipeline front NON validé
-            # (le build front publie `latest` AVANT son DAST/E2E). Le front est
-            # géré par SON propre flux de déploiement. On ne touche donc qu'aux
-            # services back. `edge` dépend de `frontend` → au tout premier
-            # déploiement (front absent), on amorce la stack COMPLÈTE une fois ;
-            # ensuite on ne recrée que le back, `app_frontend` reste intact.
-            BACKEND_SERVICES="db backend nginx edge"
-            if docker inspect app_frontend >/dev/null 2>&1; then
-              echo "▶ Déploiement back seul (app_frontend préservé)."
-              # PAS de --remove-orphans ici : avec une liste de services, Compose
-              # traiterait `frontend` (non listé) comme orphelin et le
-              # SUPPRIMERAIT — exactement ce qu'on veut éviter.
-              docker compose -f docker-compose.prod.yaml pull $BACKEND_SERVICES
-              docker compose -f docker-compose.prod.yaml up -d $BACKEND_SERVICES
-            else
-              echo "▶ Amorçage : app_frontend absent → démarrage de la stack complète."
-              docker compose -f docker-compose.prod.yaml pull
-              docker compose -f docker-compose.prod.yaml up -d --remove-orphans
-            fi
+            # ─── DÉPLOIEMENT ORCHESTRÉ back → front ───
+            # Pipeline unique : back ET front ont été validés (CI complète verte)
+            # AVANT d'arriver ici. On déploie dans l'ORDRE pour minimiser le skew :
+            #   1. back (db, backend, nginx, edge) + migrations + healthcheck /up
+            #   2. front (app_frontend) + healthcheck /
+            # Le back monte d'abord et reste servi ; le front arrive ensuite.
+            # `edge` dépend de `frontend` → au tout 1er déploiement (front absent)
+            # `up` du back le crée aussi ; c'est sans risque puisque son image est
+            # elle aussi validée. On pull tout en amont (une seule passe réseau).
+            docker compose -f docker-compose.prod.yaml pull
+
+            echo "▶ [1/2] Déploiement back (db, backend, nginx, edge)…"
+            # PAS de --remove-orphans avec une liste de services : Compose
+            # traiterait `frontend` (non listé ici) comme orphelin et le
+            # SUPPRIMERAIT. Le front est (re)déployé juste après, avec
+            # --remove-orphans sur la stack COMPLÈTE (nettoyage sûr à ce moment).
+            docker compose -f docker-compose.prod.yaml up -d db backend nginx edge
 
             # Proxy Caddy frontal (SSL Let's Encrypt auto). Partagé par toutes
             # les applis du VPS. Les certificats vivent dans le volume /data,
@@ -155,6 +153,13 @@ jobs:
             docker compose -f docker-compose.prod.yaml exec -T backend php artisan migrate --force
             docker compose -f docker-compose.prod.yaml exec -T backend php artisan config:cache
 
+            # ▶ [2/2] Déploiement FRONT (après que le back soit up + migré).
+            # Comme pour le back : PAS de --remove-orphans avec un service nommé
+            # (sinon db/backend/nginx/edge seraient vus comme orphelins). Le
+            # nettoyage d'orphelins n'est sûr qu'avec un `up` de toute la stack.
+            echo "▶ [2/2] Déploiement front (app_frontend)…"
+            docker compose -f docker-compose.prod.yaml up -d frontend
+
             # ─── SMOKE TESTS (endpoints critiques, en INTERNE via app_edge) ───
             # On teste la vraie stack déployée avant de la valider. Test interne
             # (app_edge:80) pour ne pas dépendre de la propagation TLS/DNS.
@@ -184,35 +189,42 @@ jobs:
             }
             smoke_test() {
               echo "▶ Smoke tests…"
+              # Back (via app_edge → nginx → php-fpm)
               probe /up             || { echo "✗ /up KO";             return 1; }
               probe /api/articles   || { echo "✗ /api/articles KO";   return 1; }
               probe /api/categories || { echo "✗ /api/categories KO"; return 1; }
+              # Front (via app_edge → frontend:8080) : la SPA doit être servie.
+              probe /               || { echo "✗ / (front) KO";       return 1; }
               echo "✓ Smoke tests OK"
             }
 
             # ─── ROLLBACK auto si les smoke tests échouent ───
+            # Le déploiement étant orchestré back + front, on rollback LES DEUX :
+            # on re-tague chaque image précédente sous le tag "latest" attendu par
+            # le compose, puis on recrée toute la stack applicative.
             if ! smoke_test; then
               echo "❌ Smoke tests en échec."
-              # Nom d'image EXACT attendu par le compose : ${DOCKERHUB_USERNAME}/
-              # ${BACKEND_IMAGE}:latest. DOCKERHUB_USERNAME vit dans le .env prod
-              # (lu par compose), pas dans ce shell → on le récupère depuis là.
+              # Noms d'images EXACTS attendus par le compose :
+              # ${DOCKERHUB_USERNAME}/${BACKEND_IMAGE|FRONTEND_IMAGE}:latest.
+              # DOCKERHUB_USERNAME vit dans le .env prod (lu par compose), pas
+              # dans ce shell → on le récupère depuis là.
               DHU="$(grep -E '^DOCKERHUB_USERNAME=' .env | cut -d= -f2- || true)"
-              TARGET_TAG="${DHU}/${BACKEND_IMAGE}:latest"
-              if [ -n "$PREV_BACKEND_IMAGE" ] && [ -n "$DHU" ]; then
-                echo "↩ Rollback : re-déploiement de l'image backend précédente ($TARGET_TAG)."
-                # On re-tague l'ancienne image sous le tag "latest" : le
-                # up --force-recreate réutilise cette image LOCALE (Compose ne
+              if [ -n "$DHU" ] && [ -n "$PREV_BACKEND_IMAGE" ] && [ -n "$PREV_FRONTEND_IMAGE" ]; then
+                echo "↩ Rollback : re-déploiement des images back + front précédentes."
+                # On re-tague les anciennes images sous le tag "latest" : le
+                # up --force-recreate réutilise ces images LOCALES (Compose ne
                 # pull que si l'image est absente), donc pas besoin d'un flag
                 # --no-pull/--pull (non portable selon la version de Compose).
-                docker tag "$PREV_BACKEND_IMAGE" "$TARGET_TAG"
-                docker compose -f docker-compose.prod.yaml up -d --force-recreate backend nginx edge
-                if probe /up; then
-                  echo "↩ Rollback appliqué (ancienne version de nouveau en service)."
+                docker tag "$PREV_BACKEND_IMAGE"  "${DHU}/${BACKEND_IMAGE}:latest"
+                docker tag "$PREV_FRONTEND_IMAGE" "${DHU}/${FRONTEND_IMAGE}:latest"
+                docker compose -f docker-compose.prod.yaml up -d --force-recreate backend nginx edge frontend
+                if probe /up && probe /; then
+                  echo "↩ Rollback appliqué (back + front, anciennes versions de nouveau en service)."
                 else
-                  echo "⚠ Rollback tenté mais /up ne répond toujours pas."
+                  echo "⚠ Rollback tenté mais la stack ne répond toujours pas (/up ou /)."
                 fi
               else
-                echo "⚠ Rollback impossible (pas d'image précédente ou DOCKERHUB_USERNAME introuvable)."
+                echo "⚠ Rollback impossible (image back/front précédente ou DOCKERHUB_USERNAME introuvable)."
               fi
               docker image prune -f
               exit 1

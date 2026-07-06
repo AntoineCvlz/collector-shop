@@ -40,6 +40,47 @@ on:
       result_dast_zap_test:
         required: true
         type: string
+      # ─── Voie FRONT (optionnelle : 'skipped' si non fournie) ───
+      result_build_and_test_front:
+        required: false
+        type: string
+        default: skipped
+      result_code_quality_sast_front:
+        required: false
+        type: string
+        default: skipped
+      result_sca_dependency_scan_front:
+        required: false
+        type: string
+        default: skipped
+      result_secure_iac_dockerfile_scan_front:
+        required: false
+        type: string
+        default: skipped
+      result_codeql_front:
+        required: false
+        type: string
+        default: skipped
+      result_e2e_playwright_front:
+        required: false
+        type: string
+        default: skipped
+      result_lighthouse_ci_front:
+        required: false
+        type: string
+        default: skipped
+      result_build_and_scan_docker_front:
+        required: false
+        type: string
+        default: skipped
+      result_publish_docker_hub_front:
+        required: false
+        type: string
+        default: skipped
+      result_dast_zap_test_front:
+        required: false
+        type: string
+        default: skipped
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -66,6 +107,17 @@ jobs:
           echo "Docker Build:    ${{ inputs.result_build_and_scan_docker }}"
           echo "Docker Publish:  ${{ inputs.result_publish_docker_hub }}"
           echo "DAST ZAP:        ${{ inputs.result_dast_zap_test }}"
+          echo "─────────── FRONT ───────────"
+          echo "Build & Test:    ${{ inputs.result_build_and_test_front }}"
+          echo "SAST:            ${{ inputs.result_code_quality_sast_front }}"
+          echo "SCA:             ${{ inputs.result_sca_dependency_scan_front }}"
+          echo "IaC Security:    ${{ inputs.result_secure_iac_dockerfile_scan_front }}"
+          echo "CodeQL:          ${{ inputs.result_codeql_front }}"
+          echo "E2E Playwright:  ${{ inputs.result_e2e_playwright_front }}"
+          echo "Lighthouse:      ${{ inputs.result_lighthouse_ci_front }}"
+          echo "Docker Build:    ${{ inputs.result_build_and_scan_docker_front }}"
+          echo "Docker Publish:  ${{ inputs.result_publish_docker_hub_front }}"
+          echo "DAST ZAP:        ${{ inputs.result_dast_zap_test_front }}"
           echo "═══════════════════════════════════════"
 
       - name: 🎨 Determine overall status
@@ -82,6 +134,16 @@ jobs:
             ${{ inputs.result_build_and_scan_docker }}
             ${{ inputs.result_publish_docker_hub }}
             ${{ inputs.result_dast_zap_test }}
+            ${{ inputs.result_build_and_test_front }}
+            ${{ inputs.result_code_quality_sast_front }}
+            ${{ inputs.result_sca_dependency_scan_front }}
+            ${{ inputs.result_secure_iac_dockerfile_scan_front }}
+            ${{ inputs.result_codeql_front }}
+            ${{ inputs.result_e2e_playwright_front }}
+            ${{ inputs.result_lighthouse_ci_front }}
+            ${{ inputs.result_build_and_scan_docker_front }}
+            ${{ inputs.result_publish_docker_hub_front }}
+            ${{ inputs.result_dast_zap_test_front }}
         run: |
           # Un job 'skipped' (ex. non lancé en PR) n'est PAS un échec.
           # Seuls 'failure' et 'cancelled' déclenchent un statut global rouge.
@@ -118,6 +180,7 @@ jobs:
             <hr/>
             <table border="1" cellpadding="8" cellspacing="0">
               <tr><th>Job</th><th>Status</th></tr>
+              <tr><th colspan="2" style="background:#eef;">⚙️ BACKEND</th></tr>
               <tr><td>🏗️ Build & Test</td><td>${{ inputs.result_build_and_test }}</td></tr>
               <tr><td>🔍 SAST</td><td>${{ inputs.result_code_quality_sast }}</td></tr>
               <tr><td>🔐 Secret Scanning</td><td>${{ inputs.result_secret_scanning }}</td></tr>
@@ -128,6 +191,17 @@ jobs:
               <tr><td>🐳 Docker Build</td><td>${{ inputs.result_build_and_scan_docker }}</td></tr>
               <tr><td>📤 Docker Publish</td><td>${{ inputs.result_publish_docker_hub }}</td></tr>
               <tr><td>🧪 DAST ZAP</td><td>${{ inputs.result_dast_zap_test }}</td></tr>
+              <tr><th colspan="2" style="background:#efe;">🎨 FRONTEND</th></tr>
+              <tr><td>🏗️ Build & Test</td><td>${{ inputs.result_build_and_test_front }}</td></tr>
+              <tr><td>🔍 SAST</td><td>${{ inputs.result_code_quality_sast_front }}</td></tr>
+              <tr><td>📦 SCA</td><td>${{ inputs.result_sca_dependency_scan_front }}</td></tr>
+              <tr><td>🏗️ IaC Security</td><td>${{ inputs.result_secure_iac_dockerfile_scan_front }}</td></tr>
+              <tr><td>🔍 CodeQL</td><td>${{ inputs.result_codeql_front }}</td></tr>
+              <tr><td>🎭 E2E Playwright</td><td>${{ inputs.result_e2e_playwright_front }}</td></tr>
+              <tr><td>💡 Lighthouse</td><td>${{ inputs.result_lighthouse_ci_front }}</td></tr>
+              <tr><td>🐳 Docker Build</td><td>${{ inputs.result_build_and_scan_docker_front }}</td></tr>
+              <tr><td>📤 Docker Publish</td><td>${{ inputs.result_publish_docker_hub_front }}</td></tr>
+              <tr><td>🧪 DAST ZAP</td><td>${{ inputs.result_dast_zap_test_front }}</td></tr>
             </table>
             <hr/>
             <p><a href="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}">🔗 View full pipeline run</a></p>

@@ -1,6 +1,12 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* Plus Jakarta Sans self-hébergée (variable, normal + italique) : bundlée par
+   Vite plutôt que chargée depuis Google Fonts. Supprime la dépendance tierce
+   (SRI/COEP DAST, RGPD) et évite un round-trip réseau externe au 1er rendu. */
+@import "@fontsource-variable/plus-jakarta-sans";
+@import "@fontsource-variable/plus-jakarta-sans/wght-italic.css";
+
 @custom-variant dark (&:is(.dark *));
 
 /*

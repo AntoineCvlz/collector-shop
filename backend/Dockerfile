@@ -32,6 +32,8 @@ RUN apk add --no-cache --virtual .build-deps \
         echo 'apc.enabled=1'; \
         echo 'apc.enable_cli=1'; \
     } > /usr/local/etc/php/conf.d/apcu.ini \
+    # Durcissement : ne pas divulguer PHP ni sa version (en-tête X-Powered-By).
+    && echo 'expose_php = Off' > /usr/local/etc/php/conf.d/hardening.ini \
     && apk del .build-deps
 
 WORKDIR /var/www/html

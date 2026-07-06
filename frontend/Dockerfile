@@ -29,7 +29,17 @@ FROM nginx:alpine
 
 # Refresh Alpine packages to pull latest security fixes in base image layers
 # (includes openssl/libcrypto3/libssl3, otherwise flagged HIGH by Trivy).
-RUN apk update && apk upgrade --no-cache && rm -rf /var/cache/apk/*
+# Puis suppression des modules nginx et libs inutiles pour servir du statique :
+# image-filter/geoip/xslt/njs et leurs deps (libgd, tiff, libavif, X11...) sont
+# une surface d'attaque pure (parsing d'images/XML) que notre conf n'utilise pas.
+RUN apk update && apk upgrade --no-cache \
+    && apk del --no-network \
+        nginx-module-image-filter \
+        nginx-module-geoip \
+        nginx-module-xslt \
+        nginx-module-njs \
+        curl \
+    && rm -rf /var/cache/apk/*
 
 COPY --from=builder /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf

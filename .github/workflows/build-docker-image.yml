@@ -31,9 +31,8 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
 
-      # Build LOCAL uniquement (load: true, pas de push) : on scanne l'image
-      # AVANT toute publication. Le push a lieu plus bas, seulement si le gate
-      # Trivy passe → une image vulnérable n'atteint jamais le registre.
+      # Build local (pas de push) : on scanne AVANT de publier. Push seulement
+      # si le gate Trivy passe → jamais d'image vulnérable au registre.
       - name: Build Docker image (local, pour scan)
         uses: docker/build-push-action@v7
         with:
@@ -79,10 +78,8 @@ jobs:
             --exit-code 1 \
             ${{ inputs.app_name }}:${{ github.sha }}
 
-      # ─── PUSH (uniquement si le gate Trivy ci-dessus a passé) ───
-      # On pousse l'image LOCALE déjà buildée (docker tag + push), sans rebuild.
-      # Remplace l'ancien save/upload → download/load côté publish : plus rapide,
-      # pas d'artifact tar.gz de plusieurs centaines de Mo.
+      # Push (le gate Trivy a passé) : on pousse l'image locale déjà buildée,
+      # sans rebuild. Évite l'aller-retour artifact tar.gz.
       - name: Login to Docker Hub
         uses: docker/login-action@v4
         with:

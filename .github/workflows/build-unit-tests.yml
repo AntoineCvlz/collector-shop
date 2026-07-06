@@ -56,8 +56,8 @@ jobs:
         with:
           node-version: "20"
 
-      # Cache le store npm. Dépend du lockfile s'il existe (clé stable), sinon
-      # du package.json (le repo n'a pas ENCORE de package-lock.json committé).
+      # Clé de cache sur le lockfile s'il existe, sinon le package.json (pas
+      # encore de package-lock.json committé).
       - name: 📦 Cache npm
         uses: actions/cache@v5
         with:
@@ -65,16 +65,14 @@ jobs:
           key: npm-${{ runner.os }}-${{ hashFiles('backend/package-lock.json', 'backend/package.json') }}
           restore-keys: npm-${{ runner.os }}-
 
-      # Compilation des assets front Laravel (Vite). Les dépendances PHP
-      # passent par Composer ci-dessus ; npm ne sert qu'au build des assets.
-      # `npm ci` (reproductible, respecte le lock) DÈS qu'un package-lock.json
-      # est committé ; fallback `npm install` tant qu'il n'existe pas.
+      # `npm ci` (reproductible) dès qu'un package-lock.json est committé ;
+      # fallback `npm install` tant qu'il n'existe pas.
       - name: ⚡ Install NPM dependencies & Build assets
         run: |
           if [ -f package-lock.json ]; then
             npm ci
           else
-            echo "::warning::Pas de package-lock.json committé — build NON reproductible (npm install). Committe backend/package-lock.json."
+            echo "::warning::Pas de package-lock.json committé — build non reproductible (npm install)."
             npm install
           fi
           npm run build
@@ -116,10 +114,7 @@ jobs:
           DB_USERNAME: laravel
           DB_PASSWORD: secret
 
-      # Seuil pilotable sans toucher au workflow : définir la variable repo
-      # COVERAGE_MIN (Settings → Variables). Défaut = cible finale 80 %.
-      # Descendre temporairement via COVERAGE_MIN si un refactor fait chuter
-      # la couverture, plutôt que d'abaisser ce défaut.
+      # Seuil pilotable via la variable repo COVERAGE_MIN (défaut : cible 80 %).
       - name: 🚦 Coverage gate
         env:
           COVERAGE_MIN: ${{ vars.COVERAGE_MIN || '80' }}

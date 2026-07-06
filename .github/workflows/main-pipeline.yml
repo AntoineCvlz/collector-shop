@@ -1,10 +1,9 @@
 name: Main CI/CD Pipeline
 
-# Pipeline UNIQUE back + front : les deux voies (build/test/scan/publish) tournent
-# en parallèle, puis un SEUL déploiement orchestré met toute la stack en prod
-# (back → healthcheck → front → healthcheck). Fusionné pour supprimer tout skew
-# front/back : on ne déploie jamais l'un sans l'autre validé. Sur une stack
-# mono-VPS partagée (même docker-compose.prod.yaml), c'est le bon niveau.
+# Pipeline unique back + front : les deux voies (build/test/scan/publish) tournent
+# en parallèle, puis un seul déploiement orchestré met toute la stack en prod.
+# Fusionné pour ne jamais déployer l'un sans l'autre validé (pas de skew), sur
+# une stack mono-VPS partagée (même docker-compose.prod.yaml).
 on:
   push:
     branches: ["main"]
@@ -35,60 +34,37 @@ permissions:
   id-token: write
 
 jobs:
-  # ═══════════════════════════════════════════════
-  # ÉTAPE 1 : BUILD & TESTS
-  # ═══════════════════════════════════════════════
+  # ─── Voie BACKEND ───
   build-and-test:
     uses: ./.github/workflows/build-unit-tests.yml
 
-  # ═══════════════════════════════════════════════
-  # ÉTAPE 2 : QUALITÉ & SÉCURITÉ
-  # ═══════════════════════════════════════════════
   code-quality-sast:
     needs: build-and-test
     uses: ./.github/workflows/code-quality-sast.yml
     secrets:
       SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
 
-  # ═══════════════════════════════════════════════
-  # ÉTAPE 3 : DÉTECTION DE SECRETS
-  # ═══════════════════════════════════════════════
   secret-scanning:
     needs: build-and-test
     uses: ./.github/workflows/secret-scanning.yml
 
-  # ═══════════════════════════════════════════════
-  # ÉTAPE 4 : ANALYSE DES DÉPENDANCES (SCA)
-  # ═══════════════════════════════════════════════
   sca-dependency-scan:
     needs: build-and-test
     uses: ./.github/workflows/sca-dependency-scan.yml
 
-  # ═══════════════════════════════════════════════
-  # ÉTAPE 5 : SÉCURITÉ INFRASTRUCTURE AS CODE
-  # ═══════════════════════════════════════════════
   secure-iac-dockerfile-scan:
     needs: build-and-test
     uses: ./.github/workflows/secure-iac-dockerfile-scan.yml
 
-  # ═══════════════════════════════════════════════
-  # ÉTAPE 5b : PHPSTAN SAST
-  # ═══════════════════════════════════════════════
   phpstan:
     needs: build-and-test
     uses: ./.github/workflows/phpstan.yml
 
-  # ═══════════════════════════════════════════════
-  # ÉTAPE 5c : MUTATION TESTS (push uniquement, trop lent pour les PRs)
-  # ═══════════════════════════════════════════════
   mutation-tests:
     needs: build-and-test
-    if: github.event_name != 'pull_request'
+    if: github.event_name != 'pull_request'   # trop lent pour les PRs
     uses: ./.github/workflows/mutation-tests.yml
 
-  # ═══════════════════════════════════════════════
-  # ÉTAPE 6 : BUILD & SCAN DOCKER
-  # ═══════════════════════════════════════════════
   build-and-scan-docker:
     needs: [code-quality-sast, secret-scanning, secure-iac-dockerfile-scan, sca-dependency-scan, phpstan]
     uses: ./.github/workflows/build-docker-image.yml
@@ -98,9 +74,6 @@ jobs:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
 
-  # ═══════════════════════════════════════════════
-  # ÉTAPE 7 : PUBLICATION DOCKER HUB
-  # ═══════════════════════════════════════════════
   publish-docker-hub:
     needs: [build-and-scan-docker]
     uses: ./.github/workflows/publish-docker-hub.yml
@@ -110,9 +83,6 @@ jobs:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
 
-  # ═══════════════════════════════════════════════
-  # ÉTAPE 8 : DAST (Après publication Docker Hub)
-  # ═══════════════════════════════════════════════
   dast-zap-test:
     needs: publish-docker-hub
     uses: ./.github/workflows/dast-zap-test.yml
@@ -123,48 +93,36 @@ jobs:
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
       LARAVEL_APP_KEY: ${{ secrets.LARAVEL_APP_KEY }}
 
-  # ═══════════════════════════════════════════════════════════════════
-  # VOIE FRONTEND — s'exécute EN PARALLÈLE de la voie back ci-dessus.
-  # Réutilise les mêmes workflows que l'ancien pipeline front (supprimé).
-  # ═══════════════════════════════════════════════════════════════════
-
-  # ÉTAPE F1 : BUILD & TESTS FRONTEND
+  # ─── Voie FRONTEND (en parallèle de la voie back) ───
   build-and-test-front:
     uses: ./.github/workflows/build-unit-tests-front.yml
 
-  # ÉTAPE F2 : QUALITÉ & SÉCURITÉ FRONTEND
   code-quality-sast-front:
     needs: build-and-test-front
     uses: ./.github/workflows/code-quality-sast-front.yml
     secrets:
       SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
 
-  # ÉTAPE F3 : SCA FRONTEND
   sca-dependency-scan-front:
     needs: build-and-test-front
     uses: ./.github/workflows/sca-dependency-scan-front.yml
 
-  # ÉTAPE F4 : SÉCURITÉ DOCKERFILE FRONT
   secure-iac-dockerfile-scan-front:
     needs: build-and-test-front
     uses: ./.github/workflows/secure-iac-dockerfile-scan-front.yml
 
-  # ÉTAPE F5 : CODEQL SAST FRONTEND
   codeql-front:
     needs: build-and-test-front
     uses: ./.github/workflows/codeql-front.yml
 
-  # ÉTAPE F6 : E2E PLAYWRIGHT
   e2e-playwright-front:
     needs: build-and-test-front
     uses: ./.github/workflows/e2e-playwright-front.yml
 
-  # ÉTAPE F7 : LIGHTHOUSE CI (perf / a11y / SEO)
   lighthouse-ci-front:
     needs: build-and-test-front
     uses: ./.github/workflows/lighthouse-ci-front.yml
 
-  # ÉTAPE F8 : BUILD & SCAN DOCKER FRONT
   build-and-scan-docker-front:
     needs: [code-quality-sast-front, secret-scanning, secure-iac-dockerfile-scan-front, sca-dependency-scan-front, codeql-front, e2e-playwright-front, lighthouse-ci-front]
     uses: ./.github/workflows/build-docker-image-front.yml
@@ -174,7 +132,6 @@ jobs:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
 
-  # ÉTAPE F9 : PUBLICATION DOCKER HUB FRONT
   publish-docker-hub-front:
     needs: [build-and-scan-docker-front]
     uses: ./.github/workflows/publish-docker-hub-front.yml
@@ -184,7 +141,6 @@ jobs:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
 
-  # ÉTAPE F10 : DAST FRONT (après publication)
   dast-zap-test-front:
     needs: publish-docker-hub-front
     uses: ./.github/workflows/dast-zap-test-front.yml
@@ -194,15 +150,9 @@ jobs:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
 
-  # ═══════════════════════════════════════════════
-  # ÉTAPE 9 : DÉPLOIEMENT PRODUCTION (VPS unique — stack COMPLÈTE, orchestrée)
-  # Uniquement sur push main (pas sur les PRs)
-  # ═══════════════════════════════════════════════
-  # Le déploiement attend que TOUTE la CI back ET front soit verte :
-  #   - dast-zap-test / mutation-tests : voie back validée
-  #   - dast-zap-test-front            : voie front validée
-  # → on ne déploie JAMAIS un skew (back sans front ou l'inverse). deploy.yml
-  #   orchestre ensuite back → healthcheck → front → healthcheck.
+  # ─── Déploiement (push main uniquement) ───
+  # Gate sur les DEUX voies (back + front) → jamais de déploiement en skew.
+  # deploy.yml orchestre ensuite back → healthcheck → front → healthcheck.
   deploy:
     needs: [dast-zap-test, mutation-tests, dast-zap-test-front]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -210,22 +160,14 @@ jobs:
     with:
       backend_image: ${{ vars.DEPLOY_APPLI_NAME }}
       frontend_image: ${{ vars.DEPLOY_APPLI_NAME_FRONT }}
-    # `inherit` est REQUIS ici (et non un raccourci) : les secrets SSH_*/GF_*/
-    # MONITORING_* sont scopés à l'environnement "production", que seul le
-    # workflow APPELÉ (deploy.yml) déclare. Un job qui `uses:` un reusable
-    # workflow ne peut PAS déclarer lui-même `environment:` (interdit par
-    # GitHub) → il ne pourrait pas résoudre ces secrets pour les passer un à un.
-    # `inherit` les transmet en les laissant se résoudre côté deploy.yml.
-    # La portée reste bornée : deploy.yml ne tourne que sur push main, après
-    # approbation manuelle de l'environnement production.
+    # `inherit` REQUIS : les secrets SSH_*/GF_*/MONITORING_* sont scopés à
+    # l'environnement "production", que seul deploy.yml (workflow appelé)
+    # déclare. Un job qui `uses:` un reusable workflow ne peut pas déclarer
+    # `environment:` lui-même → impossible de les passer un à un.
     secrets: inherit
 
-  # ═══════════════════════════════════════════════
-  # ÉTAPE 11 : Notifications (TOUJOURS exécuté, en DERNIER — deploy inclus)
-  # ═══════════════════════════════════════════════
-  # if: always() → part même si un job amont échoue (ou si deploy est skipped
-  # sur une PR). Attend TOUTE la pipeline, back + front + déploiement, pour que
-  # le mail reflète l'état final réel, mise en prod comprise.
+  # ─── Notifications (toujours, en dernier) ───
+  # if: always() → part même si un job échoue ou si deploy est skipped (PR).
   send-notifications:
     needs:
       - build-and-test
@@ -238,7 +180,6 @@ jobs:
       - build-and-scan-docker
       - publish-docker-hub
       - dast-zap-test
-      # Voie front (résultats désormais inclus dans le mail).
       - build-and-test-front
       - code-quality-sast-front
       - sca-dependency-scan-front
@@ -249,7 +190,6 @@ jobs:
       - build-and-scan-docker-front
       - publish-docker-hub-front
       - dast-zap-test-front
-      # Déploiement (skipped sur PR — traité comme non-échec par le statut).
       - deploy
     uses: ./.github/workflows/send-notifications.yml
     if: always()
@@ -258,7 +198,6 @@ jobs:
       MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
       MAIL_TO: ${{ secrets.MAIL_TO }}
     with:
-      # Voie back
       result_build_and_test: ${{ needs.build-and-test.result }}
       result_code_quality_sast: ${{ needs.code-quality-sast.result }}
       result_secret_scanning: ${{ needs.secret-scanning.result }}
@@ -269,7 +208,6 @@ jobs:
       result_build_and_scan_docker: ${{ needs.build-and-scan-docker.result }}
       result_publish_docker_hub: ${{ needs.publish-docker-hub.result }}
       result_dast_zap_test: ${{ needs.dast-zap-test.result }}
-      # Voie front
       result_build_and_test_front: ${{ needs.build-and-test-front.result }}
       result_code_quality_sast_front: ${{ needs.code-quality-sast-front.result }}
       result_sca_dependency_scan_front: ${{ needs.sca-dependency-scan-front.result }}
@@ -280,5 +218,4 @@ jobs:
       result_build_and_scan_docker_front: ${{ needs.build-and-scan-docker-front.result }}
       result_publish_docker_hub_front: ${{ needs.publish-docker-hub-front.result }}
       result_dast_zap_test_front: ${{ needs.dast-zap-test-front.result }}
-      # Déploiement (orchestré back→front)
       result_deploy: ${{ needs.deploy.result }}

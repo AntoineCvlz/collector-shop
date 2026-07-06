@@ -1,11 +1,6 @@
-# ─────────────────────────────────────────────────────────────
-# Déploiement PRODUCTION — VPS unique, back + front mutualisés.
-#
-# Le déploiement est piloté par docker/docker-compose.prod.yaml :
-#   pull des images back+front depuis Docker Hub, puis migrations Laravel.
-# Approbation manuelle via l'environnement GitHub "production"
-# (Settings → Environments → production → Required reviewers).
-# ─────────────────────────────────────────────────────────────
+# Déploiement production (VPS unique, back + front mutualisés).
+# Piloté par docker-compose.prod.yaml. Approbation manuelle via
+# l'environnement GitHub "production".
 on:
   workflow_call:
     inputs:
@@ -25,10 +20,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment: production      # secrets SSH_* scopés ici + approbation manuelle
-    # Sérialise les déploiements : deux merges rapprochés sur main ne doivent
-    # JAMAIS lancer deux `docker compose up` SSH concurrents sur le même VPS
-    # (état imprévisible). cancel-in-progress: false → on ne tue jamais un
-    # déploiement en cours ; le suivant attend que celui-ci finisse.
+    # Sérialise les déploiements : jamais deux `docker compose up` SSH
+    # concurrents sur le même VPS. cancel-in-progress: false → on ne tue
+    # jamais un déploiement en cours.
     concurrency:
       group: deploy-production
       cancel-in-progress: false
@@ -37,7 +31,6 @@ jobs:
       - name: 📥 Checkout
         uses: actions/checkout@v6
 
-      # Copie le compose de prod + les confs nginx sur le VPS (idempotent).
       - name: 📦 Sync fichiers de déploiement → VPS
         uses: appleboy/scp-action@v1
         with:
@@ -59,73 +52,38 @@ jobs:
             cd /opt/collector-shop
             export BACKEND_IMAGE='${{ inputs.backend_image }}'
             export FRONTEND_IMAGE='${{ inputs.frontend_image }}'
-            # Les deux images sont taguées "latest" par les pipelines de publication.
-            # On déploie "latest" pour éviter tout décalage de sha entre back et front
-            # (le front n'est rebuildé que lorsque frontend/** change).
-            export IMAGE_TAG='latest'
+            export IMAGE_TAG='latest'   # tag publié par les pipelines back/front
 
-            # Réseaux Docker partagés (idempotents), créés AVANT tout compose :
-            #  - web        : proxy Caddy ⇄ applis
-            #  - monitoring : Prometheus ⇄ cibles ; l'app y rejoint son nginx
-            #                 pour exposer /metrics en interne. Déclaré "external"
-            #                 dans les deux composes → doit préexister.
+            # Réseaux partagés "external" (web, monitoring) : doivent préexister
+            # aux composes qui les référencent.
             docker network inspect web >/dev/null 2>&1 || docker network create web
             docker network inspect monitoring >/dev/null 2>&1 || docker network create monitoring
 
-            # ROLLBACK : mémoriser l'image backend ACTUELLEMENT en service avant
-            # de pull la nouvelle. On la re-taguera si les smoke tests échouent.
-            # (chaîne vide au tout premier déploiement → pas de rollback possible).
+            # Rollback : mémoriser les images en service AVANT le pull (re-taguées
+            # en "latest" si les smoke tests échouent). Vide au 1er déploiement.
             PREV_BACKEND_IMAGE="$(docker inspect --format '{{.Image}}' app_backend 2>/dev/null || true)"
             PREV_FRONTEND_IMAGE="$(docker inspect --format '{{.Image}}' app_frontend 2>/dev/null || true)"
             echo "Image backend précédente  : ${PREV_BACKEND_IMAGE:-<aucune>}"
             echo "Image frontend précédente : ${PREV_FRONTEND_IMAGE:-<aucune>}"
 
-            # IMPORTANT : recréer l'appli AVANT de lancer Caddy.
-            # L'ancien app_edge pouvait publier :80 sur l'hôte ; le recréer
-            # avec la nouvelle conf (plus de port publié) LIBÈRE le port 80
-            # pour que Caddy puisse le prendre.
-            # Le .env (secrets prod) vit sur le VPS et n'est jamais committé.
-            #
-            # ─── DÉPLOIEMENT ORCHESTRÉ back → front ───
-            # Pipeline unique : back ET front ont été validés (CI complète verte)
-            # AVANT d'arriver ici. On déploie dans l'ORDRE pour minimiser le skew :
-            #   1. back (db, backend, nginx, edge) + migrations + healthcheck /up
-            #   2. front (app_frontend) + healthcheck /
-            # Le back monte d'abord et reste servi ; le front arrive ensuite.
-            # `edge` dépend de `frontend` → au tout 1er déploiement (front absent)
-            # `up` du back le crée aussi ; c'est sans risque puisque son image est
-            # elle aussi validée. On pull tout en amont (une seule passe réseau).
+            # Déploiement orchestré back → front (ordre = pas de skew : les deux
+            # images ont été validées par la CI avant d'arriver ici).
             docker compose -f docker-compose.prod.yaml pull
 
             echo "▶ [1/2] Déploiement back (db, backend, nginx, edge)…"
             # PAS de --remove-orphans avec une liste de services : Compose
-            # traiterait `frontend` (non listé ici) comme orphelin et le
-            # SUPPRIMERAIT. Le front est (re)déployé juste après, avec
-            # --remove-orphans sur la stack COMPLÈTE (nettoyage sûr à ce moment).
+            # traiterait `frontend` (non listé) comme orphelin et le supprimerait.
             docker compose -f docker-compose.prod.yaml up -d db backend nginx edge
 
-            # Proxy Caddy frontal (SSL Let's Encrypt auto). Partagé par toutes
-            # les applis du VPS. Les certificats vivent dans le volume /data,
-            # donc recréer le conteneur ne les perd pas et ne re-sollicite pas
-            # Let's Encrypt inutilement.
-            #
-            # --force-recreate est REQUIS ici : le SCP REMPLACE le Caddyfile
-            # (nouvel inode), or le bind-mount du conteneur reste accroché à
-            # l'ANCIEN inode → un simple `caddy reload` relit l'ancien contenu
-            # ("config is unchanged") et ignore tout nouveau bloc (ex. grafana).
-            # Recréer le conteneur ré-attache le bind au fichier courant.
+            # --force-recreate REQUIS : le SCP remplace le Caddyfile (nouvel
+            # inode), mais le bind-mount reste sur l'ancien → `caddy reload`
+            # relirait l'ancien contenu. Recréer le conteneur ré-attache le bind.
             docker compose -f proxy/docker-compose.proxy.yaml up -d --force-recreate
 
-            # Stack d'observabilité (Prometheus + Grafana + exporters infra/pg/app).
-            # Découplée de l'app mais déployée dans le même flux, à chaque merge.
-            # Le .env (secrets Grafana + connexion PG de l'exporter) est généré
-            # ICI depuis les secrets GitHub de l'environnement "production" :
-            # il n'est jamais committé et reste sur le VPS.
-            #
-            # Écriture ATOMIQUE et TOLÉRANTE : on écrit un fichier temporaire en
-            # 600 puis on le déplace en place. `rm -f` d'abord car un ancien
-            # monitoring/.env appartenant à root (déploiements antérieurs) ferait
-            # échouer une redirection `>` en tant qu'utilisateur deploy.
+            # Stack observabilité. Le .env (secrets Grafana + PG exporter) est
+            # généré ici depuis les secrets GitHub, jamais committé.
+            # Écriture atomique en 600 (fichier temp → mv) ; `rm -f` d'abord car
+            # un ancien monitoring/.env root ferait échouer la redirection.
             umask 077
             rm -f monitoring/.env
             install -m 600 /dev/null monitoring/.env.tmp
@@ -139,45 +97,29 @@ jobs:
             GF_SMTP_PASSWORD=${{ secrets.GF_SMTP_PASSWORD }}
             GF_SMTP_FROM_ADDRESS=${{ secrets.GF_SMTP_FROM_ADDRESS }}
             # DOIT être non-vide : contact-points.yaml l'injecte via $__env{}
-            # (sans valeur par défaut). Un contact point "email" à addresses
-            # vide fait crash-looper Grafana 11. Fallback placeholder tant que
-            # le secret n'est pas défini (l'alerting mail est inactif de toute
-            # façon si GF_SMTP_* n'est pas configuré).
+            # (sans défaut) ; une adresse vide fait crash-looper Grafana 11.
             GF_ALERT_EMAIL_TO=${{ secrets.GF_ALERT_EMAIL_TO || 'alerts@example.invalid' }}
             ENV
             mv -f monitoring/.env.tmp monitoring/.env
             docker compose -f monitoring/docker-compose.monitoring.yaml pull
             docker compose -f monitoring/docker-compose.monitoring.yaml up -d --remove-orphans
 
-            # Migrations Laravel (idempotentes, --force = non interactif en prod)
+            # Migrations Laravel (idempotentes, --force = non interactif)
             docker compose -f docker-compose.prod.yaml exec -T backend php artisan migrate --force
             docker compose -f docker-compose.prod.yaml exec -T backend php artisan config:cache
 
-            # ▶ [2/2] Déploiement FRONT (après que le back soit up + migré).
-            # Comme pour le back : PAS de --remove-orphans avec un service nommé
-            # (sinon db/backend/nginx/edge seraient vus comme orphelins). Le
-            # nettoyage d'orphelins n'est sûr qu'avec un `up` de toute la stack.
             echo "▶ [2/2] Déploiement front (app_frontend)…"
+            # Idem back : pas de --remove-orphans avec un service nommé.
             docker compose -f docker-compose.prod.yaml up -d frontend
 
-            # ─── SMOKE TESTS (endpoints critiques, en INTERNE via app_edge) ───
-            # On teste la vraie stack déployée avant de la valider. Test interne
-            # (app_edge:80) pour ne pas dépendre de la propagation TLS/DNS.
-            #
-            # Attente active : app_edge/app_backend viennent d'être recréés,
-            # nginx + php-fpm mettent quelques secondes à écouter → on RÉESSAIE
-            # au lieu d'un sleep fixe (qui donnait "Connection refused").
+            # Smoke tests INTERNES (via app_edge:80, indépendants de TLS/DNS).
             probe() {
-              # $1 = chemin ; réessaie jusqu'à ~60s.
+              # $1 = chemin ; réessaie ~60s (nginx/php-fpm mettent qq s à écouter).
               #
-              # On vise 127.0.0.1 et NON "localhost" : dans nginx:alpine,
-              # /etc/hosts résout "localhost" vers ::1 (IPv6) EN PREMIER, or
-              # nginx-edge n'écoute que sur 0.0.0.0:80 (IPv4). Le script
-              # d'entrypoint 10-listen-on-ipv6-by-default.sh ne peut pas ajouter
-              # "listen [::]:80" car la conf est montée read-only → un wget vers
-              # "localhost" tape ::1 et récolte "Connection refused" alors que la
-              # stack est saine (faux négatif qui déclenchait un rollback inutile).
-              # BusyBox wget : -T = timeout réseau (--timeout est silencieusement ignoré).
+              # 127.0.0.1 et NON "localhost" : dans nginx:alpine, "localhost"
+              # résout ::1 (IPv6) en premier, or nginx-edge n'écoute que sur
+              # 0.0.0.0:80 (IPv4, conf read-only) → "localhost" = Connection
+              # refused (faux négatif). BusyBox wget : -T = timeout.
               local path="$1" i
               for i in $(seq 1 20); do
                 if docker exec app_edge wget -q -T 5 -O- "http://127.0.0.1${path}" >/dev/null 2>&1; then
@@ -198,23 +140,15 @@ jobs:
               echo "✓ Smoke tests OK"
             }
 
-            # ─── ROLLBACK auto si les smoke tests échouent ───
-            # Le déploiement étant orchestré back + front, on rollback LES DEUX :
-            # on re-tague chaque image précédente sous le tag "latest" attendu par
-            # le compose, puis on recrée toute la stack applicative.
+            # Rollback back + front si les smoke tests échouent.
             if ! smoke_test; then
               echo "❌ Smoke tests en échec."
-              # Noms d'images EXACTS attendus par le compose :
-              # ${DOCKERHUB_USERNAME}/${BACKEND_IMAGE|FRONTEND_IMAGE}:latest.
-              # DOCKERHUB_USERNAME vit dans le .env prod (lu par compose), pas
-              # dans ce shell → on le récupère depuis là.
+              # DOCKERHUB_USERNAME vit dans le .env prod (lu par compose).
               DHU="$(grep -E '^DOCKERHUB_USERNAME=' .env | cut -d= -f2- || true)"
               if [ -n "$DHU" ] && [ -n "$PREV_BACKEND_IMAGE" ] && [ -n "$PREV_FRONTEND_IMAGE" ]; then
                 echo "↩ Rollback : re-déploiement des images back + front précédentes."
-                # On re-tague les anciennes images sous le tag "latest" : le
-                # up --force-recreate réutilise ces images LOCALES (Compose ne
-                # pull que si l'image est absente), donc pas besoin d'un flag
-                # --no-pull/--pull (non portable selon la version de Compose).
+                # Re-tag en "latest" : `up --force-recreate` réutilise l'image
+                # LOCALE (Compose ne pull que si absente) → pas de flag --pull.
                 docker tag "$PREV_BACKEND_IMAGE"  "${DHU}/${BACKEND_IMAGE}:latest"
                 docker tag "$PREV_FRONTEND_IMAGE" "${DHU}/${FRONTEND_IMAGE}:latest"
                 docker compose -f docker-compose.prod.yaml up -d --force-recreate backend nginx edge frontend

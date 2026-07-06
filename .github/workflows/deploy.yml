@@ -113,7 +113,12 @@ jobs:
             GF_SMTP_USER=${{ secrets.GF_SMTP_USER }}
             GF_SMTP_PASSWORD=${{ secrets.GF_SMTP_PASSWORD }}
             GF_SMTP_FROM_ADDRESS=${{ secrets.GF_SMTP_FROM_ADDRESS }}
-            GF_ALERT_EMAIL_TO=${{ secrets.GF_ALERT_EMAIL_TO }}
+            # DOIT être non-vide : contact-points.yaml l'injecte via $__env{}
+            # (sans valeur par défaut). Un contact point "email" à addresses
+            # vide fait crash-looper Grafana 11. Fallback placeholder tant que
+            # le secret n'est pas défini (l'alerting mail est inactif de toute
+            # façon si GF_SMTP_* n'est pas configuré).
+            GF_ALERT_EMAIL_TO=${{ secrets.GF_ALERT_EMAIL_TO || 'alerts@example.invalid' }}
             ENV
             mv -f monitoring/.env.tmp monitoring/.env
             docker compose -f monitoring/docker-compose.monitoring.yaml pull

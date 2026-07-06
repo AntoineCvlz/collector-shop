@@ -10,16 +10,18 @@ contactPoints:
       - uid: email-admin
         type: email
         settings:
-          # Destinataire fourni par le .env (GF_ALERT_EMAIL_TO). Grafana
-          # interpole ${...} depuis l'environnement du conteneur.
+          # Destinataire fourni par le .env (GF_ALERT_EMAIL_TO).
           #
-          # Fallback OBLIGATOIRE : Grafana 11 REFUSE de démarrer si un contact
-          # point "email" a des addresses vides ("could not find addresses in
-          # settings" → crash-loop → 502). Tant que GF_ALERT_EMAIL_TO n'est pas
-          # renseigné (secret prod), on met une adresse placeholder pour que
-          # Grafana démarre. L'alerting n'enverra rien d'utile tant que le SMTP
-          # et le destinataire réels ne sont pas configurés.
-          addresses: ${GF_ALERT_EMAIL_TO:-alerts@example.invalid}
+          # SYNTAXE CRITIQUE : dans les fichiers de provisioning, Grafana
+          # n'interpole les variables d'ENV qu'avec $__env{VAR} — PAS ${VAR}.
+          # Un ${VAR} est laissé littéral (voire interprété comme variable de
+          # template d'alerte) → addresses vide → Grafana 11 REFUSE de démarrer
+          # ("could not find addresses in settings" → crash-loop → 502).
+          #
+          # $__env{} ne gère pas de valeur par défaut : GF_ALERT_EMAIL_TO DOIT
+          # être non-vide dans le .env (le job de déploiement le garantit via
+          # un fallback, cf. deploy.yml). Sinon Grafana ne démarre pas.
+          addresses: $__env{GF_ALERT_EMAIL_TO}
           singleEmail: false
         disableResolveMessage: false
 

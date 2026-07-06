@@ -132,9 +132,18 @@ jobs:
             # au lieu d'un sleep fixe (qui donnait "Connection refused").
             probe() {
               # $1 = chemin ; réessaie jusqu'à ~60s.
+              #
+              # On vise 127.0.0.1 et NON "localhost" : dans nginx:alpine,
+              # /etc/hosts résout "localhost" vers ::1 (IPv6) EN PREMIER, or
+              # nginx-edge n'écoute que sur 0.0.0.0:80 (IPv4). Le script
+              # d'entrypoint 10-listen-on-ipv6-by-default.sh ne peut pas ajouter
+              # "listen [::]:80" car la conf est montée read-only → un wget vers
+              # "localhost" tape ::1 et récolte "Connection refused" alors que la
+              # stack est saine (faux négatif qui déclenchait un rollback inutile).
+              # BusyBox wget : -T = timeout réseau (--timeout est silencieusement ignoré).
               local path="$1" i
               for i in $(seq 1 20); do
-                if docker exec app_edge wget -qO- --timeout=5 "http://localhost${path}" >/dev/null 2>&1; then
+                if docker exec app_edge wget -q -T 5 -O- "http://127.0.0.1${path}" >/dev/null 2>&1; then
                   return 0
                 fi
                 sleep 3

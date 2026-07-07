@@ -44,11 +44,13 @@ jobs:
       - name: 🚦 k6 thresholds gate
         run: |
           REPORT="${{ github.workspace }}/k6-reports/k6-summary.json"
-          FAILED=$(jq '[.metrics | to_entries[] | select(.value.thresholds != null) | .value.thresholds | to_entries[] | select(.value.ok == false)] | length' "$REPORT")
+          # Dans --summary-export, chaque seuil est un booléen (true = respecté,
+          # false = échoué), PAS un objet { ok: … } → on teste .value == false.
+          FAILED=$(jq '[.metrics | to_entries[] | select(.value.thresholds != null) | .value.thresholds | to_entries[] | select(.value == false)] | length' "$REPORT")
           echo "Seuils k6 en échec : ${FAILED}"
           if [ "${FAILED:-0}" -gt 0 ]; then
             echo "::error::Test de charge : ${FAILED} seuil(s) de performance non respecté(s) — voir l'artifact k6-load-test-report."
-            jq -r '.metrics | to_entries[] | select(.value.thresholds != null) | .key as $m | .value.thresholds | to_entries[] | select(.value.ok == false) | "  - \($m): \(.key)"' "$REPORT"
+            jq -r '.metrics | to_entries[] | select(.value.thresholds != null) | .key as $m | .value.thresholds | to_entries[] | select(.value == false) | "  - \($m): \(.key)"' "$REPORT"
             exit 1
           fi
           echo "✓ Tous les seuils de performance sont respectés."

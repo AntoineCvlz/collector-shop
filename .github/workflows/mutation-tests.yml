@@ -115,6 +115,7 @@ jobs:
       - name: 🧬 Run Infection PHP
         run: |
           vendor/bin/infection \
+            --test-framework=phpunit \
             --coverage=/tmp/infection-coverage \
             --skip-initial-tests \
             --min-msi=50 \

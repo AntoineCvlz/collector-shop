@@ -71,8 +71,7 @@ test('users list returns 500 when the query fails', function () {
     $admin->assignRole(Role::ADMIN);
     Passport::actingAs($admin, ['*'], 'api');
 
-    \Illuminate\Support\Facades\Schema::drop('role_user');
-    \Illuminate\Support\Facades\Schema::drop('roles');
+    \Illuminate\Support\Facades\Schema::drop('users');
 
     $this->getJson(route('users.index'))
         ->assertStatus(500)

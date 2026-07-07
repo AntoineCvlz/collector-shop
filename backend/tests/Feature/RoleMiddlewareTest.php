@@ -71,7 +71,10 @@ test('users list returns 500 when the query fails', function () {
     $admin->assignRole(Role::ADMIN);
     Passport::actingAs($admin, ['*'], 'api');
 
-    \Illuminate\Support\Facades\Schema::drop('users');
+    // hasRole() (middleware) only runs an exists() check and never hydrates a
+    // Role model, so failing on Role::retrieved only breaks usersList()'s
+    // eager-loaded with('roles'), which happens after the middleware passes.
+    Role::retrieved(fn () => throw new \RuntimeException('boom'));
 
     $this->getJson(route('users.index'))
         ->assertStatus(500)

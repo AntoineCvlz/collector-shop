@@ -110,8 +110,7 @@ export default function Header() {
                 {open && (
                   <div
                     role="menu"
-                    className="animate-fade absolute right-0 mt-2 w-56 overflow-hidden rounded-2xl border border-border bg-popover shadow-soft-lg"
-                    style={{ animationDuration: "0.12s" }}
+                    className="animate-fade [animation-duration:0.12s] absolute right-0 mt-2 w-56 overflow-hidden rounded-2xl border border-border bg-popover shadow-soft-lg"
                   >
                     <div className="border-b border-border px-4 py-3">
                       <p className="truncate text-sm font-semibold">

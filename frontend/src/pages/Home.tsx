@@ -14,6 +14,23 @@ import { listArticles } from "../services/article.service";
 import { listCategories } from "../services/category.service";
 import { getRecommendations } from "../services/favorite.service";
 
+// Paliers de délai d'apparition (index * 0.04s, plafonné à 0.4s) : classes
+// Tailwind statiques (scannées à la build) plutôt qu'un style inline, pour
+// respecter la CSP style-src sans 'unsafe-inline'.
+const ANIMATION_DELAY_CLASSES = [
+  "[animation-delay:0s]",
+  "[animation-delay:0.04s]",
+  "[animation-delay:0.08s]",
+  "[animation-delay:0.12s]",
+  "[animation-delay:0.16s]",
+  "[animation-delay:0.2s]",
+  "[animation-delay:0.24s]",
+  "[animation-delay:0.28s]",
+  "[animation-delay:0.32s]",
+  "[animation-delay:0.36s]",
+  "[animation-delay:0.4s]",
+];
+
 export default function Home() {
   const { t } = useTranslation();
   const authed = isAuthenticated();
@@ -127,8 +144,7 @@ export default function Home() {
                 <ArticleCard
                   key={article.id}
                   article={article}
-                  className="animate-pop"
-                  style={{ animationDelay: `${Math.min(i * 0.04, 0.4)}s` }}
+                  className={`animate-pop ${ANIMATION_DELAY_CLASSES[Math.min(i, ANIMATION_DELAY_CLASSES.length - 1)]}`}
                 />
               ))}
             </div>

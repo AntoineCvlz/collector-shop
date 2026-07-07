@@ -94,7 +94,7 @@ export default function Profile() {
 
         <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_1.5fr]">
           {/* ── Snapshot card ── */}
-          <aside className="animate-pop" style={{ animationDelay: "0.06s" }}>
+          <aside className="animate-pop [animation-delay:0.06s]">
             <div className="rounded-2xl border border-border bg-card p-6">
               <h2 className="text-base font-bold">
                 {t("profile.accountDetails")}
@@ -168,10 +168,7 @@ export default function Profile() {
           </aside>
 
           {/* ── Edit form ── */}
-          <section
-            className="animate-pop rounded-2xl border border-border bg-card p-6 sm:p-8"
-            style={{ animationDelay: "0.12s" }}
-          >
+          <section className="animate-pop [animation-delay:0.12s] rounded-2xl border border-border bg-card p-6 sm:p-8">
             <h2 className="text-xl font-bold">{t("profile.editProfile")}</h2>
             <p className="mt-1 text-sm text-muted-foreground">
               {t("profile.editSubtitle")}
@@ -201,7 +198,7 @@ export default function Profile() {
 
         {/* ── Interests (buyers) ── */}
         {isBuyer(user) && (
-          <div className="animate-pop mt-6" style={{ animationDelay: "0.18s" }}>
+          <div className="animate-pop [animation-delay:0.18s] mt-6">
             <InterestsCard token={token} />
           </div>
         )}

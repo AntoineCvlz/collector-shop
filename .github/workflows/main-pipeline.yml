@@ -166,6 +166,16 @@ jobs:
     # `environment:` lui-même → impossible de les passer un à un.
     secrets: inherit
 
+  # ─── Test de charge post-déploiement (prod réelle) ───
+  # Après deploy réussi uniquement : mesure la dégradation de perf introduite
+  # par ce déploiement sur des routes GET publiques (pas d'écriture en prod).
+  load-test:
+    needs: deploy
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/load-test.yml
+    with:
+      target_url: ${{ vars.PRODUCTION_URL }}
+
   # ─── Notifications (toujours, en dernier) ───
   # if: always() → part même si un job échoue ou si deploy est skipped (PR).
   send-notifications:
@@ -191,6 +201,7 @@ jobs:
       - publish-docker-hub-front
       - dast-zap-test-front
       - deploy
+      - load-test
     uses: ./.github/workflows/send-notifications.yml
     if: always()
     secrets:
@@ -219,3 +230,4 @@ jobs:
       result_publish_docker_hub_front: ${{ needs.publish-docker-hub-front.result }}
       result_dast_zap_test_front: ${{ needs.dast-zap-test-front.result }}
       result_deploy: ${{ needs.deploy.result }}
+      result_load_test: ${{ needs.load-test.result }}

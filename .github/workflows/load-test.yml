@@ -1,0 +1,61 @@
+on:
+  workflow_call:
+    inputs:
+      target_url:
+        required: true
+        type: string
+
+jobs:
+  load-test:
+    name: 🏋️ Load & Perf Test (k6)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Create k6 reports directory
+        run: |
+          mkdir -p ${{ github.workspace }}/k6-reports
+          chmod -R 777 ${{ github.workspace }}/k6-reports
+
+      # Charge courte et modérée contre la prod réelle, juste après déploiement
+      # (cf. backend/tests/Load/api-smoke-load.js) — seuils dans `options.thresholds`
+      # du script ; --summary-export produit un résumé JSON pour le gate ci-dessous.
+      - name: Run k6 load test against production
+        run: |
+          docker run --rm \
+            -v ${{ github.workspace }}/backend/tests/Load:/scripts:ro \
+            -v ${{ github.workspace }}/k6-reports:/reports:rw \
+            -e LOAD_TEST_BASE_URL="${{ inputs.target_url }}" \
+            grafana/k6:latest run \
+            --summary-export /reports/k6-summary.json \
+            /scripts/api-smoke-load.js
+        continue-on-error: true
+
+      - name: Verify k6 actually ran
+        run: |
+          test -s "${{ github.workspace }}/k6-reports/k6-summary.json" \
+            || { echo "::error::k6 n'a produit aucun résumé — le test de charge n'a pas eu lieu."; exit 1; }
+
+      # Gate : échoue si un des seuils définis dans le script (p95, taux d'erreur)
+      # n'est pas respecté. Non bloquant pour le déploiement lui-même (déjà fait),
+      # mais fait échouer la pipeline pour signaler la régression de perf.
+      - name: 🚦 k6 thresholds gate
+        run: |
+          REPORT="${{ github.workspace }}/k6-reports/k6-summary.json"
+          FAILED=$(jq '[.metrics | to_entries[] | select(.value.thresholds != null) | .value.thresholds | to_entries[] | select(.value.ok == false)] | length' "$REPORT")
+          echo "Seuils k6 en échec : ${FAILED}"
+          if [ "${FAILED:-0}" -gt 0 ]; then
+            echo "::error::Test de charge : ${FAILED} seuil(s) de performance non respecté(s) — voir l'artifact k6-load-test-report."
+            jq -r '.metrics | to_entries[] | select(.value.thresholds != null) | .key as $m | .value.thresholds | to_entries[] | select(.value.ok == false) | "  - \($m): \(.key)"' "$REPORT"
+            exit 1
+          fi
+          echo "✓ Tous les seuils de performance sont respectés."
+
+      - name: Upload k6 report
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: k6-load-test-report
+          path: k6-reports/k6-summary.json

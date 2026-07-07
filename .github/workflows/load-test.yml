@@ -27,8 +27,8 @@ jobs:
           docker run --rm \
             -v ${{ github.workspace }}/backend/tests/Load:/scripts:ro \
             -v ${{ github.workspace }}/k6-reports:/reports:rw \
-            -e LOAD_TEST_BASE_URL="${{ inputs.target_url }}" \
             grafana/k6:latest run \
+            -e LOAD_TEST_BASE_URL="${{ inputs.target_url }}" \
             --summary-export /reports/k6-summary.json \
             /scripts/api-smoke-load.js
         continue-on-error: true

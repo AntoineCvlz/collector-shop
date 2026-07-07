@@ -11,20 +11,16 @@ jobs:
       - name: 📥 Checkout code
         uses: actions/checkout@v6
 
-      - name: ⚙️ Setup Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: "20"
-          cache: "npm"
-          cache-dependency-path: frontend/package-lock.json
+      # On build et sert l'image nginx de prod (avec CSP/COOP/HSTS/X-Frame-Options)
+      # plutôt que de scanner les fichiers statiques bruts : sinon Lighthouse
+      # rapporte à tort ces headers comme absents alors qu'ils sont posés par nginx.
+      - name: 🏗️ Build production image (nginx + build Vite)
+        run: docker build -t collector-shop-frontend:lighthouse ./frontend
 
-      - name: 📦 Install dependencies
-        run: npm ci
-        working-directory: ./frontend
-
-      - name: 🏗️ Build
-        run: npm run build
-        working-directory: ./frontend
+      - name: 🚀 Run production container
+        run: |
+          docker run -d --name lighthouse-frontend -p 8080:8080 collector-shop-frontend:lighthouse
+          timeout 30 sh -c 'until curl -sf http://localhost:8080; do sleep 1; done'
 
       - name: 🔦 Run Lighthouse CI
         uses: treosh/lighthouse-ci-action@v12
@@ -32,4 +28,12 @@ jobs:
           uploadArtifacts: true
           temporaryPublicStorage: true
           configPath: .github/lighthouserc.json
+          urls: |
+            http://localhost:8080
+
+      - name: 🧹 Stop container
+        if: always()
+        run: |
+          docker stop lighthouse-frontend || true
+          docker rm lighthouse-frontend || true
 

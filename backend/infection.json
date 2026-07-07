@@ -1,6 +1,6 @@
 {
     "source": { "directories": ["app"] },
-    "testFramework": "pest",
+    "testFramework": "phpunit",
     "phpUnit": {
         "configDir": "."
     }

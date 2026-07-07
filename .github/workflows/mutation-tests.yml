@@ -70,7 +70,7 @@ jobs:
         run: php artisan passport:keys --force --no-interaction
 
       - name: 🔧 Install Infection PHP
-        run: composer require --dev infection/infection infection/pest-adapter --no-interaction --quiet
+        run: composer require --dev infection/infection --no-interaction --quiet
 
       - name: 🧪 Run initial tests
         run: vendor/bin/pest

@@ -39,10 +39,13 @@ jobs:
           cosign sign --yes \
             ${{ secrets.DOCKERHUB_USERNAME }}/${{ inputs.app_name }}:${{ github.sha }}
 
+      # SBOM sur le tag immuable :sha (comme la signature Cosign ci-dessus).
+      # Générer depuis :latest exposait à une course : :latest peut déjà pointer
+      # sur une autre image que celle qu'on vient de signer → provenance faussée.
       - name: Generate SBOM
         uses: anchore/sbom-action@v0
         with:
-          image: ${{ secrets.DOCKERHUB_USERNAME }}/${{ inputs.app_name }}:latest
+          image: ${{ secrets.DOCKERHUB_USERNAME }}/${{ inputs.app_name }}:${{ github.sha }}
           format: spdx-json
           output-file: sbom.spdx.json
 

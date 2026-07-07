@@ -62,17 +62,20 @@
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.21 0.01 264);
 
-  /* Coral is the brand action color */
-  --primary: oklch(0.66 0.2 27);
+  /* Coral is the brand action color. Darkened from L=0.66 to L=0.57 so white
+     text (#fcfcfc) on this fill reaches the WCAG AA 4.5:1 ratio (was 3.32:1). */
+  --primary: oklch(0.57 0.21 28);
   --primary-foreground: oklch(0.99 0 0);
-  --coral: oklch(0.66 0.2 27);
+  --coral: oklch(0.57 0.21 28);
   --coral-foreground: oklch(0.99 0 0);
 
   --secondary: oklch(0.97 0.005 264);
   --secondary-foreground: oklch(0.27 0.01 264);
 
   --muted: oklch(0.968 0.004 264);
-  --muted-foreground: oklch(0.55 0.012 264);
+  /* Darkened from L=0.55 to L=0.485 to reach 4.5:1 against the light-pink
+     accent background (was 4.29:1). */
+  --muted-foreground: oklch(0.485 0.012 264);
 
   --accent: oklch(0.97 0.02 30);
   --accent-foreground: oklch(0.45 0.16 27);

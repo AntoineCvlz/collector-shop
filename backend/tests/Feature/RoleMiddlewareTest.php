@@ -65,3 +65,20 @@ test('an admin who is also a buyer still passes the admin gate', function () {
 
     $this->getJson(route('users.index'))->assertStatus(200);
 });
+
+test('users list returns 500 when the query fails', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole(Role::ADMIN);
+    Passport::actingAs($admin, ['*'], 'api');
+
+    \Illuminate\Support\Facades\Schema::drop('role_user');
+    \Illuminate\Support\Facades\Schema::drop('roles');
+
+    $this->getJson(route('users.index'))
+        ->assertStatus(500)
+        ->assertJson([
+            'response_code' => 500,
+            'status' => 'error',
+            'message' => 'Failed to fetch user list',
+        ]);
+});

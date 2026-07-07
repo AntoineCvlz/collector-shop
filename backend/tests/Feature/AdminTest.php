@@ -204,3 +204,29 @@ test('moderation delete returns 500 when deletion fails', function () {
     $this->deleteJson(route('articles.moderate.destroy', $article))
         ->assertStatus(500);
 });
+
+test('unban returns 500 when persistence fails', function () {
+    $seller = withRole(Role::SELLER);
+    $seller->ban();
+    asRole(Role::ADMIN);
+
+    User::saving(fn () => throw new \RuntimeException('boom'));
+
+    $this->patchJson(route('sellers.unban', $seller))->assertStatus(500);
+});
+
+test('moderation delete removes the article images from storage', function () {
+    \Illuminate\Support\Facades\Storage::fake('public');
+
+    $article = Article::factory()->published()->create();
+    $image = \App\Models\ArticleImage::factory()->create([
+        'article_id' => $article->id,
+        'path' => 'articles/test-image.jpg',
+    ]);
+    \Illuminate\Support\Facades\Storage::disk('public')->put($image->path, 'fake-content');
+    asRole(Role::ADMIN);
+
+    $this->deleteJson(route('articles.moderate.destroy', $article))->assertStatus(200);
+
+    \Illuminate\Support\Facades\Storage::disk('public')->assertMissing($image->path);
+});

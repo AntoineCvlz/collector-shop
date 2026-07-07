@@ -1,11 +1,10 @@
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { PackageOpen, ShieldCheck, Sparkles, Tag } from "lucide-react";
 
 import ArticleCard from "../components/ArticleCard";
-import Footer from "../components/Footer";
 import Header from "../components/Header";
 import { Button } from "../components/ui/button";
 import { cn } from "../lib/utils";
@@ -13,6 +12,8 @@ import { getToken, getUser, isAuthenticated, isBuyer } from "../lib/auth";
 import { listArticles } from "../services/article.service";
 import { listCategories } from "../services/category.service";
 import { getRecommendations } from "../services/favorite.service";
+
+const Footer = lazy(() => import("../components/Footer"));
 
 // Paliers de délai d'apparition (index * 0.04s, plafonné à 0.4s) : classes
 // Tailwind statiques (scannées à la build) plutôt qu'un style inline, pour
@@ -192,7 +193,9 @@ export default function Home() {
         </section>
       </main>
 
-      <Footer />
+      <Suspense fallback={null}>
+        <Footer />
+      </Suspense>
     </div>
   );
 }

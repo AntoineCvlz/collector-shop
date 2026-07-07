@@ -1,7 +1,7 @@
 {
     "source": { "directories": ["app"] },
+    "testFramework": "pest",
     "phpUnit": {
-        "configDir": ".",
-        "customPath": "vendor/bin/pest"
+        "configDir": "."
     }
 }

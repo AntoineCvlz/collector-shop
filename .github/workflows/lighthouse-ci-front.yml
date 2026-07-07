@@ -11,9 +11,8 @@ jobs:
       - name: 📥 Checkout code
         uses: actions/checkout@v6
 
-      # On build et sert l'image nginx de prod (avec CSP/COOP/HSTS/X-Frame-Options)
-      # plutôt que de scanner les fichiers statiques bruts : sinon Lighthouse
-      # rapporte à tort ces headers comme absents alors qu'ils sont posés par nginx.
+      # Build + sert l'image nginx de prod (headers CSP/COOP/HSTS/X-Frame-Options
+      # posés par nginx, absents si on scanne les fichiers statiques bruts).
       - name: 🏗️ Build production image (nginx + build Vite)
         run: docker build -t collector-shop-frontend:lighthouse ./frontend
 
@@ -21,17 +20,6 @@ jobs:
         run: |
           docker run -d --name lighthouse-frontend -p 8080:8080 collector-shop-frontend:lighthouse
           timeout 30 sh -c 'until curl -sf http://localhost:8080; do sleep 1; done'
-
-      # Warm-up : quelques requêtes jetables pour amortir le coût "à froid"
-      # (cache disque, JIT nginx) qui gonfle le TBT du premier run Lighthouse
-      # et fait plonger le score perf sur ce run isolé.
-      - name: 🔥 Warm up the container
-        run: |
-          for i in $(seq 1 5); do
-            curl -sf http://localhost:8080/ > /dev/null || true
-            curl -sf http://localhost:8080/api/categories > /dev/null || true
-            curl -sf http://localhost:8080/api/articles > /dev/null || true
-          done
 
       - name: 🔦 Run Lighthouse CI
         uses: treosh/lighthouse-ci-action@v12

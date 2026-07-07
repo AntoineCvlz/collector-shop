@@ -15,4 +15,15 @@ export default defineConfig({
     host: '0.0.0.0',
     port: 3000,
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          react: ["react", "react-dom", "react-router-dom"],
+          "react-query": ["@tanstack/react-query"],
+          i18n: ["i18next", "i18next-browser-languagedetector", "react-i18next"],
+        },
+      },
+    },
+  },
 })

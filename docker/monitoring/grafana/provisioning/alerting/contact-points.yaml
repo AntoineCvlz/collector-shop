@@ -1,6 +1,7 @@
 # Point de contact des alertes Grafana : email de l'admin.
-# L'envoi SMTP est configuré via les variables GF_SMTP_* du conteneur Grafana
-# (cf. docker-compose.monitoring.yaml), alimentées par le .env (secrets CI).
+# L'envoi SMTP n'est PAS configuré (cf. docker-compose.monitoring.yaml) : les
+# alertes restent visibles dans l'UI Alerting mais ne partent pas par mail.
+# Seul le destinataire (GF_ALERT_EMAIL_TO) est requis pour que Grafana démarre.
 apiVersion: 1
 
 contactPoints:

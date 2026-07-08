@@ -58,17 +58,12 @@ jobs:
           GF_SECURITY_ADMIN_USER: ${{ secrets.GF_SECURITY_ADMIN_USER }}
           GF_SECURITY_ADMIN_PASSWORD: ${{ secrets.GF_SECURITY_ADMIN_PASSWORD }}
           MONITORING_DATA_SOURCE_NAME: ${{ secrets.MONITORING_DATA_SOURCE_NAME }}
-          GF_SMTP_ENABLED: ${{ vars.GF_SMTP_ENABLED || 'false' }}
-          GF_SMTP_HOST: ${{ secrets.GF_SMTP_HOST }}
-          GF_SMTP_USER: ${{ secrets.GF_SMTP_USER }}
-          GF_SMTP_PASSWORD: ${{ secrets.GF_SMTP_PASSWORD }}
-          GF_SMTP_FROM_ADDRESS: ${{ secrets.GF_SMTP_FROM_ADDRESS }}
           GF_ALERT_EMAIL_TO: ${{ secrets.GF_ALERT_EMAIL_TO || 'alerts@example.invalid' }}
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          envs: DOCKERHUB_USERNAME,LARAVEL_APP_KEY,DB_PASSWORD,APP_URL,PASSPORT_PRIVATE_KEY,PASSPORT_PUBLIC_KEY,GF_SECURITY_ADMIN_USER,GF_SECURITY_ADMIN_PASSWORD,MONITORING_DATA_SOURCE_NAME,GF_SMTP_ENABLED,GF_SMTP_HOST,GF_SMTP_USER,GF_SMTP_PASSWORD,GF_SMTP_FROM_ADDRESS,GF_ALERT_EMAIL_TO
+          envs: DOCKERHUB_USERNAME,LARAVEL_APP_KEY,DB_PASSWORD,APP_URL,PASSPORT_PRIVATE_KEY,PASSPORT_PUBLIC_KEY,GF_SECURITY_ADMIN_USER,GF_SECURITY_ADMIN_PASSWORD,MONITORING_DATA_SOURCE_NAME,GF_ALERT_EMAIL_TO
           script: |
             set -e
             cd /opt/collector-shop
@@ -164,11 +159,6 @@ jobs:
             GF_SECURITY_ADMIN_USER=${GF_SECURITY_ADMIN_USER}
             GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD}
             DATA_SOURCE_NAME=${MONITORING_DATA_SOURCE_NAME}
-            GF_SMTP_ENABLED=${GF_SMTP_ENABLED}
-            GF_SMTP_HOST=${GF_SMTP_HOST}
-            GF_SMTP_USER=${GF_SMTP_USER}
-            GF_SMTP_PASSWORD=${GF_SMTP_PASSWORD}
-            GF_SMTP_FROM_ADDRESS=${GF_SMTP_FROM_ADDRESS}
             # DOIT être non-vide : contact-points.yaml l'injecte via $__env{}
             # (sans défaut) ; une adresse vide fait crash-looper Grafana 11.
             GF_ALERT_EMAIL_TO=${GF_ALERT_EMAIL_TO}

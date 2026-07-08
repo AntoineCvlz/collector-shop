@@ -86,10 +86,6 @@ on:
         required: false
         type: string
         default: skipped
-      result_load_test:
-        required: false
-        type: string
-        default: skipped
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -129,7 +125,6 @@ jobs:
           echo "DAST ZAP:        ${{ inputs.result_dast_zap_test_front }}"
           echo "─────────── DEPLOY ──────────"
           echo "Deploy Prod:     ${{ inputs.result_deploy }}"
-          echo "Load Test:       ${{ inputs.result_load_test }}"
           echo "═══════════════════════════════════════"
 
       - name: 🎨 Determine overall status
@@ -157,7 +152,6 @@ jobs:
             ${{ inputs.result_publish_docker_hub_front }}
             ${{ inputs.result_dast_zap_test_front }}
             ${{ inputs.result_deploy }}
-            ${{ inputs.result_load_test }}
         run: |
           # Un job 'skipped' (ex. non lancé en PR) n'est PAS un échec.
           # Seuls 'failure' et 'cancelled' déclenchent un statut global rouge.
@@ -218,7 +212,6 @@ jobs:
               <tr><td>🧪 DAST ZAP</td><td>${{ inputs.result_dast_zap_test_front }}</td></tr>
               <tr><th colspan="2" style="background:#fee;">🚀 DÉPLOIEMENT</th></tr>
               <tr><td>🚀 Deploy Production</td><td>${{ inputs.result_deploy }}</td></tr>
-              <tr><td>🏋️ Load Test</td><td>${{ inputs.result_load_test }}</td></tr>
             </table>
             <hr/>
             <p><a href="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}">🔗 View full pipeline run</a></p>

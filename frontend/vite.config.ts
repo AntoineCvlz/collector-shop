@@ -28,8 +28,28 @@ export default defineConfig({
         "src/**/*.{test,spec}.{ts,tsx}",
         "src/test/**",
         "src/main.tsx",
+        "src/App.tsx",
         "src/vite-env.d.ts",
+        // Vues « coquilles » et primitives UI : couvertes par les tests E2E
+        // Playwright (tests/), pas par Vitest. Les inclure fausserait la
+        // mesure de la logique réellement testable en unitaire.
+        "src/pages/**",
+        "src/components/ui/**",
+        "src/components/Header.tsx",
+        "src/components/Footer.tsx",
+        "src/components/AuthLayout.tsx",
+        "src/components/InterestsCard.tsx",
+        "src/components/Hello.tsx",
+        "src/components/Logo.tsx",
+        "src/services/hello.service.ts",
+        "src/i18n/**",
       ],
+      thresholds: {
+        lines: 90,
+        functions: 90,
+        branches: 90,
+        statements: 90,
+      },
     },
   },
   server: {

@@ -1,5 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { listArticles, getArticle } from "./article.service";
+import {
+  listArticles,
+  getArticle,
+  createArticle,
+  deleteArticle,
+  listMyArticles,
+} from "./article.service";
 
 // Fabrique une réponse fetch JSON réussie.
 function jsonResponse(body: unknown) {
@@ -103,5 +109,88 @@ describe("getArticle", () => {
 
     expect(fetchMock.mock.calls[0][0]).toBe("/api/articles/42");
     expect(res).toEqual(article);
+  });
+});
+
+describe("listMyArticles", () => {
+  it("GET /api/my/articles avec le Bearer token", async () => {
+    const paginated = { data: [fullArticle], current_page: 1, last_page: 1, total: 1 };
+    fetchMock.mockReturnValueOnce(
+      jsonResponse({ response_code: 200, status: "ok", message: "", data: paginated }),
+    );
+
+    const res = await listMyArticles("tok");
+
+    expect(fetchMock.mock.calls[0][0]).toBe("/api/my/articles");
+    const opts = fetchMock.mock.calls[0][1] as RequestInit;
+    expect((opts.headers as Record<string, string>).Authorization).toBe("Bearer tok");
+    expect(res).toEqual(paginated);
+  });
+});
+
+describe("createArticle", () => {
+  it("POST multipart /api/articles avec un FormData (sans Content-Type JSON)", async () => {
+    fetchMock.mockReturnValueOnce(
+      jsonResponse({ response_code: 200, status: "ok", message: "", data: fullArticle }),
+    );
+
+    const image = new File(["x"], "card.png", { type: "image/png" });
+    await createArticle("tok", {
+      category_id: 1,
+      title: "Carte",
+      description: "desc",
+      price: 12,
+      shipping_cost: 3,
+      images: [image],
+    });
+
+    expect(fetchMock.mock.calls[0][0]).toBe("/api/articles");
+    const opts = fetchMock.mock.calls[0][1] as RequestInit;
+    expect(opts.method).toBe("POST");
+    expect(opts.body).toBeInstanceOf(FormData);
+    const form = opts.body as FormData;
+    expect(form.get("title")).toBe("Carte");
+    expect(form.get("category_id")).toBe("1");
+    expect(form.get("shipping_cost")).toBe("3");
+    expect(form.getAll("images[]")).toHaveLength(1);
+    // On laisse le navigateur poser la frontière multipart : pas de header JSON.
+    expect((opts.headers as Record<string, string>)["Content-Type"]).toBeUndefined();
+  });
+
+  it("omet shipping_cost quand absent", async () => {
+    fetchMock.mockReturnValueOnce(
+      jsonResponse({ response_code: 200, status: "ok", message: "", data: fullArticle }),
+    );
+
+    await createArticle("tok", {
+      category_id: 1,
+      title: "Carte",
+      description: "desc",
+      price: 12,
+    });
+
+    const form = (fetchMock.mock.calls[0][1] as RequestInit).body as FormData;
+    expect(form.has("shipping_cost")).toBe(false);
+  });
+
+  it("lève sur réponse non ok", async () => {
+    fetchMock.mockReturnValueOnce(Promise.resolve({ ok: false, status: 422 } as Response));
+
+    await expect(
+      createArticle("tok", { category_id: 1, title: "x", description: "y", price: 1 }),
+    ).rejects.toThrow("422");
+  });
+});
+
+describe("deleteArticle", () => {
+  it("DELETE /api/articles/:id", async () => {
+    fetchMock.mockReturnValueOnce(
+      jsonResponse({ response_code: 200, status: "ok", message: "", data: null }),
+    );
+
+    await deleteArticle("tok", 9);
+
+    expect(fetchMock.mock.calls[0][0]).toBe("/api/articles/9");
+    expect((fetchMock.mock.calls[0][1] as RequestInit).method).toBe("DELETE");
   });
 });

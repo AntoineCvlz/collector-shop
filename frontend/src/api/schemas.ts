@@ -1,6 +1,5 @@
 import { z } from "zod";
 
-/** Enveloppe standard des réponses API. `data` est typé par chaque endpoint. */
 export function envelope<T extends z.ZodTypeAny>(data: T) {
   return z.object({
     response_code: z.number(),
@@ -10,7 +9,6 @@ export function envelope<T extends z.ZodTypeAny>(data: T) {
   });
 }
 
-/** Pagination Laravel (sous-ensemble consommé par le front). */
 export function paginated<T extends z.ZodTypeAny>(item: T) {
   return z.object({
     data: z.array(item),

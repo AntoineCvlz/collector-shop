@@ -13,21 +13,9 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
-/**
- * Populates the database with realistic demo data so the whole flow
- * (catalogue → listing → moderation → purchase + 5% commission) can be
- * explored by hand. Run explicitly:
- *
- *   php artisan db:seed --class=DemoSeeder
- *
- * Not wired into DatabaseSeeder on purpose — it must never run in production.
- */
 class DemoSeeder extends Seeder
 {
     /**
-     * Curated catalogue: each item has a matching Unsplash photo.
-     * status: published | pending | sold
-     *
      * @var list<array{title: string, category: string, price: float, shipping: float, status: string, photo: string, description: string}>
      */
     private array $catalogue = [
@@ -254,10 +242,6 @@ class DemoSeeder extends Seeder
         ]);
     }
 
-    /**
-     * Download the real photo into the public disk. Falls back to a coloured
-     * placeholder if the download is unavailable (offline / CI).
-     */
     private function attachPhoto(Article $article, string $url): void
     {
         $path = 'articles/demo-'.$article->id.'.jpg';

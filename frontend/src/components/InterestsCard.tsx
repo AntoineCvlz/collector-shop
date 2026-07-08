@@ -12,9 +12,6 @@ interface InterestsCardProps {
   token: string;
 }
 
-/**
- * Lets a buyer pick favourite categories to drive recommendations.
- */
 export default function InterestsCard({ token }: InterestsCardProps) {
   const { t } = useTranslation();
   const [saved, setSaved] = useState(false);

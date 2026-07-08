@@ -15,8 +15,6 @@ class User extends Authenticatable
     use HasApiTokens, HasFactory, Notifiable;
 
     /**
-     * The attributes that are mass assignable.
-     *
      * @var list<string>
      */
     protected $fillable = [
@@ -26,8 +24,6 @@ class User extends Authenticatable
     ];
 
     /**
-     * The attributes that should be hidden for serialization.
-     *
      * @var list<string>
      */
     protected $hidden = [
@@ -36,8 +32,6 @@ class User extends Authenticatable
     ];
 
     /**
-     * Get the attributes that should be cast.
-     *
      * @return array<string, string>
      */
     protected function casts(): array
@@ -58,8 +52,6 @@ class User extends Authenticatable
     }
 
     /**
-     * Buyer's favourite categories (interests for recommendations).
-     *
      * @return BelongsToMany<Category, $this>
      */
     public function favoriteCategories(): BelongsToMany
@@ -68,8 +60,6 @@ class User extends Authenticatable
     }
 
     /**
-     * Buyer's saved articles (wishlist).
-     *
      * @return BelongsToMany<Article, $this>
      */
     public function favoriteArticles(): BelongsToMany
@@ -78,8 +68,6 @@ class User extends Authenticatable
     }
 
     /**
-     * Reviews this user has received (as a seller or a buyer).
-     *
      * @return HasMany<Review, $this>
      */
     public function reviewsReceived(): HasMany
@@ -87,9 +75,6 @@ class User extends Authenticatable
         return $this->hasMany(Review::class, 'subject_id');
     }
 
-    /**
-     * Average rating received, rounded to one decimal (null if none).
-     */
     public function averageRating(): ?float
     {
         $avg = $this->reviewsReceived()->avg('rating');
@@ -135,8 +120,6 @@ class User extends Authenticatable
     }
 
     /**
-     * Flat list of the user's role names, e.g. ['buyer', 'seller'].
-     *
      * @return list<string>
      */
     public function roleNames(): array

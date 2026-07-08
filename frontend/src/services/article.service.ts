@@ -92,10 +92,6 @@ export interface NewArticle {
   images?: File[];
 }
 
-/**
- * Multipart upload — we must let the browser set the multipart boundary,
- * so we bypass the JSON apiFetch helper here.
- */
 export const createArticle = async (
   token: string,
   payload: NewArticle,

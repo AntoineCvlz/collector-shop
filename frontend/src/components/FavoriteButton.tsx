@@ -13,10 +13,6 @@ interface FavoriteButtonProps {
   className?: string;
 }
 
-/**
- * Heart toggle for saving an article to the wishlist. Guests are sent to
- * login. Stops click propagation so it can sit inside a card link.
- */
 export default function FavoriteButton({
   articleId,
   initialFavorited = false,

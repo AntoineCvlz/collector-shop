@@ -15,16 +15,11 @@ class Role extends Model
 
     public const MODERATOR = 'moderator';
 
-    /**
-     * Role assigned to every account on registration.
-     */
     public const DEFAULT = self::BUYER;
 
     protected $fillable = ['name'];
 
     /**
-     * All role names recognised by the application.
-     *
      * @return list<string>
      */
     public static function names(): array

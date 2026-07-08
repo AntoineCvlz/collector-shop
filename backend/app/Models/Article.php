@@ -72,8 +72,6 @@ class Article extends Model
     }
 
     /**
-     * Only articles visible in the public catalogue.
-     *
      * @param  Builder<Article>  $query
      */
     public function scopePublished(Builder $query): void
@@ -87,9 +85,6 @@ class Article extends Model
         return $this->status === self::STATUS_PUBLISHED;
     }
 
-    /**
-     * Whether the article can still be bought.
-     */
     public function isAvailable(): bool
     {
         return $this->status === self::STATUS_PUBLISHED;

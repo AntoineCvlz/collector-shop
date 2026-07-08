@@ -9,16 +9,6 @@ use Illuminate\Http\Response;
 use Prometheus\CollectorRegistry;
 use Prometheus\RenderTextFormat;
 
-/**
- * Endpoint /metrics au format texte Prometheus.
- *
- * NON exposé publiquement : la route n'est pas routée via nginx-edge (cf.
- * docker/nginx/edge.prod.conf). Prometheus la scrape en interne, sur le
- * réseau Docker « monitoring », par le conteneur nginx du backend.
- *
- * En plus des séries HTTP alimentées par CollectHttpMetrics, on échantillonne
- * ici quelques gauges métier à chaque scrape (peu coûteux, requêtes count()).
- */
 class MetricsController extends Controller
 {
     public function __construct(private readonly CollectorRegistry $registry) {}
@@ -34,9 +24,6 @@ class MetricsController extends Controller
         ]);
     }
 
-    /**
-     * Snapshot de métriques métier, rafraîchi à chaque scrape.
-     */
     private function sampleBusinessGauges(): void
     {
         $this->setGauge('users_total', 'Nombre de comptes utilisateurs.', User::count());

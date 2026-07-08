@@ -16,10 +16,6 @@ interface RoleBadgeProps {
   className?: string;
 }
 
-/**
- * A small pill describing a single role. Admin keeps a coral accent so it
- * reads as a special badge; buyer/seller stay neutral.
- */
 export default function RoleBadge({ role, className }: RoleBadgeProps) {
   const { t } = useTranslation();
   const Icon = ROLE_ICON[role] ?? ShoppingBag;

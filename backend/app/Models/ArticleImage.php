@@ -32,8 +32,6 @@ class ArticleImage extends Model
     }
 
     /**
-     * Public URL for the stored image.
-     *
      * @return Attribute<string, never>
      */
     protected function url(): Attribute

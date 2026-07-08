@@ -4,7 +4,6 @@ import { cn } from "../lib/utils";
 
 interface LogoProps {
   className?: string;
-  /** Render as a static mark instead of a link (e.g. inside a footer). */
   asStatic?: boolean;
 }
 

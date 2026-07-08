@@ -16,9 +16,6 @@ class Category extends Model
      */
     protected $fillable = ['name', 'slug'];
 
-    /**
-     * Keep the slug in sync with the name automatically.
-     */
     protected static function booted(): void
     {
         static::saving(function (Category $category): void {

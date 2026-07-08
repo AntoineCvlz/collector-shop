@@ -42,10 +42,6 @@ function validCard(): array
     ];
 }
 
-// ─────────────────────────────────────────────
-// SUCCESSFUL CHECKOUT
-// ─────────────────────────────────────────────
-
 test('a buyer can purchase a published article', function () {
     $article = Article::factory()->published()->create([
         'price' => 100,
@@ -68,7 +64,6 @@ test('the 5 percent commission is computed on price plus shipping', function () 
     ]);
     Passport::actingAs(buyer(), ['*'], 'api');
 
-    // total = 250 → commission = 12.50, payout = 237.50
     $this->postJson(route('orders.checkout', $article), validCard())
         ->assertStatus(201)
         ->assertJsonPath('data.commission', '12.50')
@@ -94,10 +89,6 @@ test('the order stores only the last four digits of the card', function () {
 
     $this->assertDatabaseMissing('orders', ['card_last4' => '4242424242424242']);
 });
-
-// ─────────────────────────────────────────────
-// BUSINESS RULES
-// ─────────────────────────────────────────────
 
 test('a seller cannot buy their own article', function () {
     $seller = User::factory()->create();
@@ -125,10 +116,6 @@ test('an already sold article cannot be purchased again', function () {
     $this->postJson(route('orders.checkout', $article), validCard())
         ->assertStatus(409);
 });
-
-// ─────────────────────────────────────────────
-// CARD VALIDATION
-// ─────────────────────────────────────────────
 
 test('checkout rejects a card number that fails the Luhn check', function () {
     $article = Article::factory()->published()->create();
@@ -170,10 +157,6 @@ test('checkout validates required card fields', function () {
         ->assertJsonValidationErrors(['card_number', 'card_name', 'expiry_month', 'expiry_year', 'cvv']);
 });
 
-// ─────────────────────────────────────────────
-// ROLE ISOLATION
-// ─────────────────────────────────────────────
-
 test('a non-buyer cannot check out', function () {
     $article = Article::factory()->published()->create();
     Passport::actingAs(sellerUser(), ['*'], 'api');
@@ -188,10 +171,6 @@ test('checkout requires authentication', function () {
     $this->postJson(route('orders.checkout', $article), validCard())
         ->assertStatus(401);
 });
-
-// ─────────────────────────────────────────────
-// ORDER & SALES HISTORY
-// ─────────────────────────────────────────────
 
 test('a buyer sees their own orders', function () {
     $user = buyer();
@@ -216,13 +195,8 @@ test('a seller sees their own sales', function () {
 });
 
 test('the commission helper rounds to the cent', function () {
-    // 33.33 * 0.05 = 1.6665 → 1.67
     expect(Order::commissionFor(33.33))->toBe(1.67);
 });
-
-// ─────────────────────────────────────────────
-// ERROR HANDLING (catch block → 500)
-// ─────────────────────────────────────────────
 
 test('checkout returns 500 when persistence fails', function () {
     $article = Article::factory()->published()->create();

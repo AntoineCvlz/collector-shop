@@ -126,8 +126,6 @@ jobs:
 
       - name: Run OWASP ZAP DAST scan
         run: |
-          # -J JSON (parsé par le gate), -r HTML (humain), -I : le conteneur
-          # n'échoue pas sur alerte → c'est le gate ci-dessous qui décide.
           docker run --rm \
             -v ${{ github.workspace }}/zap-reports:/zap/wrk/:rw \
             -v /tmp/zap-home:/home/zap:rw \
@@ -140,19 +138,14 @@ jobs:
             -I
         continue-on-error: true
 
-      # Garde-fou : si ZAP n'a pas produit de rapport, c'est que le scan n'a
-      # pas réellement balayé l'app (app morte, réseau, crash) → on échoue.
       - name: Verify ZAP actually scanned the app
         run: |
           test -s "${{ github.workspace }}/zap-reports/zap-report.json" \
             || { echo "::error::ZAP n'a produit aucun rapport JSON — le scan DAST n'a pas eu lieu."; exit 1; }
 
-      # Bloque sur les alertes HIGH (riskcode ZAP : 3=High). Medium/Low restent
-      # visibles dans les rapports uploadés, non bloquantes.
       - name: 🚦 ZAP gate (blocking on HIGH risk alerts)
         run: |
           REPORT="${{ github.workspace }}/zap-reports/zap-report.json"
-          # riskcode peut être string ou nombre selon la version → tonumber?.
           HIGH=$(jq '[.site[].alerts[] | select((.riskcode | tonumber?) == 3)] | length' "$REPORT")
           echo "Alertes ZAP de risque HIGH : ${HIGH}"
           if [ "${HIGH:-0}" -gt 0 ]; then

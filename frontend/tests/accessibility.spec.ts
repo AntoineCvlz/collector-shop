@@ -1,12 +1,6 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 
-// Tests d'accessibilité automatisés (axe-core). Complémentaires de Lighthouse :
-// Lighthouse donne un score global, axe remonte les violations WCAG précises
-// (contrastes, labels, rôles ARIA, ordre des titres…) et fait échouer la CI.
-//
-// On restreint aux règles WCAG 2.0/2.1 niveaux A et AA (le standard légal
-// courant), pour éviter le bruit des règles expérimentales.
 const WCAG_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"];
 
 test.beforeEach(async ({ page }) => {
@@ -14,8 +8,6 @@ test.beforeEach(async ({ page }) => {
     window.localStorage.setItem("lang", "en");
   });
 
-  // Mocks pour que l'accueil rende un catalogue réel (sinon axe scanne une
-  // page en chargement, moins représentative).
   await page.route("**/api/categories", (route) =>
     route.fulfill({
       json: {
@@ -62,7 +54,6 @@ const scan = (page: import("@playwright/test").Page) =>
 test.describe("Accessibilité (WCAG 2 A/AA)", () => {
   test("page d'accueil sans violation", async ({ page }) => {
     await page.goto("/");
-    // Attend qu'au moins un article soit rendu avant de scanner.
     await expect(
       page.getByRole("link", { name: /Charizard/ }),
     ).toBeVisible();

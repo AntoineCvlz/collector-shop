@@ -31,13 +31,7 @@ jobs:
       - name: 📦 Install dependencies
         run: npm ci
 
-      # ESLint + TypeScript sont déjà exécutés (et bloquants) dans
-      # build-unit-tests-front.yml. On ne les duplique pas ici pour éviter
-      # un double verdict incohérent.
 
-      # ═══════════════════════════════════════
-      # 1. SEMGREP
-      # ═══════════════════════════════════════
       - name: 🔍 Run Semgrep SAST
         if: always()
         run: |
@@ -56,8 +50,5 @@ jobs:
           sarif_file: frontend/semgrep-front.sarif
           category: semgrep-front
 
-      # ═══════════════════════════════════════
-      # 2. NPM AUDIT (Sécurité Dépendances) — bloquant sur HIGH/CRITICAL
-      # ═══════════════════════════════════════
       - name: 📦 Check JS Dependencies Security
         run: npm audit --audit-level=high

@@ -21,10 +21,6 @@ function buyerActor(): User
     return $user;
 }
 
-// ─────────────────────────────────────────────
-// INTERESTS
-// ─────────────────────────────────────────────
-
 test('a buyer starts with no interests', function () {
     buyerActor();
 
@@ -85,10 +81,6 @@ test('a non-buyer cannot set interests', function () {
         ->assertStatus(403);
 });
 
-// ─────────────────────────────────────────────
-// RECOMMENDATIONS
-// ─────────────────────────────────────────────
-
 test('recommendations are limited to the buyer interests', function () {
     $liked = Category::factory()->create();
     $other = Category::factory()->create();
@@ -113,10 +105,6 @@ test('recommendations fall back to latest published when no interest is set', fu
         ->assertStatus(200)
         ->assertJsonCount(3, 'data');
 });
-
-// ─────────────────────────────────────────────
-// WISHLIST
-// ─────────────────────────────────────────────
 
 test('a user can add an article to their wishlist', function () {
     $article = Article::factory()->published()->create();
@@ -164,15 +152,10 @@ test('the wishlist requires authentication', function () {
     $this->postJson(route('favorites.store', $article))->assertStatus(401);
 });
 
-// ─────────────────────────────────────────────
-// ERROR HANDLING (catch block → 500)
-// ─────────────────────────────────────────────
-
 test('syncing interests returns 500 when persistence fails', function () {
     $category = Category::factory()->create();
     buyerActor();
 
-    // Drop the pivot so sync() raises a QueryException → catch block.
     \Illuminate\Support\Facades\Schema::drop('category_user');
 
     $this->putJson(route('interests.sync'), ['category_ids' => [$category->id]])

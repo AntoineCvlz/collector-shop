@@ -8,14 +8,12 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // Buyer's favourite categories (interests for recommendations).
         Schema::create('category_user', function (Blueprint $table) {
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->foreignId('category_id')->constrained()->cascadeOnDelete();
             $table->primary(['user_id', 'category_id']);
         });
 
-        // Buyer's saved articles (wishlist).
         Schema::create('article_user', function (Blueprint $table) {
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->foreignId('article_id')->constrained()->cascadeOnDelete();

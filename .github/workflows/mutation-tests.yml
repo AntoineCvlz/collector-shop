@@ -65,7 +65,6 @@ jobs:
           DB_USERNAME: laravel
           DB_PASSWORD: secret
 
-      # Clés Passport requises par les tests d'auth (personal access client).
       - name: 🔑 Generate Passport keys
         run: php artisan passport:keys --force --no-interaction
 

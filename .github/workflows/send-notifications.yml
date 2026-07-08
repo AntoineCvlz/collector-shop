@@ -40,7 +40,6 @@ on:
       result_dast_zap_test:
         required: true
         type: string
-      # ─── Voie FRONT (optionnelle : 'skipped' si non fournie) ───
       result_build_and_test_front:
         required: false
         type: string
@@ -81,7 +80,6 @@ on:
         required: false
         type: string
         default: skipped
-      # ─── Déploiement (skipped sur PR : les notifs partent quand même) ───
       result_deploy:
         required: false
         type: string
@@ -153,8 +151,6 @@ jobs:
             ${{ inputs.result_dast_zap_test_front }}
             ${{ inputs.result_deploy }}
         run: |
-          # Un job 'skipped' (ex. non lancé en PR) n'est PAS un échec.
-          # Seuls 'failure' et 'cancelled' déclenchent un statut global rouge.
           overall="✅ SUCCESS"
           color="green"
           for r in $RESULTS; do

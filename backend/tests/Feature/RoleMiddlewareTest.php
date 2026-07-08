@@ -10,10 +10,6 @@ beforeEach(function () {
     }
 });
 
-// ─────────────────────────────────────────────
-// ROLE ISOLATION — admin-only route (users.index)
-// ─────────────────────────────────────────────
-
 test('an admin can access an admin-only route', function () {
     $admin = User::factory()->create();
     $admin->assignRole(Role::ADMIN);
@@ -71,9 +67,6 @@ test('users list returns 500 when the query fails', function () {
     $admin->assignRole(Role::ADMIN);
     Passport::actingAs($admin, ['*'], 'api');
 
-    // hasRole() (middleware) only runs an exists() check and never hydrates a
-    // Role model, so failing on Role::retrieved only breaks usersList()'s
-    // eager-loaded with('roles'), which happens after the middleware passes.
     Role::retrieved(fn () => throw new \RuntimeException('boom'));
 
     $this->getJson(route('users.index'))

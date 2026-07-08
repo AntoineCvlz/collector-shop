@@ -1,14 +1,4 @@
 #!/usr/bin/env bash
-# ─────────────────────────────────────────────────────────────
-# Provisioning d'un VPS Ubuntu pour Collector Shop (production).
-# À exécuter UNE FOIS, en root, sur un VPS fraîchement créé.
-#
-#   curl -fsSL .../provision-vps.sh | DEPLOY_PUBKEY="ssh-ed25519 AAAA..." bash
-# ou copier le fichier puis :  DEPLOY_PUBKEY="ssh-ed25519 AAAA..." bash provision-vps.sh
-#
-# Variable requise :
-#   DEPLOY_PUBKEY = la clé PUBLIQUE de déploiement (~/.ssh/collector_deploy.pub)
-# ─────────────────────────────────────────────────────────────
 set -euo pipefail
 
 if [[ "${EUID}" -ne 0 ]]; then
@@ -35,9 +25,6 @@ if ! command -v docker &>/dev/null; then
 fi
 usermod -aG docker deploy
 
-# DNS pour les conteneurs : sur Ubuntu, systemd-resolved expose 127.0.0.53
-# qui n'est PAS joignable depuis un conteneur → la résolution DNS échoue
-# (ex: Caddy ne peut pas joindre Let's Encrypt). On fixe un resolver public.
 if [[ ! -f /etc/docker/daemon.json ]]; then
   install -d -m 755 /etc/docker
   cat > /etc/docker/daemon.json <<'JSON'
@@ -56,7 +43,6 @@ ufw allow 443/tcp               # HTTPS (Caddy)
 ufw allow 443/udp               # HTTP/3
 ufw --force enable
 
-# Réseau Docker frontal partagé entre le proxy Caddy et les applis.
 docker network inspect web >/dev/null 2>&1 || docker network create web
 
 echo "▶ 4/5 Dossier de déploiement"

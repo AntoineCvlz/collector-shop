@@ -6,9 +6,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import i18n from "../i18n";
 
-// Wrapper de rendu pour les tests composants : fournit i18n (traductions
-// réelles), un routeur mémoire et un QueryClient sans retry (échecs immédiats,
-// tests rapides et déterministes).
 export function renderWithProviders(
   ui: ReactElement,
   { route = "/" }: { route?: string } = {},

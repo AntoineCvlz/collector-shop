@@ -7,7 +7,6 @@ const buyer = {
   roles: ["buyer"],
 };
 
-// Force English + injecte une session buyer avant le chargement de l'app.
 test.beforeEach(async ({ page }) => {
   await page.addInitScript((user) => {
     window.localStorage.setItem("lang", "en");
@@ -71,7 +70,6 @@ test.describe("Favoris", () => {
 
 test.describe("Favoris — accès non authentifié", () => {
   test("redirige vers /login sans session", async ({ page }) => {
-    // Écrase le beforeEach : on retire la session avant chargement.
     await page.addInitScript(() => {
       window.localStorage.removeItem("auth_token");
       window.localStorage.removeItem("auth_user");

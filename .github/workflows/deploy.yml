@@ -1,6 +1,3 @@
-# Déploiement production (VPS unique, back + front mutualisés).
-# Piloté par docker-compose.prod.yaml. Approbation manuelle via
-# l'environnement GitHub "production".
 on:
   workflow_call:
     inputs:
@@ -20,9 +17,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment: production      # secrets SSH_* scopés ici + approbation manuelle
-    # Sérialise les déploiements : jamais deux `docker compose up` SSH
-    # concurrents sur le même VPS. cancel-in-progress: false → on ne tue
-    # jamais un déploiement en cours.
     concurrency:
       group: deploy-production
       cancel-in-progress: false
@@ -43,11 +37,6 @@ jobs:
 
       - name: 🚀 Deploy via SSH
         uses: appleboy/ssh-action@v1
-        # Secrets passés à l'environnement du shell distant (envs:) plutôt
-        # qu'interpolés dans le texte du script → aucun caractère spécial
-        # (` $ ") ne peut casser ou s'exécuter. GitHub masque toujours ces
-        # valeurs dans les logs. Les noms listés dans `envs` DOIVENT exister
-        # dans le bloc `env:` ci-dessous.
         env:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           LARAVEL_APP_KEY: ${{ secrets.LARAVEL_APP_KEY }}
@@ -71,37 +60,23 @@ jobs:
             export FRONTEND_IMAGE='${{ inputs.frontend_image }}'
             export IMAGE_TAG='latest'   # tag publié par les pipelines back/front
 
-            # Réseaux partagés "external" (web, monitoring) : doivent préexister
-            # aux composes qui les référencent.
             docker network inspect web >/dev/null 2>&1 || docker network create web
             docker network inspect monitoring >/dev/null 2>&1 || docker network create monitoring
 
-            # Rollback : mémoriser les images en service AVANT le pull (re-taguées
-            # en "latest" si les smoke tests échouent). Vide au 1er déploiement.
             PREV_BACKEND_IMAGE="$(docker inspect --format '{{.Image}}' app_backend 2>/dev/null || true)"
             PREV_FRONTEND_IMAGE="$(docker inspect --format '{{.Image}}' app_frontend 2>/dev/null || true)"
             echo "Image backend précédente  : ${PREV_BACKEND_IMAGE:-<aucune>}"
             echo "Image frontend précédente : ${PREV_FRONTEND_IMAGE:-<aucune>}"
 
-            # .env de l'appli (secrets Laravel + coordonnées des images Docker Hub).
-            # Généré ici depuis les secrets/vars GitHub, JAMAIS committé ni posé à
-            # la main : GitHub reste la seule source de vérité. Même durcissement
-            # que le monitoring (umask 077, écriture atomique temp → mv, mode 600).
-            # Les secrets arrivent via l'env du shell (envs: de ssh-action) et non
-            # interpolés dans le texte → pas de casse/injection sur caractères
-            # spéciaux (` $ "). Les non-secrets (APP_URL…) via vars GitHub ; les
-            # constantes de prod sont en dur (cf. docker/.env.prod.example).
             umask 077
             rm -f .env
             install -m 600 /dev/null .env.tmp
             cat > .env.tmp <<ENV
-            # --- Images Docker Hub (lues par docker-compose.prod.yaml + rollback) ---
             DOCKERHUB_USERNAME=${DOCKERHUB_USERNAME}
             BACKEND_IMAGE=${BACKEND_IMAGE}
             FRONTEND_IMAGE=${FRONTEND_IMAGE}
             IMAGE_TAG=${IMAGE_TAG}
             APP_PORT=80
-            # --- Application Laravel ---
             APP_NAME=CollectorShop
             APP_ENV=production
             APP_DEBUG=false
@@ -109,80 +84,50 @@ jobs:
             APP_URL=${APP_URL}
             APP_LOCALE=fr
             APP_FALLBACK_LOCALE=en
-            # --- Base de données (PostgreSQL) ---
             DB_CONNECTION=pgsql
             DB_HOST=db
             DB_PORT=5432
             DB_DATABASE=collector_shop
             DB_USERNAME=collector
             DB_PASSWORD=${DB_PASSWORD}
-            # --- Sessions / cache / queue ---
             SESSION_DRIVER=database
             SESSION_LIFETIME=120
             CACHE_STORE=database
             QUEUE_CONNECTION=database
-            # --- Logs ---
             LOG_CHANNEL=stderr
             LOG_LEVEL=warning
-            # --- Laravel Passport (clés OAuth) ---
-            # Vides tant que Passport n'est pas provisionné ; alimentées par les
-            # secrets GitHub PASSPORT_* si présents (défaut = chaîne vide).
             PASSPORT_PRIVATE_KEY="${PASSPORT_PRIVATE_KEY}"
             PASSPORT_PUBLIC_KEY="${PASSPORT_PUBLIC_KEY}"
             ENV
             mv -f .env.tmp .env
 
-            # Déploiement orchestré back → front (ordre = pas de skew : les deux
-            # images ont été validées par la CI avant d'arriver ici).
             docker compose -f docker-compose.prod.yaml pull
 
             echo "▶ [1/2] Déploiement back (db, backend, nginx, edge)…"
-            # PAS de --remove-orphans avec une liste de services : Compose
-            # traiterait `frontend` (non listé) comme orphelin et le supprimerait.
             docker compose -f docker-compose.prod.yaml up -d db backend nginx edge
 
-            # --force-recreate REQUIS : le SCP remplace le Caddyfile (nouvel
-            # inode), mais le bind-mount reste sur l'ancien → `caddy reload`
-            # relirait l'ancien contenu. Recréer le conteneur ré-attache le bind.
             docker compose -f proxy/docker-compose.proxy.yaml up -d --force-recreate
 
-            # Stack observabilité. Le .env (secrets Grafana + PG exporter) est
-            # généré ici depuis les secrets GitHub, jamais committé.
-            # Écriture atomique en 600 (fichier temp → mv) ; `rm -f` d'abord car
-            # un ancien monitoring/.env root ferait échouer la redirection.
             umask 077
             rm -f monitoring/.env
             install -m 600 /dev/null monitoring/.env.tmp
-            # Valeurs lues depuis l'environnement (envs: de ssh-action), pas
-            # interpolées dans le texte : sûr vis-à-vis des caractères spéciaux.
             cat > monitoring/.env.tmp <<ENV
             GF_SECURITY_ADMIN_USER=${GF_SECURITY_ADMIN_USER}
             GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD}
             DATA_SOURCE_NAME=${MONITORING_DATA_SOURCE_NAME}
-            # DOIT être non-vide : contact-points.yaml l'injecte via $__env{}
-            # (sans défaut) ; une adresse vide fait crash-looper Grafana 11.
             GF_ALERT_EMAIL_TO=${GF_ALERT_EMAIL_TO}
             ENV
             mv -f monitoring/.env.tmp monitoring/.env
             docker compose -f monitoring/docker-compose.monitoring.yaml pull
             docker compose -f monitoring/docker-compose.monitoring.yaml up -d --remove-orphans
 
-            # Migrations Laravel (idempotentes, --force = non interactif)
             docker compose -f docker-compose.prod.yaml exec -T backend php artisan migrate --force
             docker compose -f docker-compose.prod.yaml exec -T backend php artisan config:cache
 
             echo "▶ [2/2] Déploiement front (app_frontend)…"
-            # Idem back : pas de --remove-orphans avec un service nommé.
             docker compose -f docker-compose.prod.yaml up -d frontend
 
-            # Smoke tests INTERNES (via app_edge:80, indépendants de TLS/DNS).
             probe() {
-              # $1 = chemin ; réessaie ~60s (nginx/php-fpm mettent qq s à écouter).
-              #
-              # 127.0.0.1 et NON "localhost" : dans nginx:alpine, "localhost"
-              # résout ::1 (IPv6) en premier, or nginx-edge n'écoute que sur
-              # 0.0.0.0:80 (IPv4, conf read-only) → "localhost" = Connection
-              # refused (faux négatif). BusyBox wget : -T = timeout.
               local path="$1" i
               for i in $(seq 1 20); do
                 if docker exec app_edge wget -q -T 5 -O- "http://127.0.0.1${path}" >/dev/null 2>&1; then
@@ -194,24 +139,18 @@ jobs:
             }
             smoke_test() {
               echo "▶ Smoke tests…"
-              # Back (via app_edge → nginx → php-fpm)
               probe /up             || { echo "✗ /up KO";             return 1; }
               probe /api/articles   || { echo "✗ /api/articles KO";   return 1; }
               probe /api/categories || { echo "✗ /api/categories KO"; return 1; }
-              # Front (via app_edge → frontend:8080) : la SPA doit être servie.
               probe /               || { echo "✗ / (front) KO";       return 1; }
               echo "✓ Smoke tests OK"
             }
 
-            # Rollback back + front si les smoke tests échouent.
             if ! smoke_test; then
               echo "❌ Smoke tests en échec."
-              # DOCKERHUB_USERNAME vit dans le .env prod (lu par compose).
               DHU="$(grep -E '^DOCKERHUB_USERNAME=' .env | cut -d= -f2- || true)"
               if [ -n "$DHU" ] && [ -n "$PREV_BACKEND_IMAGE" ] && [ -n "$PREV_FRONTEND_IMAGE" ]; then
                 echo "↩ Rollback : re-déploiement des images back + front précédentes."
-                # Re-tag en "latest" : `up --force-recreate` réutilise l'image
-                # LOCALE (Compose ne pull que si absente) → pas de flag --pull.
                 docker tag "$PREV_BACKEND_IMAGE"  "${DHU}/${BACKEND_IMAGE}:latest"
                 docker tag "$PREV_FRONTEND_IMAGE" "${DHU}/${FRONTEND_IMAGE}:latest"
                 docker compose -f docker-compose.prod.yaml up -d --force-recreate backend nginx edge frontend
@@ -231,7 +170,5 @@ jobs:
 
       - name: 🏥 Health check production
         run: |
-          # 1ère émission du certificat Let's Encrypt = quelques secondes.
           sleep 20
-          # PRODUCTION_URL doit valoir https://collector-shop.antoine-cuvilliez.fr
           curl --fail --retry 5 --retry-delay 5 "${{ vars.PRODUCTION_URL }}/up"

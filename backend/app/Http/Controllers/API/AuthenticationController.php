@@ -28,7 +28,6 @@ class AuthenticationController extends Controller
             $user->password = Hash::make($request->string('password')->value());
             $user->save();
 
-            // Ensure the default role exists even if the seeder has not run.
             Role::firstOrCreate(['name' => Role::DEFAULT]);
             $user->assignRole(Role::DEFAULT);
 

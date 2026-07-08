@@ -9,9 +9,6 @@ on:
         required: true
 
 jobs:
-  # ─────────────────────────────────────────────
-  # STAGING — déploiement automatique
-  # ─────────────────────────────────────────────
   deploy-staging-front:
     name: 🚀 Deploy Frontend → Staging
     runs-on: ubuntu-latest
@@ -36,9 +33,6 @@ jobs:
           sleep 15
           curl --fail --retry 3 --retry-delay 5 "${{ vars.STAGING_URL }}"
 
-  # ─────────────────────────────────────────────
-  # PRODUCTION — approbation manuelle requise
-  # ─────────────────────────────────────────────
   deploy-production-front:
     name: 🚀 Deploy Frontend → Production
     needs: deploy-staging-front

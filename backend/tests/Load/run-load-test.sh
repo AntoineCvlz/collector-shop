@@ -1,11 +1,4 @@
 #!/usr/bin/env bash
-# Lance le test de charge k6 contre l'URL fournie (défaut : http://localhost).
-#
-#   ./run-load-test.sh                         # → http://localhost
-#   ./run-load-test.sh https://mon-domaine.fr  # → cible explicite
-#
-# Utilise k6 s'il est installé, sinon retombe sur l'image Docker grafana/k6.
-# Sort avec le code 99 si un seuil de performance n'est pas respecté.
 set -euo pipefail
 
 TARGET_URL="${1:-${LOAD_TEST_BASE_URL:-http://localhost}}"

@@ -28,7 +28,6 @@ export default function AdminCategories() {
   const token = getToken();
   const user = getUser();
 
-  // Client-side guard; the API enforces the real authorization.
   useEffect(() => {
     if (!token) {
       navigate("/login");

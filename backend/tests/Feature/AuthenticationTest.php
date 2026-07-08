@@ -7,8 +7,6 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 use Laravel\Passport\Passport;
 
-// La base de test est réinitialisée à chaque test (RefreshDatabase) ;
-// login() appelle $user->createToken() qui nécessite un personal access client.
 beforeEach(function () {
     $this->artisan('passport:client', [
         '--personal' => true,
@@ -16,10 +14,6 @@ beforeEach(function () {
         '--no-interaction' => true,
     ]);
 });
-
-// ─────────────────────────────────────────────
-// REGISTER
-// ─────────────────────────────────────────────
 
 test('register creates a new user and returns 201', function () {
     $response = $this->postJson(route('register'), [
@@ -114,10 +108,6 @@ test('register fails when the email is already taken', function () {
         ->assertJsonValidationErrors(['email']);
 });
 
-// ─────────────────────────────────────────────
-// LOGIN
-// ─────────────────────────────────────────────
-
 test('login succeeds with valid credentials and returns a token', function () {
     User::factory()->create([
         'email' => 'login@example.com',
@@ -171,10 +161,6 @@ test('login fails validation with missing fields', function () {
         ->assertJsonValidationErrors(['email', 'password']);
 });
 
-// ─────────────────────────────────────────────
-// ME (route protégée — utilisateur courant)
-// ─────────────────────────────────────────────
-
 test('me returns the authenticated user and their roles', function () {
     Role::create(['name' => Role::BUYER]);
     $user = User::factory()->create();
@@ -208,10 +194,6 @@ test('me is rejected when not authenticated', function () {
     $this->getJson(route('me'))->assertStatus(401);
 });
 
-// ─────────────────────────────────────────────
-// LOGOUT (route protégée)
-// ─────────────────────────────────────────────
-
 test('logout succeeds and revokes tokens when authenticated', function () {
     Passport::actingAs(User::factory()->create(), ['*'], 'api');
 
@@ -228,22 +210,13 @@ test('logout is rejected when not authenticated', function () {
     $this->postJson(route('logout'))->assertStatus(401);
 });
 
-// ─────────────────────────────────────────────
-// ROUTE PUBLIQUE
-// ─────────────────────────────────────────────
-
 test('hello world endpoint returns a message', function () {
     $this->getJson('/api/hello-world')
         ->assertStatus(200)
         ->assertJson(['message' => 'Hello World']);
 });
 
-// ─────────────────────────────────────────────
-// CAS D'ERREUR 500 (blocs catch)
-// ─────────────────────────────────────────────
-
 test('register returns 500 when an unexpected error occurs', function () {
-    // Hash::make est appelé dans le try : on le force à lever une exception.
     Hash::shouldReceive('make')->andThrow(new \RuntimeException('boom'));
 
     $this->postJson(route('register'), [
@@ -275,8 +248,6 @@ test('login returns 500 when an unexpected error occurs', function () {
 test('me returns 500 when the query fails', function () {
     Passport::actingAs(User::factory()->create(), ['*'], 'api');
 
-    // roleNames() interroge la table roles via la relation : sans elle, la
-    // requête lève une QueryException → bloc catch (500).
     Schema::drop('role_user');
     Schema::drop('roles');
 
@@ -292,9 +263,6 @@ test('me returns 500 when the query fails', function () {
 test('logout returns 500 when an unexpected error occurs', function () {
     Passport::actingAs(User::factory()->create(), ['*'], 'api');
 
-    // $user->tokens()->delete() est appelé dans le try : sans la table des
-    // tokens, la requête lève une QueryException → bloc catch (500).
-    // (On ne mocke pas la façade Auth pour ne pas casser le middleware auth:api.)
     Schema::drop('oauth_access_tokens');
 
     $this->postJson(route('logout'))

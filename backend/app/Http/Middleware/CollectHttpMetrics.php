@@ -38,8 +38,6 @@ class CollectHttpMetrics
 
     private function record(Request $request, Response $response, float $durationSeconds): void
     {
-        // Motif de route stable ("articles/{article}") plutôt que l'URI concrète.
-        // Fallback "unmatched" quand aucune route ne correspond (404, etc.).
         $route = $request->route()?->uri() ?? 'unmatched';
         $method = $request->getMethod();
         $status = (string) $response->getStatusCode();
@@ -60,7 +58,6 @@ class CollectHttpMetrics
                 [0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10],
             )->observe($durationSeconds, [$method, $route]);
         } catch (MetricsRegistrationException) {
-            // Ne jamais casser une requête utilisateur à cause de la télémétrie.
         }
     }
 }

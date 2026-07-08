@@ -6,7 +6,6 @@ import StarRating from "./StarRating";
 describe("StarRating", () => {
   it("affiche toujours 5 étoiles", () => {
     const { container } = render(<StarRating value={3} />);
-    // 5 svg d'étoiles (lucide rend un <svg>).
     expect(container.querySelectorAll("svg")).toHaveLength(5);
   });
 

@@ -47,7 +47,6 @@ describe("LoginForm", () => {
   });
 
   it("passe le bouton en état de chargement pendant la soumission", async () => {
-    // Mutation qui ne se résout jamais → on observe l'état pending.
     login.mockReturnValue(new Promise(() => {}));
     renderWithProviders(<LoginForm />);
 

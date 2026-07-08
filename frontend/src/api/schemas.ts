@@ -1,13 +1,3 @@
-// Schémas de contrat API (source de vérité front↔back).
-//
-// Le backend Laravel enveloppe toutes ses réponses dans
-// { response_code, status, message, data }. Ces schémas valident cette forme
-// AU RUNTIME quand les services parsent une réponse : si le backend change la
-// structure (champ renommé, type modifié), le front lève une erreur explicite
-// (ZodError) au lieu de propager un `undefined` silencieux.
-//
-// Les tests (schemas.test.ts) vérifient que fixtures conformes ↔ schémas, et
-// que des réponses malformées sont bien rejetées.
 import { z } from "zod";
 
 /** Enveloppe standard des réponses API. `data` est typé par chaque endpoint. */
@@ -30,7 +20,6 @@ export function paginated<T extends z.ZodTypeAny>(item: T) {
   });
 }
 
-// ── Entités ──
 
 export const roleSchema = z.enum(["buyer", "seller", "admin", "moderator"]);
 
@@ -71,7 +60,6 @@ export const articleSchema = z.object({
   images: z.array(articleImageSchema),
 });
 
-// ── Réponses complètes ──
 
 export const loginResponseSchema = z.object({
   response_code: z.number(),
@@ -92,8 +80,6 @@ export const catalogueResponseSchema = envelope(paginated(articleSchema));
 export const articleResponseSchema = envelope(articleSchema);
 export const categoryListResponseSchema = envelope(z.array(categorySchema));
 
-// Types dérivés — le front peut consommer ceux-ci à la place des interfaces
-// manuelles pour garantir type ↔ schéma alignés.
 export type UserInfo = z.infer<typeof userInfoSchema>;
 export type Category = z.infer<typeof categorySchema>;
 export type Article = z.infer<typeof articleSchema>;

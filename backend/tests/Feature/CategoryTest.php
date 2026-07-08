@@ -20,10 +20,6 @@ function actingAsRole(string $role): User
     return $user;
 }
 
-// ─────────────────────────────────────────────
-// PUBLIC READ
-// ─────────────────────────────────────────────
-
 test('anyone can list categories without authentication', function () {
     Category::factory()->count(3)->create();
 
@@ -54,10 +50,6 @@ test('categories are returned sorted by name', function () {
     $names = array_column($response->json('data'), 'name');
     expect($names)->toBe(['Anchors', 'Zeppelins']);
 });
-
-// ─────────────────────────────────────────────
-// ADMIN CREATE
-// ─────────────────────────────────────────────
 
 test('an admin can create a category and the slug is generated', function () {
     actingAsRole(Role::ADMIN);
@@ -90,10 +82,6 @@ test('creating a category validates the name', function () {
         ->assertJsonValidationErrors(['name']);
 });
 
-// ─────────────────────────────────────────────
-// ADMIN UPDATE / DELETE
-// ─────────────────────────────────────────────
-
 test('an admin can update a category', function () {
     $category = Category::factory()->create(['name' => 'Old', 'slug' => 'old']);
     actingAsRole(Role::ADMIN);
@@ -124,10 +112,6 @@ test('an admin can delete a category', function () {
     $this->assertDatabaseMissing('categories', ['id' => $category->id]);
 });
 
-// ─────────────────────────────────────────────
-// ROLE ISOLATION
-// ─────────────────────────────────────────────
-
 test('a buyer cannot create a category', function () {
     actingAsRole(Role::BUYER);
 
@@ -150,14 +134,9 @@ test('a guest cannot delete a category', function () {
         ->assertStatus(401);
 });
 
-// ─────────────────────────────────────────────
-// ERROR HANDLING (catch blocks → 500)
-// ─────────────────────────────────────────────
-
 test('store returns 500 when persistence fails', function () {
     actingAsRole(Role::ADMIN);
 
-    // Force the write to fail after validation passes.
     Category::saving(function () {
         throw new \RuntimeException('boom');
     });

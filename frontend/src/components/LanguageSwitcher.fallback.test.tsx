@@ -1,9 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 
-// Cas défensif isolé : quand i18n n'a pas encore résolu de langue
-// (resolvedLanguage === undefined), le composant retombe sur "en".
-// On mocke react-i18next uniquement pour ce fichier afin de forcer cet état.
 vi.mock("react-i18next", async (orig) => ({
   ...(await orig<typeof import("react-i18next")>()),
   useTranslation: () => ({

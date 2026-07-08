@@ -15,9 +15,6 @@ import { getRecommendations } from "../services/favorite.service";
 
 const Footer = lazy(() => import("../components/Footer"));
 
-// Paliers de délai d'apparition (index * 0.04s, plafonné à 0.4s) : classes
-// Tailwind statiques (scannées à la build) plutôt qu'un style inline, pour
-// respecter la CSP style-src sans 'unsafe-inline'.
 const ANIMATION_DELAY_CLASSES = [
   "[animation-delay:0s]",
   "[animation-delay:0.04s]",

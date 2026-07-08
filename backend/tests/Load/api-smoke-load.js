@@ -1,12 +1,3 @@
-// Test de charge k6 — lancé À LA DEMANDE (voir backend/tests/Load/README.md).
-// N'est PAS dans la CI/CD : on le déclenche manuellement contre l'environnement
-// de son choix (local, staging, prod) via la variable LOAD_TEST_BASE_URL.
-//
-//   k6 run -e LOAD_TEST_BASE_URL=https://mon-domaine api-smoke-load.js
-//
-// Ne couvre QUE des routes GET publiques, sans authentification ni écriture :
-// on mesure la perf du catalogue sans générer de données ni de charge
-// d'écriture sur la cible.
 import http from "k6/http";
 import { check, sleep } from "k6";
 import { Trend } from "k6/metrics";
@@ -15,11 +6,6 @@ const BASE_URL = __ENV.LOAD_TEST_BASE_URL || "http://localhost";
 
 const articleShowDuration = new Trend("article_show_duration");
 
-// Montée en charge courte et modérée : suffisant pour détecter une
-// régression de perf sans stresser sérieusement le VPS mono-instance.
-//
-// Le respect des seuils est évalué par k6 lui-même : si l'un d'eux échoue,
-// la commande `k6 run` sort avec le code 99 (utile en script).
 export const options = {
   stages: [
     { duration: "30s", target: 10 },
@@ -27,9 +13,7 @@ export const options = {
     { duration: "30s", target: 0 },
   ],
   thresholds: {
-    // Taux d'échec HTTP < 1 %.
     http_req_failed: [{ threshold: "rate<0.01", abortOnFail: false }],
-    // 95 % des requêtes sous 800 ms.
     http_req_duration: [{ threshold: "p(95)<800", abortOnFail: false }],
   },
 };
@@ -46,8 +30,6 @@ export default function () {
     "/api/articles → 200": (r) => r.status === 200,
   });
 
-  // Détail d'un article, si le catalogue en propose un — dépend des
-  // données réelles en prod, donc on reste défensif.
   if (articlesOk) {
     const body = articles.json();
     const firstId = body?.data?.data?.[0]?.id ?? body?.data?.[0]?.id;
@@ -61,7 +43,6 @@ export default function () {
   sleep(1);
 }
 
-// Résumé lisible sur stdout + export JSON dans le dossier courant.
 export function handleSummary(data) {
   return {
     stdout: textSummary(data),
@@ -69,8 +50,6 @@ export function handleSummary(data) {
   };
 }
 
-// Mini résumé texte (évite d'importer le module distant k6-summary, qui peut
-// être bloqué hors ligne).
 function textSummary(data) {
   const dur = data.metrics.http_req_duration?.values ?? {};
   const failed = data.metrics.http_req_failed?.values ?? {};

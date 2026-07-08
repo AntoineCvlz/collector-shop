@@ -25,7 +25,6 @@ class MetricsServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(CollectorRegistry::class, function (): CollectorRegistry {
-            // $registerDefaultMetrics = false : on ne veut que nos propres séries.
             return new CollectorRegistry($this->makeStorage(), false);
         });
     }

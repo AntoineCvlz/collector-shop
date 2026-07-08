@@ -1,25 +1,5 @@
-# ─────────────────────────────────────────────────────────────
-# Observabilité — stack DÉDIÉE (Prometheus + Grafana + exporters infra)
-#
-# Découplée de l'appli : se déploie/redémarre indépendamment.
-#   docker compose -f docker-compose.monitoring.yaml up -d
-#
-# Ce qu'on collecte (périmètre INFRA) :
-#   - node-exporter : métriques de l'HÔTE (CPU, RAM, disque, réseau)
-#   - cadvisor      : métriques PAR CONTENEUR Docker
-#   - prometheus    : scrape + stockage (INTERNE, non exposé publiquement)
-#   - grafana       : dashboards, exposé via le proxy Caddy en HTTPS
-#                     (grafana.antoine-cuvilliez.fr → réseau "web")
-#
-# Pré-requis sur le VPS :
-#   - réseau Docker externe "web" (créé par provision-vps.sh)
-#   - un .env à côté de ce fichier (cf. .env.monitoring.example)
-#   - DNS : grafana.antoine-cuvilliez.fr → IP du VPS
-#   - bloc Caddy ajouté (cf. docker/proxy/Caddyfile)
-# ─────────────────────────────────────────────────────────────
 
 services:
-  # --- PROMETHEUS (scrape + TSDB) — INTERNE, pas de port publié ---
   prometheus:
     image: prom/prometheus:v3.1.0
     container_name: mon_prometheus
@@ -38,7 +18,6 @@ services:
       - node-exporter
       - cadvisor
 
-  # --- GRAFANA — exposé via Caddy (réseau "web"), TLS auto ---
   grafana:
     image: grafana/grafana:11.4.0
     container_name: mon_grafana
@@ -46,27 +25,15 @@ services:
     env_file:
       - .env
     environment:
-      # URL publique servie par Caddy (cf. Caddyfile)
       GF_SERVER_ROOT_URL: https://grafana.antoine-cuvilliez.fr
-      # Caddy termine le TLS et parle en HTTP au conteneur
       GF_SERVER_ENFORCE_DOMAIN: "false"
-      # Pas d'inscription publique
       GF_USERS_ALLOW_SIGN_UP: "false"
-      # Admin provisionné depuis le .env
       GF_SECURITY_ADMIN_USER: ${GF_SECURITY_ADMIN_USER:-admin}
       GF_SECURITY_ADMIN_PASSWORD: ${GF_SECURITY_ADMIN_PASSWORD:?GF_SECURITY_ADMIN_PASSWORD requis}
-      # Envoi SMTP des alertes NON configuré : les alertes se déclenchent et
-      # restent visibles dans l'UI Alerting de Grafana, mais ne partent pas par
-      # mail. Pour l'activer un jour : ajouter GF_SMTP_ENABLED/HOST/USER/
-      # PASSWORD/FROM_ADDRESS ici + les secrets correspondants au déploiement.
-      # Destinataire des alertes, interpolé dans contact-points.yaml
-      # ($__env{GF_ALERT_EMAIL_TO} — DOIT être non-vide sinon Grafana crash-loop).
       GF_ALERT_EMAIL_TO: ${GF_ALERT_EMAIL_TO:-alerts@example.invalid}
     volumes:
       - grafana-data:/var/lib/grafana
-      # Datasource + provider de dashboards auto-provisionnés (zéro clic).
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
-      # Dashboards JSON chargés au démarrage (cf. provider dashboards.yaml).
       - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
     networks:
       - monitoring   # parle à Prometheus
@@ -74,7 +41,6 @@ services:
     depends_on:
       - prometheus
 
-  # --- NODE EXPORTER — métriques de l'HÔTE ---
   node-exporter:
     image: prom/node-exporter:v1.8.2
     container_name: mon_node_exporter
@@ -90,7 +56,6 @@ services:
     networks:
       - monitoring
 
-  # --- cADVISOR — métriques par conteneur Docker ---
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:v0.49.1
     container_name: mon_cadvisor
@@ -107,9 +72,6 @@ services:
     networks:
       - monitoring
 
-  # --- POSTGRES EXPORTER — métriques de la base de l'app (app_db) ---
-  # Rejoint aussi "app-network" (réseau de l'app) pour joindre app_db:5432.
-  # La chaîne de connexion (idéalement un rôle read-only) vient du .env.
   postgres-exporter:
     image: quay.io/prometheuscommunity/postgres-exporter:v0.16.0
     container_name: mon_postgres_exporter
@@ -121,20 +83,11 @@ services:
       - app-network    # joint la base app_db
 
 networks:
-  # Réseau interne de la stack d'observabilité. Nom fixe : l'app le rejoint
-  # (déclaré "external" côté docker-compose.prod.yaml) pour exposer /metrics.
-  # EXTERNAL : créé une seule fois par le job de déploiement (docker network
-  # create monitoring) AVANT tout compose, puis référencé à l'identique par
-  # l'app et par cette stack. Le déclarer non-external ici ferait échouer
-  # Compose s'il trouve un réseau "monitoring" qu'il n'a pas lui-même créé.
   monitoring:
     name: monitoring
     external: true
-  # Réseau frontal partagé (créé par provision-vps.sh) : seul Grafana le rejoint.
   web:
     external: true
-  # Réseau de l'app (créé par docker-compose.prod.yaml) : le postgres-exporter
-  # le rejoint pour joindre app_db. L'app est déployée avant le monitoring.
   app-network:
     name: app-network
     external: true

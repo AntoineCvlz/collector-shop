@@ -1,9 +1,3 @@
-# Règles d'alerte Grafana provisionnées (périmètre infra + app + DB).
-# Évaluées contre la datasource Prometheus (uid: prometheus).
-#
-# Chaque règle : une condition PromQL (refId A) réduite en seuil booléen
-# (refId C via l'expression "threshold"). Alerte si la condition tient
-# pendant la durée "for".
 apiVersion: 1
 
 groups:
@@ -12,7 +6,6 @@ groups:
     folder: Alerts
     interval: 1m
     rules:
-      # ---- Application Laravel injoignable (cible /metrics down) ----
       - uid: app-down
         title: Application Laravel down
         condition: C
@@ -37,7 +30,6 @@ groups:
         annotations:
           summary: "L'endpoint /metrics de l'app ne répond plus (up=0)."
 
-      # ---- PostgreSQL injoignable ----
       - uid: postgres-down
         title: PostgreSQL down
         condition: C
@@ -62,7 +54,6 @@ groups:
         annotations:
           summary: "La base PostgreSQL ne répond plus (pg_up=0)."
 
-      # ---- Disque hôte presque plein (< 10% libre sur /) ----
       - uid: disk-low
         title: Espace disque faible (hôte)
         condition: C
@@ -87,7 +78,6 @@ groups:
         annotations:
           summary: "Moins de 10% d'espace disque libre sur / (hôte)."
 
-      # ---- Mémoire hôte saturée (< 10% disponible) ----
       - uid: memory-high
         title: Mémoire faible (hôte)
         condition: C
@@ -112,7 +102,6 @@ groups:
         annotations:
           summary: "Moins de 10% de mémoire disponible sur l'hôte."
 
-      # ---- CPU hôte élevé (> 90% en moyenne 5 min) ----
       - uid: cpu-high
         title: CPU élevé (hôte)
         condition: C
@@ -137,7 +126,6 @@ groups:
         annotations:
           summary: "Utilisation CPU hôte > 90% pendant 10 min."
 
-      # ---- Taux d'erreurs 5xx applicatives élevé ----
       - uid: http-5xx-high
         title: Erreurs HTTP 5xx élevées
         condition: C

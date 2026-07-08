@@ -22,9 +22,6 @@ jobs:
       - name: 📥 Checkout code
         uses: actions/checkout@v6
 
-      # ═══════════════════════════════════════
-      # 1. COMPOSER AUDIT (Le remplaçant natif de l'OWASP pour PHP)
-      # ═══════════════════════════════════════
       - name: 🐘 Set up PHP
         uses: shivammathur/setup-php@v2
         with:
@@ -34,11 +31,6 @@ jobs:
       - name: 📦 Composer Audit (Native Laravel SCA) — bloquant
         run: composer audit --locked --format=plain
 
-      # ═══════════════════════════════════════
-      # 2. TRIVY SCA (Analyse des fichiers lock)
-      # Install via le script officiel (pas l'action, qui échoue au download).
-      # ═══════════════════════════════════════
-      # Download direct du binaire (CDN GitHub, sans API → pas de rate-limit).
       - name: 📥 Install Trivy CLI
         run: |
           TRIVY_VERSION=0.71.0
@@ -46,7 +38,6 @@ jobs:
           sudo tar -xzf /tmp/trivy.tar.gz -C /usr/local/bin trivy
           trivy --version
 
-      # Run 1 : rapport complet (CRITICAL/HIGH/MEDIUM) → onglet Security, non bloquant
       - name: 🔍 Trivy SCA — rapport SARIF
         run: |
           trivy fs . \
@@ -63,7 +54,6 @@ jobs:
           sarif_file: backend/trivy-results.sarif
           category: trivy-sca
 
-      # Run 2 : gate bloquant sur CRITICAL/HIGH corrigeables
       - name: 🚦 Trivy SCA — gate (CRITICAL/HIGH bloquant)
         run: |
           trivy fs . \

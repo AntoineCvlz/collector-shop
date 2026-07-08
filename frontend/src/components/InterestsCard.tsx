@@ -18,8 +18,6 @@ interface InterestsCardProps {
 export default function InterestsCard({ token }: InterestsCardProps) {
   const { t } = useTranslation();
   const [saved, setSaved] = useState(false);
-  // Local edits layered on top of the loaded interests. Null = not edited yet,
-  // so we mirror whatever the server returned.
   const [draft, setDraft] = useState<number[] | null>(null);
 
   const { data: categories = [] } = useQuery({

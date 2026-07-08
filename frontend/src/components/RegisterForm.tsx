@@ -18,7 +18,6 @@ export default function RegisterForm() {
   const mutation = useMutation({
     mutationFn: register,
     onSuccess: () => {
-      // Account created — send the new collector to sign in.
       navigate("/login");
     },
   });

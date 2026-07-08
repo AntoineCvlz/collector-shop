@@ -1,7 +1,5 @@
 import { test, expect } from "@playwright/test";
 
-// Force English so the UI copy matches the assertions regardless of the
-// browser's locale (the app auto-detects and persists the language).
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
     window.localStorage.setItem("lang", "en");
@@ -24,8 +22,6 @@ test.describe("Écran de connexion", () => {
   test("affiche une erreur avec des identifiants invalides", async ({
     page,
   }) => {
-    // On force l'API à répondre 401 pour rendre le test déterministe,
-    // indépendamment de l'état réel du backend.
     await page.route("**/api/login", (route) =>
       route.fulfill({
         status: 401,
@@ -47,7 +43,6 @@ test.describe("Écran de connexion", () => {
   test("redirige vers la connexion depuis l'accueil", async ({ page }) => {
     await page.goto("/");
 
-    // Le header (utilisateur non connecté) expose un lien "Log in".
     await page.getByRole("link", { name: "Log in" }).click();
 
     await expect(page).toHaveURL(/\/login$/);

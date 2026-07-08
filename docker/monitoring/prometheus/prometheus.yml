@@ -1,38 +1,25 @@
-# ─────────────────────────────────────────────────────────────
-# Configuration Prometheus — périmètre INFRA (host + conteneurs).
-#
-# Les cibles sont jointes par leur nom de conteneur sur le réseau
-# "monitoring" (cf. docker-compose.monitoring.yaml).
-# ─────────────────────────────────────────────────────────────
 
 global:
   scrape_interval: 15s
   evaluation_interval: 15s
 
 scrape_configs:
-  # Prometheus se scrape lui-même (santé du serveur).
   - job_name: prometheus
     static_configs:
       - targets: ["localhost:9090"]
 
-  # Métriques de l'hôte (CPU, RAM, disque, réseau).
   - job_name: node
     static_configs:
       - targets: ["node-exporter:9100"]
 
-  # Métriques par conteneur Docker.
   - job_name: cadvisor
     static_configs:
       - targets: ["cadvisor:8080"]
 
-  # Métriques PostgreSQL (base de l'app, via postgres-exporter).
   - job_name: postgres
     static_configs:
       - targets: ["postgres-exporter:9187"]
 
-  # Métriques applicatives Laravel (endpoint /metrics servi par le backend).
-  # Joint le nginx du backend (app_nginx) sur le réseau "app-network".
-  # /metrics n'est PAS exposé publiquement (cf. edge.prod.conf).
   - job_name: laravel
     metrics_path: /metrics
     static_configs:

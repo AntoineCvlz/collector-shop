@@ -1,6 +1,5 @@
 import { test, expect } from "@playwright/test";
 
-// Force English so the UI copy matches the assertions regardless of locale.
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
     window.localStorage.setItem("lang", "en");
@@ -25,14 +24,12 @@ test.describe("Écran d'inscription", () => {
 
   test("navigue entre connexion et inscription", async ({ page }) => {
     await page.goto("/login");
-    // Lien interne au formulaire de connexion vers l'inscription.
     await page
       .getByRole("form", { name: "Sign in form" })
       .getByRole("link", { name: "Sign up" })
       .click();
     await expect(page).toHaveURL(/\/register$/);
 
-    // Lien interne au formulaire d'inscription vers la connexion.
     await page
       .getByRole("form", { name: "Create account form" })
       .getByRole("link", { name: "Log in" })
@@ -41,7 +38,6 @@ test.describe("Écran d'inscription", () => {
   });
 
   test("affiche une erreur quand la création échoue", async ({ page }) => {
-    // On force l'API à répondre en erreur pour rendre le test déterministe.
     await page.route("**/api/register", (route) =>
       route.fulfill({
         status: 422,

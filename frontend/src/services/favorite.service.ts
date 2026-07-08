@@ -25,7 +25,6 @@ interface WishlistResponse {
 
 const authHeaders = (token: string) => ({ Authorization: `Bearer ${token}` });
 
-// ── Interests ──
 
 export const getInterests = async (token: string): Promise<Category[]> => {
   const res = await apiFetch<CategoryListResponse>("/api/me/interests", {
@@ -55,7 +54,6 @@ export const getRecommendations = async (
   return res.data;
 };
 
-// ── Wishlist ──
 
 export const getFavorites = async (
   token: string,

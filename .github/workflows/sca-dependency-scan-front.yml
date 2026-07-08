@@ -35,7 +35,6 @@ jobs:
       - name: 🔐 NPM Audit — bloquant sur HIGH/CRITICAL
         run: npm audit --audit-level=high
 
-      # Download direct du binaire (CDN GitHub, sans API → pas de rate-limit).
       - name: 📥 Install Trivy CLI
         run: |
           TRIVY_VERSION=0.71.0
@@ -43,7 +42,6 @@ jobs:
           sudo tar -xzf /tmp/trivy.tar.gz -C /usr/local/bin trivy
           trivy --version
 
-      # Run 1 : rapport complet → onglet Security, non bloquant
       - name: 🔍 Trivy SCA — rapport SARIF
         run: |
           trivy fs . \
@@ -60,7 +58,6 @@ jobs:
           sarif_file: frontend/trivy-front-results.sarif
           category: trivy-frontend-sca
 
-      # Run 2 : gate bloquant sur CRITICAL/HIGH corrigeables
       - name: 🚦 Trivy SCA — gate (CRITICAL/HIGH bloquant)
         run: |
           trivy fs . \

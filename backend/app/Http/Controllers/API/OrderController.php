@@ -34,7 +34,6 @@ class OrderController extends Controller
 
         try {
             $order = DB::transaction(function () use ($article, $buyer, $request): Order {
-                // Lock the row so two buyers can't purchase the same article.
                 $fresh = Article::where('id', $article->getKey())
                     ->lockForUpdate()
                     ->firstOrFail();

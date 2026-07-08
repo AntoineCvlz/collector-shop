@@ -138,7 +138,6 @@ class ArticleController extends Controller
                 'category_id', 'title', 'description', 'price', 'shipping_cost',
             ]);
             $article->fill($attributes);
-            // Re-moderate after any edit.
             $article->status = Article::STATUS_PENDING;
             $article->published_at = null;
             $article->save();

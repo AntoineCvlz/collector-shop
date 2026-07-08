@@ -1,8 +1,5 @@
 import { vi, beforeEach, afterEach } from "vitest";
 
-// Helpers partagés par les tests de services : chaque service repose sur
-// apiFetch (fetch global). On stub fetch une bonne fois et on expose des
-// fabriques de réponses conformes à l'enveloppe API { response_code, ... }.
 
 export const fetchMock = vi.fn();
 

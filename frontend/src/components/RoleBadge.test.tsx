@@ -19,6 +19,14 @@ describe("RoleBadge", () => {
     expect(container.firstChild).toHaveClass("text-secondary-foreground");
   });
 
+  it("retombe sur l'icône par défaut pour un rôle inconnu", () => {
+    const { container } = renderWithProviders(
+      // @ts-expect-error — rôle hors contrat : on vérifie le fallback d'icône.
+      <RoleBadge role="ghost" />,
+    );
+    expect(container.querySelector("svg")).toBeInTheDocument();
+  });
+
   it("propage className", () => {
     const { container } = renderWithProviders(
       <RoleBadge role="moderator" className="mt-2" />,

@@ -43,6 +43,16 @@ describe("RegisterForm", () => {
     await waitFor(() => expect(navigate).toHaveBeenCalledWith("/login"));
   });
 
+  it("passe le bouton en état de chargement pendant la soumission", async () => {
+    register.mockReturnValue(new Promise(() => {}));
+    renderWithProviders(<RegisterForm />);
+
+    await fill();
+    await userEvent.click(screen.getByRole("button", { name: /create my account/i }));
+
+    expect(await screen.findByRole("button", { name: /creating/i })).toBeDisabled();
+  });
+
   it("affiche une alerte en cas d'échec", async () => {
     register.mockRejectedValue(new Error("422"));
     renderWithProviders(<RegisterForm />);

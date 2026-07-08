@@ -37,6 +37,15 @@ describe("ArticleCard", () => {
     expect(screen.getByText("Ash")).toBeInTheDocument();
   });
 
+  it("retombe sur 0 quand shipping_cost est absent", () => {
+    // Cas runtime où le backend omet shipping_cost : le total = prix seul.
+    const { shipping_cost: _omit, ...noShip } = base;
+    void _omit;
+    renderWithProviders(<ArticleCard article={noShip as Article} />);
+    expect(screen.getByText("+€0.00 ship")).toBeInTheDocument();
+    expect(screen.getByText(/€120\.00 total/)).toBeInTheDocument();
+  });
+
   it("montre le placeholder image quand aucune cover", () => {
     const { container } = renderWithProviders(<ArticleCard article={base} />);
     expect(container.querySelector("img")).toBeNull();

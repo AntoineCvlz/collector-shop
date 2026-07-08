@@ -46,6 +46,17 @@ describe("LoginForm", () => {
     expect(localStorage.getItem("auth_token")).toBe("tok");
   });
 
+  it("passe le bouton en état de chargement pendant la soumission", async () => {
+    // Mutation qui ne se résout jamais → on observe l'état pending.
+    login.mockReturnValue(new Promise(() => {}));
+    renderWithProviders(<LoginForm />);
+
+    await fill();
+    await userEvent.click(screen.getByRole("button", { name: /log in/i }));
+
+    expect(await screen.findByRole("button", { name: /logging in/i })).toBeDisabled();
+  });
+
   it("affiche une alerte si les identifiants sont invalides", async () => {
     login.mockRejectedValue(new Error("401"));
     renderWithProviders(<LoginForm />);

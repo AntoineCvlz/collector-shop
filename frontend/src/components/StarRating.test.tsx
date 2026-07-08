@@ -23,6 +23,11 @@ describe("StarRating", () => {
     expect(screen.getByLabelText("5 stars")).toBeInTheDocument();
   });
 
+  it("applique la taille sm", () => {
+    const { container } = render(<StarRating value={3} size="sm" />);
+    expect(container.querySelector("svg")).toHaveClass("size-4");
+  });
+
   it("appelle onChange avec la note cliquée", async () => {
     const onChange = vi.fn();
     render(<StarRating value={0} onChange={onChange} />);

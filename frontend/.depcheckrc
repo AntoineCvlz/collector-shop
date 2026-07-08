@@ -1,0 +1,18 @@
+# depcheck configuration — https://github.com/depcheck/depcheck
+#
+# ignores: packages that depcheck cannot statically see as used, but that ARE
+# used implicitly. Keep this list minimal and documented — anything not listed
+# here that shows up as "unused" is a real finding and must fail the CI gate.
+ignores:
+  # Imported from CSS (@import in src/index.css), not from TS/TSX.
+  - "@fontsource-variable/plus-jakarta-sans"
+  - "tw-animate-css"
+  # Tailwind v4 engine — pulled by @tailwindcss/vite and @import "tailwindcss".
+  - "tailwindcss"
+  # Vitest coverage provider — referenced by string ("v8") in vite.config.ts.
+  - "@vitest/coverage-v8"
+
+# tsconfig.*.json use JSONC (comments); depcheck's JSON parser chokes on them.
+# They carry no dependency references, so skipping them is safe.
+ignore-patterns:
+  - "tsconfig*.json"

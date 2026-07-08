@@ -47,6 +47,10 @@ jobs:
     needs: build-and-test
     uses: ./.github/workflows/sca-dependency-scan.yml
 
+  unused-deps:
+    needs: build-and-test
+    uses: ./.github/workflows/unused-deps.yml
+
   secure-iac-dockerfile-scan:
     needs: build-and-test
     uses: ./.github/workflows/secure-iac-dockerfile-scan.yml
@@ -61,7 +65,7 @@ jobs:
     uses: ./.github/workflows/mutation-tests.yml
 
   build-and-scan-docker:
-    needs: [code-quality-sast, secret-scanning, secure-iac-dockerfile-scan, sca-dependency-scan, phpstan]
+    needs: [code-quality-sast, secret-scanning, secure-iac-dockerfile-scan, sca-dependency-scan, unused-deps, phpstan]
     uses: ./.github/workflows/build-docker-image.yml
     with:
       app_name: ${{ vars.DEPLOY_APPLI_NAME }}
@@ -101,6 +105,10 @@ jobs:
     needs: build-and-test-front
     uses: ./.github/workflows/sca-dependency-scan-front.yml
 
+  unused-deps-front:
+    needs: build-and-test-front
+    uses: ./.github/workflows/unused-deps-front.yml
+
   secure-iac-dockerfile-scan-front:
     needs: build-and-test-front
     uses: ./.github/workflows/secure-iac-dockerfile-scan-front.yml
@@ -118,7 +126,7 @@ jobs:
     uses: ./.github/workflows/lighthouse-ci-front.yml
 
   build-and-scan-docker-front:
-    needs: [code-quality-sast-front, secret-scanning, secure-iac-dockerfile-scan-front, sca-dependency-scan-front, codeql-front, e2e-playwright-front, lighthouse-ci-front]
+    needs: [code-quality-sast-front, secret-scanning, secure-iac-dockerfile-scan-front, sca-dependency-scan-front, unused-deps-front, codeql-front, e2e-playwright-front, lighthouse-ci-front]
     uses: ./.github/workflows/build-docker-image-front.yml
     with:
       app_name: ${{ vars.DEPLOY_APPLI_NAME_FRONT }}
@@ -159,6 +167,7 @@ jobs:
       - code-quality-sast
       - secret-scanning
       - sca-dependency-scan
+      - unused-deps
       - secure-iac-dockerfile-scan
       - phpstan
       - mutation-tests
@@ -168,6 +177,7 @@ jobs:
       - build-and-test-front
       - code-quality-sast-front
       - sca-dependency-scan-front
+      - unused-deps-front
       - secure-iac-dockerfile-scan-front
       - codeql-front
       - e2e-playwright-front
@@ -187,6 +197,7 @@ jobs:
       result_code_quality_sast: ${{ needs.code-quality-sast.result }}
       result_secret_scanning: ${{ needs.secret-scanning.result }}
       result_sca_dependency_scan: ${{ needs.sca-dependency-scan.result }}
+      result_unused_deps: ${{ needs.unused-deps.result }}
       result_secure_iac_dockerfile_scan: ${{ needs.secure-iac-dockerfile-scan.result }}
       result_phpstan: ${{ needs.phpstan.result }}
       result_mutation_tests: ${{ needs.mutation-tests.result }}
@@ -196,6 +207,7 @@ jobs:
       result_build_and_test_front: ${{ needs.build-and-test-front.result }}
       result_code_quality_sast_front: ${{ needs.code-quality-sast-front.result }}
       result_sca_dependency_scan_front: ${{ needs.sca-dependency-scan-front.result }}
+      result_unused_deps_front: ${{ needs.unused-deps-front.result }}
       result_secure_iac_dockerfile_scan_front: ${{ needs.secure-iac-dockerfile-scan-front.result }}
       result_codeql_front: ${{ needs.codeql-front.result }}
       result_e2e_playwright_front: ${{ needs.e2e-playwright-front.result }}

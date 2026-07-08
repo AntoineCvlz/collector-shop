@@ -20,6 +20,10 @@ on:
       result_sca_dependency_scan:
         required: true
         type: string
+      result_unused_deps:
+        required: false
+        type: string
+        default: skipped
       result_secure_iac_dockerfile_scan:
         required: true
         type: string
@@ -49,6 +53,10 @@ on:
         type: string
         default: skipped
       result_sca_dependency_scan_front:
+        required: false
+        type: string
+        default: skipped
+      result_unused_deps_front:
         required: false
         type: string
         default: skipped
@@ -104,6 +112,7 @@ jobs:
           echo "SAST:            ${{ inputs.result_code_quality_sast }}"
           echo "Secret Scanning: ${{ inputs.result_secret_scanning }}"
           echo "SCA:             ${{ inputs.result_sca_dependency_scan }}"
+          echo "Unused Deps:     ${{ inputs.result_unused_deps }}"
           echo "IaC Security:    ${{ inputs.result_secure_iac_dockerfile_scan }}"
           echo "PHPStan:         ${{ inputs.result_phpstan }}"
           echo "Mutation Tests:  ${{ inputs.result_mutation_tests }}"
@@ -114,6 +123,7 @@ jobs:
           echo "Build & Test:    ${{ inputs.result_build_and_test_front }}"
           echo "SAST:            ${{ inputs.result_code_quality_sast_front }}"
           echo "SCA:             ${{ inputs.result_sca_dependency_scan_front }}"
+          echo "Unused Deps:     ${{ inputs.result_unused_deps_front }}"
           echo "IaC Security:    ${{ inputs.result_secure_iac_dockerfile_scan_front }}"
           echo "CodeQL:          ${{ inputs.result_codeql_front }}"
           echo "E2E Playwright:  ${{ inputs.result_e2e_playwright_front }}"
@@ -133,6 +143,7 @@ jobs:
             ${{ inputs.result_code_quality_sast }}
             ${{ inputs.result_secret_scanning }}
             ${{ inputs.result_sca_dependency_scan }}
+            ${{ inputs.result_unused_deps }}
             ${{ inputs.result_secure_iac_dockerfile_scan }}
             ${{ inputs.result_phpstan }}
             ${{ inputs.result_mutation_tests }}
@@ -142,6 +153,7 @@ jobs:
             ${{ inputs.result_build_and_test_front }}
             ${{ inputs.result_code_quality_sast_front }}
             ${{ inputs.result_sca_dependency_scan_front }}
+            ${{ inputs.result_unused_deps_front }}
             ${{ inputs.result_secure_iac_dockerfile_scan_front }}
             ${{ inputs.result_codeql_front }}
             ${{ inputs.result_e2e_playwright_front }}
@@ -189,6 +201,7 @@ jobs:
               <tr><td>🔍 SAST</td><td>${{ inputs.result_code_quality_sast }}</td></tr>
               <tr><td>🔐 Secret Scanning</td><td>${{ inputs.result_secret_scanning }}</td></tr>
               <tr><td>📦 SCA</td><td>${{ inputs.result_sca_dependency_scan }}</td></tr>
+              <tr><td>🧹 Unused Deps</td><td>${{ inputs.result_unused_deps }}</td></tr>
               <tr><td>🏗️ IaC Security</td><td>${{ inputs.result_secure_iac_dockerfile_scan }}</td></tr>
               <tr><td>🔍 PHPStan</td><td>${{ inputs.result_phpstan }}</td></tr>
               <tr><td>🧬 Mutation Tests</td><td>${{ inputs.result_mutation_tests }}</td></tr>
@@ -199,6 +212,7 @@ jobs:
               <tr><td>🏗️ Build & Test</td><td>${{ inputs.result_build_and_test_front }}</td></tr>
               <tr><td>🔍 SAST</td><td>${{ inputs.result_code_quality_sast_front }}</td></tr>
               <tr><td>📦 SCA</td><td>${{ inputs.result_sca_dependency_scan_front }}</td></tr>
+              <tr><td>🧹 Unused Deps</td><td>${{ inputs.result_unused_deps_front }}</td></tr>
               <tr><td>🏗️ IaC Security</td><td>${{ inputs.result_secure_iac_dockerfile_scan_front }}</td></tr>
               <tr><td>🔍 CodeQL</td><td>${{ inputs.result_codeql_front }}</td></tr>
               <tr><td>🎭 E2E Playwright</td><td>${{ inputs.result_e2e_playwright_front }}</td></tr>

@@ -20,7 +20,6 @@ function actingAsRole(string $role): User
     return $user;
 }
 
-
 test('anyone can list categories without authentication', function () {
     Category::factory()->count(3)->create();
 
@@ -51,7 +50,6 @@ test('categories are returned sorted by name', function () {
     $names = array_column($response->json('data'), 'name');
     expect($names)->toBe(['Anchors', 'Zeppelins']);
 });
-
 
 test('an admin can create a category and the slug is generated', function () {
     actingAsRole(Role::ADMIN);
@@ -84,7 +82,6 @@ test('creating a category validates the name', function () {
         ->assertJsonValidationErrors(['name']);
 });
 
-
 test('an admin can update a category', function () {
     $category = Category::factory()->create(['name' => 'Old', 'slug' => 'old']);
     actingAsRole(Role::ADMIN);
@@ -115,7 +112,6 @@ test('an admin can delete a category', function () {
     $this->assertDatabaseMissing('categories', ['id' => $category->id]);
 });
 
-
 test('a buyer cannot create a category', function () {
     actingAsRole(Role::BUYER);
 
@@ -137,7 +133,6 @@ test('a guest cannot delete a category', function () {
     $this->deleteJson(route('categories.destroy', $category))
         ->assertStatus(401);
 });
-
 
 test('store returns 500 when persistence fails', function () {
     actingAsRole(Role::ADMIN);

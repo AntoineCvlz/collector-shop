@@ -10,7 +10,6 @@ beforeEach(function () {
     }
 });
 
-
 test('an admin can access an admin-only route', function () {
     $admin = User::factory()->create();
     $admin->assignRole(Role::ADMIN);

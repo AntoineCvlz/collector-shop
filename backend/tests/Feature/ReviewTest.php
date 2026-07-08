@@ -32,7 +32,6 @@ function transaction(): array
     return ['order' => $order, 'buyer' => $buyer, 'seller' => $seller];
 }
 
-
 test('a buyer can review the seller after a transaction', function () {
     ['order' => $order, 'buyer' => $buyer, 'seller' => $seller] = transaction();
     Passport::actingAs($buyer, ['*'], 'api');
@@ -69,7 +68,6 @@ test('both parties can review the same transaction independently', function () {
     expect($order->reviews()->count())->toBe(2);
 });
 
-
 test('a stranger cannot review a transaction they were not part of', function () {
     ['order' => $order] = transaction();
     $outsider = User::factory()->create();
@@ -95,7 +93,6 @@ test('reviewing requires authentication', function () {
         ->assertStatus(401);
 });
 
-
 test('the rating is required', function () {
     ['order' => $order, 'buyer' => $buyer] = transaction();
     Passport::actingAs($buyer, ['*'], 'api');
@@ -113,7 +110,6 @@ test('the rating must be between 1 and 5', function () {
         ->assertStatus(422)
         ->assertJsonValidationErrors(['rating']);
 });
-
 
 test('anyone can see the reviews and average rating of a user', function () {
     $seller = User::factory()->create();
@@ -135,7 +131,6 @@ test('a user with no reviews has a null average', function () {
         ->assertJsonPath('meta.total_reviews', 0)
         ->assertJsonPath('meta.average_rating', null);
 });
-
 
 test('review creation returns 500 when persistence fails', function () {
     ['order' => $order, 'buyer' => $buyer] = transaction();

@@ -2,7 +2,6 @@
 
 use function Pest\Laravel\get;
 
-
 test('the metrics endpoint returns Prometheus text format', function () {
     $response = get('/metrics');
 

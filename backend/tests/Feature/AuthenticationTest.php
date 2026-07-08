@@ -15,7 +15,6 @@ beforeEach(function () {
     ]);
 });
 
-
 test('register creates a new user and returns 201', function () {
     $response = $this->postJson(route('register'), [
         'name' => 'John Doe',
@@ -109,7 +108,6 @@ test('register fails when the email is already taken', function () {
         ->assertJsonValidationErrors(['email']);
 });
 
-
 test('login succeeds with valid credentials and returns a token', function () {
     User::factory()->create([
         'email' => 'login@example.com',
@@ -163,7 +161,6 @@ test('login fails validation with missing fields', function () {
         ->assertJsonValidationErrors(['email', 'password']);
 });
 
-
 test('me returns the authenticated user and their roles', function () {
     Role::create(['name' => Role::BUYER]);
     $user = User::factory()->create();
@@ -197,7 +194,6 @@ test('me is rejected when not authenticated', function () {
     $this->getJson(route('me'))->assertStatus(401);
 });
 
-
 test('logout succeeds and revokes tokens when authenticated', function () {
     Passport::actingAs(User::factory()->create(), ['*'], 'api');
 
@@ -214,13 +210,11 @@ test('logout is rejected when not authenticated', function () {
     $this->postJson(route('logout'))->assertStatus(401);
 });
 
-
 test('hello world endpoint returns a message', function () {
     $this->getJson('/api/hello-world')
         ->assertStatus(200)
         ->assertJson(['message' => 'Hello World']);
 });
-
 
 test('register returns 500 when an unexpected error occurs', function () {
     Hash::shouldReceive('make')->andThrow(new \RuntimeException('boom'));

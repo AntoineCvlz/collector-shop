@@ -33,7 +33,6 @@ function asRole(string $role): User
     return $user;
 }
 
-
 test('a banned user cannot log in', function () {
     $user = User::factory()->create([
         'email' => 'banned@example.com',
@@ -67,7 +66,6 @@ test("a banned seller's article returns 404 on the public show endpoint", functi
 
     $this->getJson(route('articles.show', $article))->assertStatus(404);
 });
-
 
 test('an admin can ban a seller', function () {
     $seller = withRole(Role::SELLER);
@@ -121,7 +119,6 @@ test('an admin cannot be banned', function () {
     $this->patchJson(route('sellers.ban', $target))->assertStatus(422);
 });
 
-
 test('a seller cannot ban another seller', function () {
     $target = withRole(Role::SELLER);
     asRole(Role::SELLER);
@@ -140,7 +137,6 @@ test('banning requires authentication', function () {
 
     $this->patchJson(route('sellers.ban', $seller))->assertStatus(401);
 });
-
 
 test('an admin can list sellers', function () {
     withRole(Role::SELLER);
@@ -169,7 +165,6 @@ test('a seller cannot use the moderation delete endpoint', function () {
     $this->deleteJson(route('articles.moderate.destroy', $article))
         ->assertStatus(403);
 });
-
 
 test('ban returns 500 when persistence fails', function () {
     $seller = withRole(Role::SELLER);

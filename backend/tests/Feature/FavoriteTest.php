@@ -21,7 +21,6 @@ function buyerActor(): User
     return $user;
 }
 
-
 test('a buyer starts with no interests', function () {
     buyerActor();
 
@@ -82,7 +81,6 @@ test('a non-buyer cannot set interests', function () {
         ->assertStatus(403);
 });
 
-
 test('recommendations are limited to the buyer interests', function () {
     $liked = Category::factory()->create();
     $other = Category::factory()->create();
@@ -107,7 +105,6 @@ test('recommendations fall back to latest published when no interest is set', fu
         ->assertStatus(200)
         ->assertJsonCount(3, 'data');
 });
-
 
 test('a user can add an article to their wishlist', function () {
     $article = Article::factory()->published()->create();
@@ -154,7 +151,6 @@ test('the wishlist requires authentication', function () {
 
     $this->postJson(route('favorites.store', $article))->assertStatus(401);
 });
-
 
 test('syncing interests returns 500 when persistence fails', function () {
     $category = Category::factory()->create();

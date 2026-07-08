@@ -91,7 +91,6 @@ return [
         //     'url' => 'https://www.apache.org/licenses/LICENSE-2.0.html',
     ],
 
-
     'url_generation_strategy' => UrlGeneratorInterface::ABS_PATH,
 
     'serializer' => [

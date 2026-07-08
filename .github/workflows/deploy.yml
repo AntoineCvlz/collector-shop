@@ -43,10 +43,32 @@ jobs:
 
       - name: 🚀 Deploy via SSH
         uses: appleboy/ssh-action@v1
+        # Secrets passés à l'environnement du shell distant (envs:) plutôt
+        # qu'interpolés dans le texte du script → aucun caractère spécial
+        # (` $ ") ne peut casser ou s'exécuter. GitHub masque toujours ces
+        # valeurs dans les logs. Les noms listés dans `envs` DOIVENT exister
+        # dans le bloc `env:` ci-dessous.
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          LARAVEL_APP_KEY: ${{ secrets.LARAVEL_APP_KEY }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          APP_URL: ${{ vars.PRODUCTION_URL }}
+          PASSPORT_PRIVATE_KEY: ${{ secrets.PASSPORT_PRIVATE_KEY }}
+          PASSPORT_PUBLIC_KEY: ${{ secrets.PASSPORT_PUBLIC_KEY }}
+          GF_SECURITY_ADMIN_USER: ${{ secrets.GF_SECURITY_ADMIN_USER }}
+          GF_SECURITY_ADMIN_PASSWORD: ${{ secrets.GF_SECURITY_ADMIN_PASSWORD }}
+          MONITORING_DATA_SOURCE_NAME: ${{ secrets.MONITORING_DATA_SOURCE_NAME }}
+          GF_SMTP_ENABLED: ${{ vars.GF_SMTP_ENABLED || 'false' }}
+          GF_SMTP_HOST: ${{ secrets.GF_SMTP_HOST }}
+          GF_SMTP_USER: ${{ secrets.GF_SMTP_USER }}
+          GF_SMTP_PASSWORD: ${{ secrets.GF_SMTP_PASSWORD }}
+          GF_SMTP_FROM_ADDRESS: ${{ secrets.GF_SMTP_FROM_ADDRESS }}
+          GF_ALERT_EMAIL_TO: ${{ secrets.GF_ALERT_EMAIL_TO || 'alerts@example.invalid' }}
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          envs: DOCKERHUB_USERNAME,LARAVEL_APP_KEY,DB_PASSWORD,APP_URL,PASSPORT_PRIVATE_KEY,PASSPORT_PUBLIC_KEY,GF_SECURITY_ADMIN_USER,GF_SECURITY_ADMIN_PASSWORD,MONITORING_DATA_SOURCE_NAME,GF_SMTP_ENABLED,GF_SMTP_HOST,GF_SMTP_USER,GF_SMTP_PASSWORD,GF_SMTP_FROM_ADDRESS,GF_ALERT_EMAIL_TO
           script: |
             set -e
             cd /opt/collector-shop
@@ -65,6 +87,55 @@ jobs:
             PREV_FRONTEND_IMAGE="$(docker inspect --format '{{.Image}}' app_frontend 2>/dev/null || true)"
             echo "Image backend précédente  : ${PREV_BACKEND_IMAGE:-<aucune>}"
             echo "Image frontend précédente : ${PREV_FRONTEND_IMAGE:-<aucune>}"
+
+            # .env de l'appli (secrets Laravel + coordonnées des images Docker Hub).
+            # Généré ici depuis les secrets/vars GitHub, JAMAIS committé ni posé à
+            # la main : GitHub reste la seule source de vérité. Même durcissement
+            # que le monitoring (umask 077, écriture atomique temp → mv, mode 600).
+            # Les secrets arrivent via l'env du shell (envs: de ssh-action) et non
+            # interpolés dans le texte → pas de casse/injection sur caractères
+            # spéciaux (` $ "). Les non-secrets (APP_URL…) via vars GitHub ; les
+            # constantes de prod sont en dur (cf. docker/.env.prod.example).
+            umask 077
+            rm -f .env
+            install -m 600 /dev/null .env.tmp
+            cat > .env.tmp <<ENV
+            # --- Images Docker Hub (lues par docker-compose.prod.yaml + rollback) ---
+            DOCKERHUB_USERNAME=${DOCKERHUB_USERNAME}
+            BACKEND_IMAGE=${BACKEND_IMAGE}
+            FRONTEND_IMAGE=${FRONTEND_IMAGE}
+            IMAGE_TAG=${IMAGE_TAG}
+            APP_PORT=80
+            # --- Application Laravel ---
+            APP_NAME=CollectorShop
+            APP_ENV=production
+            APP_DEBUG=false
+            APP_KEY=${LARAVEL_APP_KEY}
+            APP_URL=${APP_URL}
+            APP_LOCALE=fr
+            APP_FALLBACK_LOCALE=en
+            # --- Base de données (PostgreSQL) ---
+            DB_CONNECTION=pgsql
+            DB_HOST=db
+            DB_PORT=5432
+            DB_DATABASE=collector_shop
+            DB_USERNAME=collector
+            DB_PASSWORD=${DB_PASSWORD}
+            # --- Sessions / cache / queue ---
+            SESSION_DRIVER=database
+            SESSION_LIFETIME=120
+            CACHE_STORE=database
+            QUEUE_CONNECTION=database
+            # --- Logs ---
+            LOG_CHANNEL=stderr
+            LOG_LEVEL=warning
+            # --- Laravel Passport (clés OAuth) ---
+            # Vides tant que Passport n'est pas provisionné ; alimentées par les
+            # secrets GitHub PASSPORT_* si présents (défaut = chaîne vide).
+            PASSPORT_PRIVATE_KEY="${PASSPORT_PRIVATE_KEY}"
+            PASSPORT_PUBLIC_KEY="${PASSPORT_PUBLIC_KEY}"
+            ENV
+            mv -f .env.tmp .env
 
             # Déploiement orchestré back → front (ordre = pas de skew : les deux
             # images ont été validées par la CI avant d'arriver ici).
@@ -87,18 +158,20 @@ jobs:
             umask 077
             rm -f monitoring/.env
             install -m 600 /dev/null monitoring/.env.tmp
+            # Valeurs lues depuis l'environnement (envs: de ssh-action), pas
+            # interpolées dans le texte : sûr vis-à-vis des caractères spéciaux.
             cat > monitoring/.env.tmp <<ENV
-            GF_SECURITY_ADMIN_USER=${{ secrets.GF_SECURITY_ADMIN_USER }}
-            GF_SECURITY_ADMIN_PASSWORD=${{ secrets.GF_SECURITY_ADMIN_PASSWORD }}
-            DATA_SOURCE_NAME=${{ secrets.MONITORING_DATA_SOURCE_NAME }}
-            GF_SMTP_ENABLED=${{ vars.GF_SMTP_ENABLED || 'false' }}
-            GF_SMTP_HOST=${{ secrets.GF_SMTP_HOST }}
-            GF_SMTP_USER=${{ secrets.GF_SMTP_USER }}
-            GF_SMTP_PASSWORD=${{ secrets.GF_SMTP_PASSWORD }}
-            GF_SMTP_FROM_ADDRESS=${{ secrets.GF_SMTP_FROM_ADDRESS }}
+            GF_SECURITY_ADMIN_USER=${GF_SECURITY_ADMIN_USER}
+            GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD}
+            DATA_SOURCE_NAME=${MONITORING_DATA_SOURCE_NAME}
+            GF_SMTP_ENABLED=${GF_SMTP_ENABLED}
+            GF_SMTP_HOST=${GF_SMTP_HOST}
+            GF_SMTP_USER=${GF_SMTP_USER}
+            GF_SMTP_PASSWORD=${GF_SMTP_PASSWORD}
+            GF_SMTP_FROM_ADDRESS=${GF_SMTP_FROM_ADDRESS}
             # DOIT être non-vide : contact-points.yaml l'injecte via $__env{}
             # (sans défaut) ; une adresse vide fait crash-looper Grafana 11.
-            GF_ALERT_EMAIL_TO=${{ secrets.GF_ALERT_EMAIL_TO || 'alerts@example.invalid' }}
+            GF_ALERT_EMAIL_TO=${GF_ALERT_EMAIL_TO}
             ENV
             mv -f monitoring/.env.tmp monitoring/.env
             docker compose -f monitoring/docker-compose.monitoring.yaml pull

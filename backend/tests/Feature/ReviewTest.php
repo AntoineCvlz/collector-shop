@@ -32,9 +32,6 @@ function transaction(): array
     return ['order' => $order, 'buyer' => $buyer, 'seller' => $seller];
 }
 
-// ─────────────────────────────────────────────
-// CREATE — BIDIRECTIONAL
-// ─────────────────────────────────────────────
 
 test('a buyer can review the seller after a transaction', function () {
     ['order' => $order, 'buyer' => $buyer, 'seller' => $seller] = transaction();
@@ -72,9 +69,6 @@ test('both parties can review the same transaction independently', function () {
     expect($order->reviews()->count())->toBe(2);
 });
 
-// ─────────────────────────────────────────────
-// RULES
-// ─────────────────────────────────────────────
 
 test('a stranger cannot review a transaction they were not part of', function () {
     ['order' => $order] = transaction();
@@ -101,9 +95,6 @@ test('reviewing requires authentication', function () {
         ->assertStatus(401);
 });
 
-// ─────────────────────────────────────────────
-// VALIDATION
-// ─────────────────────────────────────────────
 
 test('the rating is required', function () {
     ['order' => $order, 'buyer' => $buyer] = transaction();
@@ -123,9 +114,6 @@ test('the rating must be between 1 and 5', function () {
         ->assertJsonValidationErrors(['rating']);
 });
 
-// ─────────────────────────────────────────────
-// PUBLIC LISTING & AVERAGE
-// ─────────────────────────────────────────────
 
 test('anyone can see the reviews and average rating of a user', function () {
     $seller = User::factory()->create();
@@ -148,9 +136,6 @@ test('a user with no reviews has a null average', function () {
         ->assertJsonPath('meta.average_rating', null);
 });
 
-// ─────────────────────────────────────────────
-// ERROR HANDLING (catch block → 500)
-// ─────────────────────────────────────────────
 
 test('review creation returns 500 when persistence fails', function () {
     ['order' => $order, 'buyer' => $buyer] = transaction();

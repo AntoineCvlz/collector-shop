@@ -1,5 +1,4 @@
 services:
-  # --- BACKEND (PHP 8.3 FPM) ---
   backend:
     build:
       context: ../backend
@@ -13,7 +12,6 @@ services:
     depends_on:
       - db
 
-  # --- SERVEUR WEB (NGINX) ---
   nginx:
     image: nginx:alpine
     container_name: app_nginx
@@ -28,7 +26,6 @@ services:
     depends_on:
       - backend
 
-  # --- DATABASE (POSTGRES) ---
   db:
     image: postgres:18-alpine
     container_name: app_db
@@ -44,7 +41,6 @@ services:
     networks:
       - app-network
 
-  # --- FRONTEND (REACT/VITE) ---
   frontend:
     build:
       context: ../frontend

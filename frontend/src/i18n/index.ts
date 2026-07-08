@@ -20,14 +20,12 @@ void i18n
     supportedLngs: SUPPORTED_LANGUAGES,
     interpolation: { escapeValue: false }, // React already escapes
     detection: {
-      // Persist the choice and prefer it over the browser language.
       order: ["localStorage", "navigator"],
       lookupLocalStorage: "lang",
       caches: ["localStorage"],
     },
   });
 
-// Keep the <html lang> attribute in sync for a11y / SEO.
 i18n.on("languageChanged", (lng) => {
   if (typeof document !== "undefined") {
     document.documentElement.lang = lng;

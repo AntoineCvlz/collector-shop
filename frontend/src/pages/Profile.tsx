@@ -36,7 +36,6 @@ export default function Profile() {
   const queryClient = useQueryClient();
   const token = getToken();
 
-  // Redirect guests out of the private space.
   useEffect(() => {
     if (!token) {
       navigate("/login");

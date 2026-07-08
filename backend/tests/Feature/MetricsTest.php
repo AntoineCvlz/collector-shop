@@ -2,8 +2,6 @@
 
 use function Pest\Laravel\get;
 
-// L'endpoint /metrics est scrapé en interne par Prometheus. On vérifie qu'il
-// répond au format texte Prometheus et expose bien nos séries applicatives.
 
 test('the metrics endpoint returns Prometheus text format', function () {
     $response = get('/metrics');
@@ -23,7 +21,6 @@ test('the metrics endpoint exposes business gauges', function () {
 });
 
 test('handled requests are counted in the http metrics', function () {
-    // Une première requête alimente le compteur, la seconde l'observe.
     get('/metrics');
 
     $body = get('/metrics')->getContent();

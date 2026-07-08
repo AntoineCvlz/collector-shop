@@ -11,8 +11,6 @@ jobs:
       - name: 📥 Checkout code
         uses: actions/checkout@v6
 
-      # Build + sert l'image nginx de prod (headers CSP/COOP/HSTS/X-Frame-Options
-      # posés par nginx, absents si on scanne les fichiers statiques bruts).
       - name: 🏗️ Build production image (nginx + build Vite)
         run: docker build -t collector-shop-frontend:lighthouse ./frontend
 

@@ -21,24 +21,15 @@ jobs:
       - name: 📥 Checkout code
         uses: actions/checkout@v6
 
-      # ═══════════════════════════════════════
-      # 1. PRÉPARATION PHP (Léger)
-      # ═══════════════════════════════════════
       - name: 🐘 Set up PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: "8.4"
           tools: composer:v2, pint
 
-      # ═══════════════════════════════════════
-      # 2. LARAVEL PINT (Qualité de code)
-      # ═══════════════════════════════════════
       - name: 🎨 Check Code Style (Pint)
         run: pint --test
 
-      # ═══════════════════════════════════════
-      # 3. SEMGREP
-      # ═══════════════════════════════════════
       - name: 🔍 Run Semgrep SAST
         if: always()
         run: |
@@ -57,9 +48,5 @@ jobs:
           sarif_file: backend/semgrep.sarif
           category: semgrep
 
-      # ═══════════════════════════════════════
-      # 4. COMPOSER AUDIT (Sécurité Dépendances) — bloquant
-      # composer audit lit composer.lock : pas besoin d'installer les vendors.
-      # ═══════════════════════════════════════
       - name: 📦 Check PHP Dependencies Security
         run: composer audit --locked

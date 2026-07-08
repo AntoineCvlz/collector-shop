@@ -7,7 +7,6 @@ import {
   listMyArticles,
 } from "./article.service";
 
-// Fabrique une réponse fetch JSON réussie.
 function jsonResponse(body: unknown) {
   return Promise.resolve({
     ok: true,
@@ -27,8 +26,6 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-// Article complet conforme au contrat (article.service.ts valide désormais
-// les réponses via les schémas Zod — cf. api/schemas.ts).
 const fullArticle = {
   id: 1,
   title: "Carte rare",
@@ -59,7 +56,6 @@ describe("listArticles", () => {
     expect(fetchMock).toHaveBeenCalledOnce();
     const url = fetchMock.mock.calls[0][0] as string;
     expect(url).toBe("/api/articles");
-    // Le service "déballe" res.data → on récupère bien le paginé.
     expect(res).toEqual(paginated);
   });
 
@@ -153,7 +149,6 @@ describe("createArticle", () => {
     expect(form.get("category_id")).toBe("1");
     expect(form.get("shipping_cost")).toBe("3");
     expect(form.getAll("images[]")).toHaveLength(1);
-    // On laisse le navigateur poser la frontière multipart : pas de header JSON.
     expect((opts.headers as Record<string, string>)["Content-Type"]).toBeUndefined();
   });
 

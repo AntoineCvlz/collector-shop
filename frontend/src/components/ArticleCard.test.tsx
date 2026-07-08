@@ -38,7 +38,6 @@ describe("ArticleCard", () => {
   });
 
   it("retombe sur 0 quand shipping_cost est absent", () => {
-    // Cas runtime où le backend omet shipping_cost : le total = prix seul.
     const { shipping_cost: _omit, ...noShip } = base;
     void _omit;
     renderWithProviders(<ArticleCard article={noShip as Article} />);

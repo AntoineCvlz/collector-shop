@@ -31,9 +31,6 @@ function actAs(string $role): User
     return $user;
 }
 
-// ─────────────────────────────────────────────
-// PUBLIC CATALOGUE
-// ─────────────────────────────────────────────
 
 test('the public catalogue lists only published articles', function () {
     Article::factory()->published()->count(2)->create();
@@ -85,9 +82,6 @@ test('a pending article is hidden from the public show endpoint', function () {
     $this->getJson(route('articles.show', $article))->assertStatus(404);
 });
 
-// ─────────────────────────────────────────────
-// SELLER — CREATE
-// ─────────────────────────────────────────────
 
 test('a seller can create an article which starts as pending', function () {
     $category = Category::factory()->create();
@@ -164,9 +158,6 @@ test('creating an article rejects non-image uploads', function () {
         ->assertJsonValidationErrors(['images.0']);
 });
 
-// ─────────────────────────────────────────────
-// SELLER — UPDATE / DELETE / ISOLATION
-// ─────────────────────────────────────────────
 
 test('a seller can update their own article and it returns to pending', function () {
     $seller = actAs(Role::SELLER);
@@ -217,9 +208,6 @@ test('a seller only sees their own articles in the my-articles endpoint', functi
         ->assertJsonPath('data.total', 2);
 });
 
-// ─────────────────────────────────────────────
-// MODERATION
-// ─────────────────────────────────────────────
 
 test('a moderator can list pending articles', function () {
     Article::factory()->count(2)->create(); // pending
@@ -270,9 +258,6 @@ test('approving requires authentication', function () {
     $this->patchJson(route('articles.approve', $article))->assertStatus(401);
 });
 
-// ─────────────────────────────────────────────
-// ERROR HANDLING (catch blocks → 500)
-// ─────────────────────────────────────────────
 
 test('store returns 500 when persistence fails', function () {
     $category = Category::factory()->create();

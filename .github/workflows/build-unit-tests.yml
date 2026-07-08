@@ -56,8 +56,6 @@ jobs:
         with:
           node-version: "20"
 
-      # Clé de cache sur le lockfile s'il existe, sinon le package.json (pas
-      # encore de package-lock.json committé).
       - name: 📦 Cache npm
         uses: actions/cache@v5
         with:
@@ -65,8 +63,6 @@ jobs:
           key: npm-${{ runner.os }}-${{ hashFiles('backend/package-lock.json', 'backend/package.json') }}
           restore-keys: npm-${{ runner.os }}-
 
-      # `npm ci` (reproductible) dès qu'un package-lock.json est committé ;
-      # fallback `npm install` tant qu'il n'existe pas.
       - name: ⚡ Install NPM dependencies & Build assets
         run: |
           if [ -f package-lock.json ]; then
@@ -99,8 +95,6 @@ jobs:
           DB_USERNAME: laravel
           DB_PASSWORD: secret
 
-      # Clés Passport requises : les tests d'auth créent un personal access
-      # client (passport:client --personal) qui chiffre avec ces clés.
       - name: 🔑 Generate Passport keys
         run: php artisan passport:keys --force --no-interaction
 
@@ -114,7 +108,6 @@ jobs:
           DB_USERNAME: laravel
           DB_PASSWORD: secret
 
-      # Seuil pilotable via la variable repo COVERAGE_MIN (défaut : cible 80 %).
       - name: 🚦 Coverage gate
         env:
           COVERAGE_MIN: ${{ vars.COVERAGE_MIN || '80' }}

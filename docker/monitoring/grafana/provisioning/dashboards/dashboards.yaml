@@ -1,4 +1,3 @@
-# Charge automatiquement les dashboards JSON déposés dans /var/lib/grafana/dashboards.
 apiVersion: 1
 
 providers:

@@ -1,10 +1,8 @@
-/// <reference types="vitest/config" />
 import { defineConfig } from 'vite'
 import tailwindcss from '@tailwindcss/vite'
 import react from "@vitejs/plugin-react"
 import path from 'path'
 
-// https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   resolve: {
@@ -12,8 +10,6 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  // Tests unitaires / composants (Vitest). Les tests E2E Playwright vivent
-  // dans tests/ et sont exclus ici pour ne pas être ramassés par Vitest.
   test: {
     environment: "jsdom",
     globals: true,
@@ -30,9 +26,6 @@ export default defineConfig({
         "src/main.tsx",
         "src/App.tsx",
         "src/vite-env.d.ts",
-        // Vues « coquilles » et primitives UI : couvertes par les tests E2E
-        // Playwright (tests/), pas par Vitest. Les inclure fausserait la
-        // mesure de la logique réellement testable en unitaire.
         "src/pages/**",
         "src/components/ui/**",
         "src/components/Header.tsx",

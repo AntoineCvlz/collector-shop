@@ -7,10 +7,6 @@ import {
   userInfoSchema,
 } from "./schemas";
 
-// Contrat front↔back : ces fixtures reproduisent la forme RÉELLE des réponses
-// Laravel (enveloppe { response_code, status, message, data }). Si le backend
-// dérive, ces schémas — utilisés au runtime par les services — lèveront, et
-// ces tests documentent la structure attendue.
 
 const validArticle = {
   id: 1,

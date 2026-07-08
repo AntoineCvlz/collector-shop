@@ -24,8 +24,6 @@ return [
 
     'routes' => [
         'domain' => null,
-        // Global middleware applied to every API Platform routes
-        // 'middleware' => [],
     ],
 
     'resources' => [
@@ -34,8 +32,6 @@ return [
 
     'formats' => [
         'jsonld' => ['application/ld+json'],
-        // 'jsonapi' => ['application/vnd.api+json'],
-        // 'csv' => ['text/csv'],
     ],
 
     'patch_formats' => [
@@ -44,7 +40,6 @@ return [
 
     'docs_formats' => [
         'jsonld' => ['application/ld+json'],
-        // 'jsonapi' => ['application/vnd.api+json'],
         'jsonopenapi' => ['application/vnd.openapi+json'],
         'html' => ['text/html'],
     ],
@@ -78,16 +73,11 @@ return [
         'introspection' => ['enabled' => true],
         'max_query_complexity' => 500,
         'max_query_depth' => 200,
-        // 'middleware' => null,
     ],
 
     'graphiql' => [
-        // 'enabled' => true,
-        // 'domain' => null,
-        // 'middleware' => null,
     ],
 
-    // set to null if you want to keep snake_case
     'name_converter' => SnakeCaseToCamelCaseNameConverter::class,
 
     'exception_to_status' => [
@@ -97,68 +87,17 @@ return [
 
     'swagger_ui' => [
         'enabled' => true,
-        // 'apiKeys' => [
-        //     'api' => [
-        //         'name' => 'Authorization',
-        //         'type' => 'header',
-        //     ],
-        // ],
-        // 'oauth' => [
-        //     'enabled' => true,
-        //     'type' => 'oauth2',
-        //     'flow' => 'authorizationCode',
-        //     'tokenUrl' => '',
-        //     'authorizationUrl' =>'',
-        //     'refreshUrl' => '',
-        //     'scopes' => ['scope1' => 'Description scope 1'],
-        //     'pkce' => true,
-        // ],
         // 'license' => [
-        //     'name' => 'Apache 2.0',
         //     'url' => 'https://www.apache.org/licenses/LICENSE-2.0.html',
-        // ],
-        // 'contact' => [
-        //     'name' => 'API Support',
-        //     'url' => 'https://www.example.com/support',
-        //     'email' => 'support@example.com',
-        // ],
-        // 'http_auth' => [
-        //     'Personal Access Token' => [
-        //         'scheme' => 'bearer',
-        //         'bearerFormat' => 'JWT',
-        //     ],
-        // ],
     ],
 
-    // 'openapi' => [
-    //     'tags' => [],
-    // ],
 
     'url_generation_strategy' => UrlGeneratorInterface::ABS_PATH,
 
     'serializer' => [
         'hydra_prefix' => false,
-        // 'datetime_format' => \DateTimeInterface::RFC3339,
     ],
 
-    // we recommend using "file" or "acpu"
     'cache' => 'file',
 
-    // install `api-platform/http-cache`
-    // 'http_cache' => [
-    //     'etag' => false,
-    //     'max_age' => null,
-    //     'shared_max_age' => null,
-    //     'vary' => null,
-    //     'public' => null,
-    //     'stale_while_revalidate' => null,
-    //     'stale_if_error' => null,
-    //     'invalidation' => [
-    //         'urls' => [],
-    //         'scoped_clients' => [],
-    //         'max_header_length' => 7500,
-    //         'request_options' => [],
-    //         'purger' => ApiPlatform\HttpCache\SouinPurger::class,
-    //     ],
-    // ],
 ];

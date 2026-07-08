@@ -1,7 +1,3 @@
-# Point de contact des alertes Grafana : email de l'admin.
-# L'envoi SMTP n'est PAS configuré (cf. docker-compose.monitoring.yaml) : les
-# alertes restent visibles dans l'UI Alerting mais ne partent pas par mail.
-# Seul le destinataire (GF_ALERT_EMAIL_TO) est requis pour que Grafana démarre.
 apiVersion: 1
 
 contactPoints:
@@ -11,27 +7,14 @@ contactPoints:
       - uid: email-admin
         type: email
         settings:
-          # Destinataire fourni par le .env (GF_ALERT_EMAIL_TO).
-          #
-          # SYNTAXE CRITIQUE : dans les fichiers de provisioning, Grafana
-          # n'interpole les variables d'ENV qu'avec $__env{VAR} — PAS ${VAR}.
-          # Un ${VAR} est laissé littéral (voire interprété comme variable de
-          # template d'alerte) → addresses vide → Grafana 11 REFUSE de démarrer
-          # ("could not find addresses in settings" → crash-loop → 502).
-          #
-          # $__env{} ne gère pas de valeur par défaut : GF_ALERT_EMAIL_TO DOIT
-          # être non-vide dans le .env (le job de déploiement le garantit via
-          # un fallback, cf. deploy.yml). Sinon Grafana ne démarre pas.
           addresses: $__env{GF_ALERT_EMAIL_TO}
           singleEmail: false
         disableResolveMessage: false
 
-# Politique de notification : tout passe par le contact point email-admin.
 policies:
   - orgId: 1
     receiver: email-admin
     group_by: ["grafana_folder", "alertname"]
-    # Regroupe les alertes, limite le spam.
     group_wait: 30s
     group_interval: 5m
     repeat_interval: 4h

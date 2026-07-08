@@ -14,7 +14,6 @@ test.beforeEach(async ({ page }) => {
     window.localStorage.setItem("auth_user", JSON.stringify(user));
   }, buyer);
 
-  // GET /api/me — profil courant.
   await page.route("**/api/me", (route) =>
     route.fulfill({
       json: {
@@ -25,7 +24,6 @@ test.beforeEach(async ({ page }) => {
       },
     }),
   );
-  // Endpoints secondaires de la page profil (intérêts buyer) — réponses vides.
   await page.route("**/api/me/interests", (route) =>
     route.fulfill({ json: { response_code: 200, status: "ok", message: "", data: [] } }),
   );
@@ -39,7 +37,6 @@ test.describe("Profil", () => {
       page.getByRole("heading", { name: "Alice Martin" }),
     ).toBeVisible();
     await expect(page.getByText("alice@example.com").first()).toBeVisible();
-    // Le formulaire d'édition est pré-rempli.
     await expect(page.getByLabel("Full name")).toHaveValue("Alice Martin");
   });
 

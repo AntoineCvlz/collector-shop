@@ -4,5 +4,4 @@ includes:
 parameters:
     paths:
         - app
-    # Niveau maximal atteint (max: 10).
     level: 10

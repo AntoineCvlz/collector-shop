@@ -11,7 +11,6 @@ describe("cn", () => {
   });
 
   it("dédoublonne les classes Tailwind en conflit (twMerge)", () => {
-    // px-2 puis px-4 → seul le dernier survit.
     expect(cn("px-2", "px-4")).toBe("px-4");
   });
 });

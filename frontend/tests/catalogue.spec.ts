@@ -1,13 +1,11 @@
 import { test, expect } from "@playwright/test";
 
-// Force English so UI copy matches assertions regardless of locale.
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
     window.localStorage.setItem("lang", "en");
   });
 });
 
-// Fixtures minimales alignées sur les types du front (article.service.ts).
 const article = (id: number, title: string, categoryId = 1) => ({
   id,
   title,
@@ -65,7 +63,6 @@ test.describe("Catalogue (accueil)", () => {
       route.fulfill({ json: categories }),
     );
 
-    // On distingue la requête filtrée de la requête initiale via l'URL.
     await page.route("**/api/articles**", (route) => {
       const url = route.request().url();
       if (url.includes("category_id=2")) {
@@ -77,7 +74,6 @@ test.describe("Catalogue (accueil)", () => {
     await page.goto("/");
     await expect(page.getByRole("link", { name: /Charizard/ })).toBeVisible();
 
-    // Clic sur la chip de catégorie "Figurines" (dans la nav Categories).
     await page
       .getByRole("navigation", { name: "Categories" })
       .getByRole("button", { name: "Figurines" })
@@ -110,8 +106,6 @@ test.describe("Catalogue (accueil)", () => {
 
     await page.goto("/");
 
-    // La page reste fonctionnelle (le hero est toujours là) et le catalogue
-    // retombe sur l'état vide plutôt que de planter la SPA.
     await expect(
       page.getByRole("heading", { name: "Find the piece you've been hunting for." }),
     ).toBeVisible();

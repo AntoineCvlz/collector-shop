@@ -26,7 +26,6 @@ jobs:
           extensions: mbstring, pdo, pdo_pgsql
           coverage: none
 
-      # Larastan est en require-dev → installé par composer install (reproductible).
       - name: 📦 Install Composer dependencies
         run: composer install --no-interaction --prefer-dist --optimize-autoloader
 

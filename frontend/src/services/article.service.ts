@@ -66,8 +66,6 @@ export const listArticles = async (
   const res = await apiFetch<CatalogueResponse>(
     `/api/articles${qs ? `?${qs}` : ""}`,
   );
-  // Validation de contrat : rejette une réponse backend malformée plutôt que
-  // de propager un `data` silencieusement cassé (cf. api/schemas.ts).
   return catalogueResponseSchema.parse(res).data;
 };
 

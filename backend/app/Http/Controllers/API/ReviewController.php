@@ -23,7 +23,6 @@ class ReviewController extends Controller
         $author = $request->user();
         $authorId = $author->getKey();
 
-        // Determine the author's side of the transaction.
         if ($authorId === $order->buyer_id) {
             $subjectId = $order->seller_id;
             $type = Review::TYPE_OF_SELLER;

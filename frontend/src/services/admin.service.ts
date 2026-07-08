@@ -25,7 +25,6 @@ interface SellerListResponse {
 
 const authHeaders = (token: string) => ({ Authorization: `Bearer ${token}` });
 
-// ── Moderation queue ──
 
 export const listPendingArticles = async (
   token: string,
@@ -66,7 +65,6 @@ export const removeArticle = async (
   });
 };
 
-// ── Sellers ──
 
 export const listSellers = async (
   token: string,

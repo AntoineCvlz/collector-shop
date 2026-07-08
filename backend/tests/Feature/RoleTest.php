@@ -3,9 +3,6 @@
 use App\Models\Role;
 use App\Models\User;
 
-// ─────────────────────────────────────────────
-// MODÈLE & RELATIONS
-// ─────────────────────────────────────────────
 
 test('roles table exists with correct columns', function () {
     expect(\Illuminate\Support\Facades\Schema::hasTable('roles'))->toBeTrue();
@@ -75,9 +72,6 @@ test('deleting a user cascades to role_user pivot', function () {
     expect(\Illuminate\Support\Facades\DB::table('role_user')->where('user_id', $userId)->exists())->toBeFalse();
 });
 
-// ─────────────────────────────────────────────
-// ROLE SEEDER
-// ─────────────────────────────────────────────
 
 test('role seeder creates the default roles', function () {
     $this->seed(\Database\Seeders\RoleSeeder::class);

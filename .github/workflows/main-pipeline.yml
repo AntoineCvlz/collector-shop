@@ -1,9 +1,5 @@
 name: Main CI/CD Pipeline
 
-# Pipeline unique back + front : les deux voies (build/test/scan/publish) tournent
-# en parallèle, puis un seul déploiement orchestré met toute la stack en prod.
-# Fusionné pour ne jamais déployer l'un sans l'autre validé (pas de skew), sur
-# une stack mono-VPS partagée (même docker-compose.prod.yaml).
 on:
   push:
     branches: ["main"]
@@ -34,7 +30,6 @@ permissions:
   id-token: write
 
 jobs:
-  # ─── Voie BACKEND ───
   build-and-test:
     uses: ./.github/workflows/build-unit-tests.yml
 
@@ -93,7 +88,6 @@ jobs:
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
       LARAVEL_APP_KEY: ${{ secrets.LARAVEL_APP_KEY }}
 
-  # ─── Voie FRONTEND (en parallèle de la voie back) ───
   build-and-test-front:
     uses: ./.github/workflows/build-unit-tests-front.yml
 
@@ -150,9 +144,6 @@ jobs:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
 
-  # ─── Déploiement (push main uniquement) ───
-  # Gate sur les DEUX voies (back + front) → jamais de déploiement en skew.
-  # deploy.yml orchestre ensuite back → healthcheck → front → healthcheck.
   deploy:
     needs: [dast-zap-test, mutation-tests, dast-zap-test-front]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -160,14 +151,8 @@ jobs:
     with:
       backend_image: ${{ vars.DEPLOY_APPLI_NAME }}
       frontend_image: ${{ vars.DEPLOY_APPLI_NAME_FRONT }}
-    # `inherit` REQUIS : les secrets SSH_*/GF_*/MONITORING_* sont scopés à
-    # l'environnement "production", que seul deploy.yml (workflow appelé)
-    # déclare. Un job qui `uses:` un reusable workflow ne peut pas déclarer
-    # `environment:` lui-même → impossible de les passer un à un.
     secrets: inherit
 
-  # ─── Notifications (toujours, en dernier) ───
-  # if: always() → part même si un job échoue ou si deploy est skipped (PR).
   send-notifications:
     needs:
       - build-and-test

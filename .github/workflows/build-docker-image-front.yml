@@ -31,8 +31,6 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
 
-      # Build local (pas de push) : on scanne AVANT de publier. Push seulement
-      # si le gate Trivy passe → jamais d'image vulnérable au registre.
       - name: Build Docker image (local, pour scan)
         uses: docker/build-push-action@v7
         with:
@@ -44,7 +42,6 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      # Download direct du binaire (CDN GitHub, sans API → pas de rate-limit).
       - name: Install Trivy CLI
         run: |
           TRIVY_VERSION=0.71.0
@@ -78,8 +75,6 @@ jobs:
             --exit-code 1 \
             ${{ inputs.app_name }}:${{ github.sha }}
 
-      # Push (le gate Trivy a passé) : on pousse l'image locale déjà buildée,
-      # sans rebuild. Évite l'aller-retour artifact tar.gz.
       - name: Login to Docker Hub
         uses: docker/login-action@v4
         with:

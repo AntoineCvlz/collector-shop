@@ -23,7 +23,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      # Valide tous les commits de la PR (de la base jusqu'au HEAD de la PR).
       - name: 📝 Run commitlint
         uses: wagoid/commitlint-github-action@v6
         with:

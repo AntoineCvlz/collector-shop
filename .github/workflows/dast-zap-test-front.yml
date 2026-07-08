@@ -64,7 +64,6 @@ jobs:
             -I
         continue-on-error: true
 
-      # Garde-fou : ZAP doit avoir produit un rapport, sinon le scan n'a pas eu lieu.
       - name: Verify ZAP actually scanned the app
         run: |
           test -s "${{ github.workspace }}/zap-front-reports/zap-front-report.html" \

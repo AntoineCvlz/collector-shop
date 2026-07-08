@@ -13,13 +13,11 @@ return new class extends Migration
             $table->foreignId('order_id')->constrained()->cascadeOnDelete();
             $table->foreignId('author_id')->constrained('users')->cascadeOnDelete();
             $table->foreignId('subject_id')->constrained('users')->cascadeOnDelete();
-            // Direction of the review: of_seller (buyer rates seller) or of_buyer.
             $table->string('type');
             $table->unsignedTinyInteger('rating');
             $table->text('comment')->nullable();
             $table->timestamps();
 
-            // One review per author per order.
             $table->unique(['order_id', 'author_id']);
             $table->index('subject_id');
         });

@@ -140,7 +140,6 @@ class DemoSeeder extends Seeder
             'description' => 'Lot of 20 Bronze Age comics, various titles. Reading-grade copies, perfect for filling gaps in a collection.',
         ],
 
-        // ── Pending (awaiting moderation) ──
         [
             'title' => 'Seiko 6139 chronograph (1970s)',
             'category' => 'Watches',
@@ -160,7 +159,6 @@ class DemoSeeder extends Seeder
             'description' => 'Classic Abbey Road pressing, sleeve shows light shelf wear. Vinyl plays clean. Awaiting approval.',
         ],
 
-        // ── Sold ──
         [
             'title' => 'Nikon F2 with 50mm lens',
             'category' => 'Cameras',
@@ -183,10 +181,8 @@ class DemoSeeder extends Seeder
 
     public function run(): void
     {
-        // Roles must exist first.
         $this->call(RoleSeeder::class);
 
-        // ── Demo accounts (password: "password") ──
         $admin = $this->account('Alice Admin', 'admin@demo.test', [Role::ADMIN]);
         $this->account('Mona Moderator', 'moderator@demo.test', [Role::MODERATOR]);
         $seller = $this->account('Sam Seller', 'seller@demo.test', [Role::SELLER]);
@@ -276,7 +272,6 @@ class DemoSeeder extends Seeder
                 return;
             }
         } catch (\Throwable $e) {
-            // fall through to placeholder
         }
 
         $this->attachPlaceholder($article);

@@ -89,8 +89,6 @@ jobs:
             ${{ inputs.result_publish_docker_hub_front }}
             ${{ inputs.result_dast_zap_test_front }}
         run: |
-          # Un job 'skipped' n'est PAS un échec.
-          # Seuls 'failure' et 'cancelled' déclenchent un statut global rouge.
           overall="✅ SUCCESS"
           color="green"
           for r in $RESULTS; do

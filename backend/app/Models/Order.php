@@ -14,9 +14,6 @@ class Order extends Model
 
     public const STATUS_PAID = 'paid';
 
-    /**
-     * Platform commission rate applied to the transaction total.
-     */
     public const COMMISSION_RATE = 0.05;
 
     /**
@@ -47,9 +44,6 @@ class Order extends Model
         ];
     }
 
-    /**
-     * Round half-up to the cent.
-     */
     public static function commissionFor(float $amount): float
     {
         return round($amount * self::COMMISSION_RATE, 2);

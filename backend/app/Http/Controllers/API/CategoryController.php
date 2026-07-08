@@ -11,9 +11,6 @@ use Illuminate\Support\Facades\Log;
 
 class CategoryController extends Controller
 {
-    /**
-     * Public list of all categories.
-     */
     public function index(): JsonResponse
     {
         $categories = Category::orderBy('name')->get();
@@ -26,9 +23,6 @@ class CategoryController extends Controller
         ]);
     }
 
-    /**
-     * Public single category (by id).
-     */
     public function show(Category $category): JsonResponse
     {
         return response()->json([
@@ -39,9 +33,6 @@ class CategoryController extends Controller
         ]);
     }
 
-    /**
-     * Create a category (admin only).
-     */
     public function store(StoreCategoryRequest $request): JsonResponse
     {
         try {
@@ -66,9 +57,6 @@ class CategoryController extends Controller
         }
     }
 
-    /**
-     * Update a category (admin only).
-     */
     public function update(UpdateCategoryRequest $request, Category $category): JsonResponse
     {
         try {
@@ -92,9 +80,6 @@ class CategoryController extends Controller
         }
     }
 
-    /**
-     * Delete a category (admin only).
-     */
     public function destroy(Category $category): JsonResponse
     {
         try {

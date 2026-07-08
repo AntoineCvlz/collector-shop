@@ -53,7 +53,6 @@ export function isModerator(user: UserInfo | null = getUser()): boolean {
   return hasRole("moderator", user);
 }
 
-/** Admins and moderators can access the back-office moderation tools. */
 export function canModerate(user: UserInfo | null = getUser()): boolean {
   return isAdmin(user) || isModerator(user);
 }

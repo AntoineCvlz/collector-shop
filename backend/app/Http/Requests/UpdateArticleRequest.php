@@ -8,9 +8,6 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateArticleRequest extends FormRequest
 {
-    /**
-     * Only the seller who owns the article may update it.
-     */
     public function authorize(): bool
     {
         $user = $this->user();

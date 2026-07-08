@@ -8,16 +8,6 @@ use Prometheus\CollectorRegistry;
 use Prometheus\Exception\MetricsRegistrationException;
 use Symfony\Component\HttpFoundation\Response;
 
-/**
- * Instrumente chaque requête HTTP pour Prometheus.
- *
- * Émet deux séries (namespace « collector ») :
- *   - collector_http_requests_total{method,route,status}   (counter)
- *   - collector_http_request_duration_seconds{method,route} (histogram)
- *
- * Le label « route » utilise le motif de route Laravel (ex: "articles/{article}")
- * et NON l'URI brute, pour borner la cardinalité (pas d'explosion par id).
- */
 class CollectHttpMetrics
 {
     public function __construct(private readonly CollectorRegistry $registry) {}

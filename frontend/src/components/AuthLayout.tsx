@@ -6,9 +6,6 @@ interface AuthLayoutProps {
   children: ReactNode;
 }
 
-/**
- * Centered card on a clean background — the marketplace auth pattern.
- */
 export default function AuthLayout({ children }: AuthLayoutProps) {
   return (
     <div className="flex min-h-svh flex-col bg-secondary/30">

@@ -3,9 +3,7 @@ import { Star } from "lucide-react";
 import { cn } from "../lib/utils";
 
 interface StarRatingProps {
-  /** Current value (0-5). For the interactive variant this is the selection. */
   value: number;
-  /** When provided, the stars become clickable. */
   onChange?: (value: number) => void;
   className?: string;
   size?: "sm" | "md";

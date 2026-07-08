@@ -61,7 +61,7 @@ jobs:
 
   mutation-tests:
     needs: build-and-test
-    if: github.event_name != 'pull_request'   # trop lent pour les PRs
+    if: github.event_name != 'pull_request'
     uses: ./.github/workflows/mutation-tests.yml
 
   build-and-scan-docker:

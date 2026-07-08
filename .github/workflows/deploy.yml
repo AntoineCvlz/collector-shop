@@ -16,7 +16,7 @@ jobs:
     name: 🚀 Deploy → Production
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    environment: production      # secrets SSH_* scopés ici + approbation manuelle
+    environment: production
     concurrency:
       group: deploy-production
       cancel-in-progress: false
@@ -58,7 +58,7 @@ jobs:
             cd /opt/collector-shop
             export BACKEND_IMAGE='${{ inputs.backend_image }}'
             export FRONTEND_IMAGE='${{ inputs.frontend_image }}'
-            export IMAGE_TAG='latest'   # tag publié par les pipelines back/front
+            export IMAGE_TAG='latest'
 
             docker network inspect web >/dev/null 2>&1 || docker network create web
             docker network inspect monitoring >/dev/null 2>&1 || docker network create monitoring

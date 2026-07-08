@@ -34,6 +34,9 @@ jobs:
       - name: 🧪 Lint
         run: npm run lint
 
+      - name: 🧪 Unit & contract tests (Vitest)
+        run: npm run test
+
       - name: 🏗️ Build assets
         run: npm run build
 

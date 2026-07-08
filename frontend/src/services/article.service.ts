@@ -1,4 +1,5 @@
 import { apiFetch } from "../api/client";
+import { catalogueResponseSchema, articleResponseSchema } from "../api/schemas";
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
 
@@ -65,12 +66,14 @@ export const listArticles = async (
   const res = await apiFetch<CatalogueResponse>(
     `/api/articles${qs ? `?${qs}` : ""}`,
   );
-  return res.data;
+  // Validation de contrat : rejette une réponse backend malformée plutôt que
+  // de propager un `data` silencieusement cassé (cf. api/schemas.ts).
+  return catalogueResponseSchema.parse(res).data;
 };
 
 export const getArticle = async (id: number): Promise<Article> => {
   const res = await apiFetch<ArticleResponse>(`/api/articles/${id}`);
-  return res.data;
+  return articleResponseSchema.parse(res).data;
 };
 
 export const listMyArticles = async (

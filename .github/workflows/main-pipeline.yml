@@ -173,8 +173,9 @@ jobs:
     needs: deploy
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     uses: ./.github/workflows/load-test.yml
-    with:
-      target_url: ${{ vars.PRODUCTION_URL }}
+    # PRODUCTION_URL est une variable de l'ENVIRONNEMENT "production" : elle
+    # n'est pas visible ici (ce workflow n'a pas d'environment). C'est le job
+    # dans load-test.yml qui déclare environment: production et la lit.
 
   # ─── Notifications (toujours, en dernier) ───
   # if: always() → part même si un job échoue ou si deploy est skipped (PR).

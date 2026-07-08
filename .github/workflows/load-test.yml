@@ -1,15 +1,14 @@
 on:
   workflow_call:
-    inputs:
-      target_url:
-        required: true
-        type: string
 
 jobs:
   load-test:
     name: 🏋️ Load & Perf Test (k6)
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    # REQUIS : PRODUCTION_URL est une variable scopée à l'environnement
+    # "production" — seul un job déclarant cet environnement peut la lire.
+    environment: production
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -19,16 +18,33 @@ jobs:
           mkdir -p ${{ github.workspace }}/k6-reports
           chmod -R 777 ${{ github.workspace }}/k6-reports
 
+      # Garde-fou : une target_url vide (ex. variable GitHub non résolue) ferait
+      # taper k6 sur "http://localhost" → 0 donnée, tous les checks en échec.
+      - name: Validate target URL
+        env:
+          TARGET_URL: ${{ vars.PRODUCTION_URL }}
+        run: |
+          echo "Cible du test de charge : '${TARGET_URL}'"
+          if [ -z "${TARGET_URL}" ]; then
+            echo "::error::PRODUCTION_URL est vide — vérifier la variable de l'environnement production."
+            exit 1
+          fi
+          # Sanity check : la prod répond bien avant de lancer la charge.
+          curl --fail --silent --show-error --max-time 15 "${TARGET_URL}/up" \
+            || { echo "::error::La cible ${TARGET_URL}/up ne répond pas — abandon du test de charge."; exit 1; }
+
       # Charge courte et modérée contre la prod réelle, juste après déploiement
       # (cf. backend/tests/Load/api-smoke-load.js) — seuils dans `options.thresholds`
       # du script ; --summary-export produit un résumé JSON pour le gate ci-dessous.
       - name: Run k6 load test against production
+        env:
+          TARGET_URL: ${{ vars.PRODUCTION_URL }}
         run: |
           docker run --rm \
             -v ${{ github.workspace }}/backend/tests/Load:/scripts:ro \
             -v ${{ github.workspace }}/k6-reports:/reports:rw \
+            -e LOAD_TEST_BASE_URL="${TARGET_URL}" \
             grafana/k6:latest run \
-            -e LOAD_TEST_BASE_URL="${{ inputs.target_url }}" \
             --summary-export /reports/k6-summary.json \
             /scripts/api-smoke-load.js
         continue-on-error: true

@@ -81,7 +81,7 @@ test.describe("Profil", () => {
 
     await page.goto("/profile");
 
-    await page.getByLabel("Full name").fill("Al");
+    await page.getByLabel("Full name").fill("Alice Renamed");
     await page.getByRole("button", { name: "Save changes" }).click();
 
     await expect(page.getByRole("alert")).toBeVisible();

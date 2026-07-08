@@ -62,11 +62,12 @@
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.21 0.01 264);
 
-  /* Coral is the brand action color. Darkened from L=0.66 to L=0.57 so white
-     text (#fcfcfc) on this fill reaches the WCAG AA 4.5:1 ratio (was 3.32:1). */
-  --primary: oklch(0.57 0.21 28);
+  /* Coral is the brand action color. Darkened to L=0.55 so it clears WCAG AA
+     4.5:1 both ways: coral text on white (5.34:1) and white text on the coral
+     fill (5.19:1). A lighter coral failed axe at ~4.49:1 in each direction. */
+  --primary: oklch(0.55 0.19 28);
   --primary-foreground: oklch(0.99 0 0);
-  --coral: oklch(0.57 0.21 28);
+  --coral: oklch(0.55 0.19 28);
   --coral-foreground: oklch(0.99 0 0);
 
   --secondary: oklch(0.97 0.005 264);

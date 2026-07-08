@@ -64,7 +64,7 @@ test.describe("Favoris", () => {
       page.getByText("No favourites yet — tap the heart on any item to save it."),
     ).toBeVisible();
     await expect(
-      page.getByRole("link", { name: "Browse the catalogue" }),
+      page.getByRole("main").getByRole("link", { name: "Browse the catalogue" }),
     ).toBeVisible();
   });
 });

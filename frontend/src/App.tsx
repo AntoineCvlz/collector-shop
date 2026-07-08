@@ -16,7 +16,13 @@ const Profile = lazy(() => import("./pages/Profile"));
 const Register = lazy(() => import("./pages/Register"));
 const SellArticle = lazy(() => import("./pages/SellArticle"));
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    // Sur erreur API, on retombe tout de suite sur l'état vide/erreur plutôt
+    // que de laisser tourner 3 retries (~7s de skeleton) avant d'abandonner.
+    queries: { retry: 1 },
+  },
+});
 
 function App() {
   return (

@@ -1,5 +1,9 @@
 FROM php:8.4-fpm-alpine
 
+# Mise à jour des paquets système Alpine pour récupérer les correctifs de
+# sécurité publiés après la construction de l'image de base (ex. CVE c-ares).
+RUN apk update && apk upgrade --no-cache
+
 # Librairies runtime nécessaires aux extensions PHP compilées ci-dessous.
 # Les headers de dev (-dev) sont installés en virtual package puis supprimés :
 # ils ne servent qu'à la compilation, pas à l'exécution.

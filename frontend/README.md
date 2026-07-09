@@ -1,73 +1,41 @@
-# React + TypeScript + Vite
+# Collector.shop — Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Interface utilisateur de [Collector.shop](../README.md) : SPA **React 19 + TypeScript** propulsée par **Vite 7**. Consomme l'API [backend](../backend/README.md) (même origine, pas de CORS).
 
-Currently, two official plugins are available:
+## Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **React 19** + **TypeScript** + **Vite 7**
+- **Tailwind CSS 4** + Radix UI (`react-slot`), `class-variance-authority`, `lucide-react`
+- **TanStack Query** — data fetching / cache
+- **react-router-dom 7** — routing
+- **i18next** — internationalisation
+- **Zod** — validation de schémas
+- Tests : **Vitest** + Testing Library (unitaires), **Playwright** + `@axe-core` (e2e & accessibilité)
 
-## React Compiler
+## Structure
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```
+src/           Composants, pages, hooks, i18n
+public/         Assets statiques
+tests / e2e     Vitest (unit) et Playwright (e2e)
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Scripts
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+```bash
+npm install
+npm run dev            # serveur de dev (Vite + HMR)
+npm run build          # build de production (tsc + vite build)
+npm run preview        # prévisualiser le build
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+npm run lint           # ESLint
+npm run type-check     # vérification TypeScript (tsc --noEmit)
+npm run test           # tests unitaires (Vitest)
+npm run test:coverage  # tests + couverture
 ```
+
+Les e2e Playwright et l'audit Lighthouse sont exécutés par la [pipeline CI](../docs/PIPELINE.md).
+
+## Qualité
+
+Avant de pousser, la CI vérifie : `lint`, `type-check`, `test:coverage`, e2e Playwright (avec contrôles d'accessibilité `axe-core`) et Lighthouse. Garde ces commandes vertes localement pour éviter les échecs de pipeline.

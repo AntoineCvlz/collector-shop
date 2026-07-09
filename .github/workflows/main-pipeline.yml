@@ -30,7 +30,11 @@ permissions:
   id-token: write
 
 jobs:
+  secret-scanning:
+    uses: ./.github/workflows/secret-scanning.yml
+
   build-and-test:
+    needs: secret-scanning
     uses: ./.github/workflows/build-unit-tests.yml
 
   code-quality-sast:
@@ -38,10 +42,6 @@ jobs:
     uses: ./.github/workflows/code-quality-sast.yml
     secrets:
       SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
-
-  secret-scanning:
-    needs: build-and-test
-    uses: ./.github/workflows/secret-scanning.yml
 
   sca-dependency-scan:
     needs: build-and-test
@@ -93,6 +93,7 @@ jobs:
       LARAVEL_APP_KEY: ${{ secrets.LARAVEL_APP_KEY }}
 
   build-and-test-front:
+    needs: secret-scanning
     uses: ./.github/workflows/build-unit-tests-front.yml
 
   code-quality-sast-front:

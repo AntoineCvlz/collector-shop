@@ -5,6 +5,7 @@ import { Link, useNavigate } from "react-router-dom";
 import {
   AlertCircle,
   CheckCircle2,
+  Gauge,
   Mail,
   Sparkles,
   Tag,
@@ -20,6 +21,7 @@ import { Input } from "../components/ui/input";
 import { getMe, updateProfile } from "../services/auth.service";
 import type { UserInfo } from "../services/auth.service";
 import { getToken, getUser, isBuyer, isSeller, saveSession } from "../lib/auth";
+import { profileStrength } from "../utils/profileStrength";
 
 function initials(name: string): string {
   return name
@@ -143,6 +145,38 @@ export default function Profile() {
                 {t("profile.viewHistory")}
               </Link>
             </div>
+
+            {/* ── Profile strength ── */}
+            {user && (() => {
+              const strength = profileStrength(user);
+              return (
+                <div className="mt-5 rounded-2xl border border-border bg-card p-6">
+                  <div className="flex items-center gap-2">
+                    <Gauge className="size-4 text-coral" />
+                    <h3 className="text-base font-bold">
+                      {t("profile.profileStrength")}
+                    </h3>
+                  </div>
+                  <div
+                    className="mt-4 h-2 overflow-hidden rounded-full bg-secondary"
+                    role="progressbar"
+                    aria-valuenow={strength.score}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                  >
+                    <div
+                      className="h-full rounded-full bg-coral transition-all"
+                      style={{ width: `${strength.score}%` }}
+                    />
+                  </div>
+                  <p className="mt-3 text-sm text-muted-foreground">
+                    {strength.score === 100
+                      ? t("profile.profileCompleteFull")
+                      : t("profile.profileComplete", { score: strength.score })}
+                  </p>
+                </div>
+              );
+            })()}
 
             {/* Become a seller nudge for buyers */}
             {user && !isSeller(user) && (

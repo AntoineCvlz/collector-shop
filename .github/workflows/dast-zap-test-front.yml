@@ -61,8 +61,7 @@ jobs:
             zap-baseline.py \
             -t http://localhost:8081 \
             -r zap-front-report.html \
-            -I
-        continue-on-error: true
+            -I || true
 
       - name: Verify ZAP actually scanned the app
         run: |

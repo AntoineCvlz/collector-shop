@@ -135,8 +135,7 @@ jobs:
             -t http://localhost:8080 \
             -r zap-report.html \
             -J zap-report.json \
-            -I
-        continue-on-error: true
+            -I || true
 
       - name: Verify ZAP actually scanned the app
         run: |
